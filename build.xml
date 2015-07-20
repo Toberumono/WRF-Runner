@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create jar" name="Create Runnable Jar for Project WRF Runner">
+	<!--this file was created by Eclipse Runnable JAR Export Wizard-->
+	<!--ANT 1.9.4 is required                                        -->
+
+	<property name="src" location="src" />
+	<property name="bin" location="bin" />
+	<property name="doc" value="doc" />
+	<property name="libs" location="../" />
+	<property name="jar" value="WRFRunner.jar" />
+	<fileset id="libraries" dir="${libs}">
+		<include name="CustomStructures.jar" />
+		<include name="NamelistParser.jar" />
+		<include name="lexer.jar" />
+		<include name="JSONLib.jar" />
+	</fileset>
+
+	<!--Files that should be excluded from the build go here-->
+	<patternset id="Build Excludes">
+		<exclude name="testCases/**" />
+	</patternset>
+	
+	<target name="javadoc">
+		<javadoc access="protected" author="true" destdir="${doc}" packagenames="toberumono.*" source="1.8" splitindex="true" use="true" version="true">
+			<fileset dir="${src}">
+				<patternset refid="Build Excludes" />
+			</fileset>
+			<classpath>
+				<fileset refid="libraries" />
+			</classpath>
+		</javadoc>
+	</target>
+
+	<target name="build">
+		<mkdir dir="${bin}" />
+		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" debug="true" debuglevel="lines,vars,source">
+			<patternset refid="Build Excludes" />
+			<classpath>
+				<fileset refid="libraries" />
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="create jar" depends="clean,javadoc,build">
+		<jar destfile="${jar}" filesetmanifest="mergewithoutmain">
+			<manifest>
+				<attribute name="Main-Class" value="toberumono.wrf.Runner" />
+				<attribute name="Class-Path" value="." />
+			</manifest>
+			<fileset dir="${bin}" />
+			<fileset dir="." includes="${doc}/**" />
+			<fileset dir="${src}" />
+			<restrict>
+				<name regex=".*\.(class|java)" />
+				<archives>
+					<zips>
+						<fileset refid="libraries" />
+					</zips>
+				</archives>
+			</restrict>
+		</jar>
+	</target>
+	
+	<target name="create jar nolibs" depends="clean,javadoc,build">
+		<jar destfile="${jar}" filesetmanifest="mergewithoutmain">
+			<manifest>
+				<attribute name="Main-Class" value="toberumono.wrf.Runner" />
+				<attribute name="Class-Path" value="." />
+			</manifest>
+			<fileset dir="${bin}" />
+			<fileset dir="." includes="${doc}/**" />
+			<fileset dir="${src}" />
+		</jar>
+	</target>
+
+	<target name="clean" description="Remove all files created by the build process.">
+		<delete dir="${bin}" />
+		<delete dir="${doc}" />
+	</target>
+</project>

@@ -1,0 +1,37 @@
+{
+	"general" : {
+		"features" : { //These are toggles for the pieces of the script, mostly useful in debugging.  Generally, the first three must be enabled for an actual run.
+			"wget" : true,
+			"wps" : true,
+			"wrf" : true,
+			"cleanup" : true
+		},
+		"wait-for-WRF" : true, //Whether to wait for WRF to finish before exiting the script.  This is only useful with cleanup enabled.
+		"processors" : 3 //The number of processors to allow MPICH to use
+	},
+	"paths" : { //Paths to the executable directories for WRF and WPS as well as the working and grib data directories
+		"wrf" : "/Users/toberumono/WRFV3/run",
+		"wps" : "/Users/toberumono/WPS",
+		"working" : "/Users/toberumono/Working",
+		"grib_data" : "/Users/toberumono/Working/grib"
+	},
+	"timing" : {
+		"rounding" : { //Automatic rounding such that all shorter time fields than the one specified in magnitude are set to 0
+			"enabled" : true,
+			"diff" : "current", //Can be current, previous, or next. (add 0, -1, 1 to the field specified in magnitude)
+			"magnitude" : "day" //Can be second, minute, hour, day, month, or year (although, generally hour and day are the only useful ones)
+		},
+		"offset" : { //The start offset from the rounded time, useful for runs that start at, for example, 6:00 am instead of midnight.  Negative values will work.
+			"enabled" : true,
+			"days" : 0,
+			"hours" : 0,
+			"minutes" : 0,
+			"seconds" : 0
+		}
+	},
+	"commands" : { //Paths to the executables used in this script.
+		"bash" : "/bin/bash",
+		"rm" : "/bin/rm",
+		"wget" : "/usr/local/bin/wget"
+	}
+}
