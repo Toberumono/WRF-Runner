@@ -37,7 +37,8 @@ public class Runner {
 	/**
 	 * Reloads the data from the settings.json file.
 	 * 
-	 * @throws IOException if an IO error occurs
+	 * @throws IOException
+	 *             if an IO error occurs
 	 */
 	public void refreshSettings() throws IOException {
 		refreshSettings(settingsFileName);
@@ -194,46 +195,49 @@ public class Runner {
 		JSONObject rounding = (JSONObject) timing.get("rounding");
 		String magnitude = ((String) rounding.get("magnitude").value()).toLowerCase();
 		String diff = ((String) rounding.get("diff").value()).toLowerCase();
-		start.set(start.YEAR, ((Number) tc.get("start_year").get(0).getY()).intValue());
-		start.set(start.MONTH, ((Number) tc.get("start_month").get(0).getY()).intValue() - 1);
-		start.set(start.DAY_OF_MONTH, ((Number) tc.get("start_day").get(0).getY()).intValue());
-		start.set(start.HOUR_OF_DAY, ((Number) tc.get("start_hour").get(0).getY()).intValue());
-		start.set(start.MINUTE, ((Number) tc.get("start_minute").get(0).getY()).intValue());
-		start.set(start.SECOND, ((Number) tc.get("start_second").get(0).getY()).intValue());
-		rounding: if (((Boolean) rounding.get("enabled").value()).booleanValue()) {
-			//The logic here is that if we are rounding to something, then we want to set everything before it to 0.
-			if (magnitude.equals("second")) {
-				round(Calendar.SECOND, start, diff);
-				break rounding;
-			}
-			start.set(Calendar.SECOND, 0);
-			if (magnitude.equals("minute")) {
-				round(Calendar.MINUTE, start, diff);
-				break rounding;
-			}
-			start.set(Calendar.MINUTE, 0);
-			if (magnitude.equals("hour")) {
-				round(Calendar.HOUR_OF_DAY, start, diff);
-				break rounding;
-			}
-			start.set(Calendar.HOUR_OF_DAY, 0);
-			//Yes, I know these last three are kind of ridiculous, but, you never know.
-			if (magnitude.equals("day")) {
-				round(Calendar.DAY_OF_MONTH, start, diff);
-				break rounding;
-			}
-			start.set(Calendar.DAY_OF_MONTH, 1);
-			if (magnitude.equals("month")) {
-				round(Calendar.YEAR, start, diff);
-				break rounding;
-			}
-			start.set(Calendar.MONTH, 0);
-			if (magnitude.equals("year")) {
-				round(Calendar.YEAR, start, diff);
-				break rounding;
-			}
-			start.set(Calendar.YEAR, 0);
+		if (!((Boolean) rounding.get("enabled").value()).booleanValue()) {
+			start.set(start.YEAR, ((Number) tc.get("start_year").get(0).getY()).intValue());
+			start.set(start.MONTH, ((Number) tc.get("start_month").get(0).getY()).intValue() - 1);
+			start.set(start.DAY_OF_MONTH, ((Number) tc.get("start_day").get(0).getY()).intValue());
+			start.set(start.HOUR_OF_DAY, ((Number) tc.get("start_hour").get(0).getY()).intValue());
+			start.set(start.MINUTE, ((Number) tc.get("start_minute").get(0).getY()).intValue());
+			start.set(start.SECOND, ((Number) tc.get("start_second").get(0).getY()).intValue());
 		}
+		else
+			rounding: {
+				//The logic here is that if we are rounding to something, then we want to set everything before it to 0.
+				if (magnitude.equals("second")) {
+					round(Calendar.SECOND, start, diff);
+					break rounding;
+				}
+				start.set(Calendar.SECOND, 0);
+				if (magnitude.equals("minute")) {
+					round(Calendar.MINUTE, start, diff);
+					break rounding;
+				}
+				start.set(Calendar.MINUTE, 0);
+				if (magnitude.equals("hour")) {
+					round(Calendar.HOUR_OF_DAY, start, diff);
+					break rounding;
+				}
+				start.set(Calendar.HOUR_OF_DAY, 0);
+				//Yes, I know these last three are kind of ridiculous, but, you never know.
+				if (magnitude.equals("day")) {
+					round(Calendar.DAY_OF_MONTH, start, diff);
+					break rounding;
+				}
+				start.set(Calendar.DAY_OF_MONTH, 1);
+				if (magnitude.equals("month")) {
+					round(Calendar.YEAR, start, diff);
+					break rounding;
+				}
+				start.set(Calendar.MONTH, 0);
+				if (magnitude.equals("year")) {
+					round(Calendar.YEAR, start, diff);
+					break rounding;
+				}
+				start.set(Calendar.YEAR, 0);
+			}
 		JSONObject offset = (JSONObject) timing.get("offset");
 		if (((Boolean) offset.get("enabled").value()).booleanValue()) {
 			start.add(Calendar.DAY_OF_MONTH, ((Number) offset.get("days").value()).intValue());
