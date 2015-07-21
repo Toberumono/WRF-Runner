@@ -113,7 +113,8 @@ public class Runner {
 	
 	public int runWPS(Namelist wps, Path wpsPath, int doms, Pair<Calendar, Calendar> timeRange) throws IOException, InterruptedException {
 		ProcessBuilder wpsPB = makePB(wpsPath.toFile());
-		int wpsExitValue = runPB(wpsPB, "./link_grib.csh", (String) paths.get("grib_data").value() + "/");
+		Path gribPath = Paths.get((String) paths.get("grib_data").value()).toAbsolutePath().normalize();
+		int wpsExitValue = runPB(wpsPB, "./link_grib.csh", gribPath.toString() + "/");
 		//Run ungrib and geogrid in parallel
 		wpsPB.command("./ungrib.exe", "2>&1", "|", "tee", "./ungrib.log");
 		Process ungrib = wpsPB.start();
@@ -128,7 +129,6 @@ public class Runner {
 						+ Paths.get(((String) wps.get("share").get("opt_output_from_geogrid_path").get(0).getY()), "geo_").toString() + "*");
 			else
 				wpsExitValue = runPB(wpsPB, (String) commands.get("bash").value(), "-c", "rm -f geo_*");
-			Path gribPath = Paths.get((String) paths.get("grib_data").value()).toAbsolutePath().normalize();
 			wpsExitValue = runPB(wpsPB, (String) commands.get("bash").value(), "-c", "rm -r -f \"" + gribPath.toString() + "\"");
 		}
 		return wpsExitValue;
@@ -179,7 +179,7 @@ public class Runner {
 	 * 
 	 * @param directory
 	 *            the working directory for the {@link ProcessBuilder}
-	 * @return a {@link ProcessBuilder} with {@Link Redirect#INHERIT} redirections and the given working directory
+	 * @return a {@link ProcessBuilder} with {@link Redirect#INHERIT} redirections and the given working directory
 	 */
 	public static ProcessBuilder makePB(File directory) {
 		ProcessBuilder pb = new ProcessBuilder();
