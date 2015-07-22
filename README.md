@@ -100,9 +100,7 @@ Therefore, to change the library directory, simply change the value of location 
 **It is tempting to change the**
 ```xml
 <fileset id="libraries" dir="${libs}">
-```
 	*library names*
-```xml
 </fileset>
 ```
 **block, but do *not* do so**.
