@@ -42,7 +42,7 @@ If you don't have these, see [Getting the required libraries](#gtrl) for how to 
 	1. Go through and set the variables as appropriate.  If you are unsure about "rounding", leave it enabled.  (Actually, in the default implementation of the wget function, this *must* be enabled)
 	2. Configure the offset if you so desire, or disable it.  It is not required by any components of the script.
 5. Configure commands:
-	1. To get the paths to each command, run the following:
+	1. To get the paths to each command, run the following:</br>
 		```bash
 		echo -e "\t\t\"bash\" : \"$(which bash)\",\n\t\t\"rm\" : \"$(which rm)\",\n\t\t\"wget\" : \"$(which wget)\""
 		```
