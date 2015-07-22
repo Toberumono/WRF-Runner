@@ -53,7 +53,7 @@ If you don't have these, see [Getting the required libraries](#gtrl) for how to 
 2. run `java -jar WRFRunner.jar settings.json` (where settings.json is the path to your settings file)
 
 ## Help
-### <a name="gtrl"></a>Getting the Required Programs
+### <a name="gtrp"></a>Getting the Required Programs
 - Linux:
 	1. install the appropriate [Java 8 SDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 	2. run `sudo apt-get install build-essential wget ant`
