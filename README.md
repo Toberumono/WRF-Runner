@@ -12,9 +12,9 @@ If you don't have these, see [Getting the required programs](#gtrp) for how to g
 
 #### <a name="rl"></a>Required Libraries
 * [Lexer](https://github.com/Toberumono/Lexer)
-* [JSON library](https://bitbucket.org/toberumono/json-library)
+* [JSON library](https://github.com/Toberumono/JSON-Library)
 * [Namelist Parser](https://github.com/Toberumono/Namelist-Parser)
-* [Additional Structures](https://github.com/Toberumono/Additional-Structures) projects.
+* [Additional Structures](https://github.com/Toberumono/Additional-Structures).
 
 If you don't have these, see [Getting the required libraries](#gtrl) for how to get them.
 
@@ -83,7 +83,7 @@ cd ../;
 mkdir JSON-Library;
 cd JSON-Library;
 git init;
-git pull https://bitbucket.org/toberumono/json-library.git;
+git pull https://github.com/Toberumono/JSON-Library.git;
 ant;
 cd ../;
 mkdir Namelist-Parser;
