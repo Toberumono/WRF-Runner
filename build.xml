@@ -9,7 +9,7 @@
 	<property name="libs" location="../" />
 	<property name="jar" value="WRFRunner.jar" />
 	<fileset id="libraries" dir="${libs}">
-		<include name="CustomStructures.jar" />
+		<include name="AdditionalStructures.jar" />
 		<include name="NamelistParser.jar" />
 		<include name="lexer.jar" />
 		<include name="JSONLib.jar" />

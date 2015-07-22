@@ -6,10 +6,14 @@
 			"wrf" : true,
 			"cleanup" : true
 		},
-		"wait-for-WRF" : true, //Whether to wait for WRF to finish before exiting the script.  This is only useful with cleanup enabled.
-		"processors" : 3 //The number of processors to allow MPICH to use
+		"parallel" : {
+			"is-dmpar" : true, //Whether the instance of WRF to be used was built with dmpar settings (in which case it will need to be run via MPICH)
+			"boot-lam", : true //Whether to include the -boot option in the MPICH command
+			"processors" : 3 //The number of processors to allow MPICH to use
+		}, 
+		"wait-for-WRF" : true //Whether to wait for WRF to finish before exiting the script.  This is only useful with cleanup enabled.
 	},
-	"paths" : { //Paths to the executable directories for WRF and WPS as well as the working and grib data directories
+	"paths" : { //Paths to the executable directories for WRF and WPS as well as the working and grib data directories.  These must not end in '/'.
 		"wrf" : "/Users/toberumono/WRFV3/run",
 		"wps" : "/Users/toberumono/WPS",
 		"working" : "/Users/toberumono/Working",

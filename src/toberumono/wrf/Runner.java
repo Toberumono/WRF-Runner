@@ -20,7 +20,7 @@ import toberumono.namelist.parser.NamelistParser;
 import toberumono.namelist.parser.NamelistType;
 
 public class Runner {
-	public JSONObject settings, general, paths, commands, features;
+	public JSONObject settings, general, paths, commands, features, parallel;
 	public String settingsFileName;
 	public Path root;
 	
@@ -51,6 +51,7 @@ public class Runner {
 		commands = (JSONObject) settings.get("commands");
 		general = (JSONObject) settings.get("general");
 		features = (JSONObject) general.get("features");
+		features = (JSONObject) general.get("parallel");
 	}
 	
 	public void runWRF() throws IOException, URISyntaxException, InterruptedException {
@@ -136,12 +137,16 @@ public class Runner {
 	
 	public int runWRF(Namelist input, Path wrfPath, int doms, Pair<Calendar, Calendar> timeRange) throws IOException, InterruptedException {
 		ProcessBuilder wrfPB = makePB(wrfPath.toFile());
-		wrfPB.redirectOutput(wrfPath.resolve("real.log").toFile());
-		int wrfExitValue = runPB(wrfPB, "./real.exe", "2>&1");
-		wrfPB.redirectOutput(Redirect.INHERIT);
-		wrfPB.redirectErrorStream(true);
-		wrfPB.redirectOutput(wrfPath.resolve("wrf.log").toFile());
-		String[] wrfCommand = {"mpiexec", "-boot", "-np", general.get("processors").value().toString(), "./wrf.exe", "2>&1"};
+		int wrfExitValue = runPB(wrfPB, "./real.exe", "2>&1", "|", "tee", "./real.log");
+		String[] wrfCommand = new String[0];
+		if ((Boolean) parallel.get("is-dmpar").value()) {
+			if ((Boolean) parallel.get("boot-lam").value())
+				wrfCommand = new String[]{"mpiexec", "-boot", "-np", parallel.get("processors").value().toString(), "./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
+			else
+				wrfCommand = new String[]{"mpiexec", "-np", parallel.get("processors").value().toString(), "./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
+		}
+		else
+			wrfCommand = new String[]{"./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
 		if (((Boolean) general.get("wait-for-WRF").value())) {
 			wrfExitValue = runPB(wrfPB, wrfCommand);
 			if (((Boolean) features.get("cleanup").value()))
