@@ -58,9 +58,10 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 	1. install the appropriate [Java 8 SDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 	2. run `sudo apt-get install build-essential wget ant`.
 - Mac:
-	1. install [Homebrew](http://brew.sh/) if you haven't already.
-	2. run `brew install wget`.
-	3. run `brew install ant`.
+	1. install the appropriate [Java 8 SDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
+	2. install [Homebrew](http://brew.sh/) if you haven't already.
+	3. run `brew install wget`.
+	4. run `brew install ant`.
 
 ### <a name="gtrl"></a>Getting the Required Libraries
 <b>This script only applies to Unix-based operating systems (Mac OSX, Linux, Unix, probably some others)</b>
