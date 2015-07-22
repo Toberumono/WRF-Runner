@@ -51,7 +51,7 @@ public class Runner {
 		commands = (JSONObject) settings.get("commands");
 		general = (JSONObject) settings.get("general");
 		features = (JSONObject) general.get("features");
-		features = (JSONObject) general.get("parallel");
+		parallel = (JSONObject) general.get("parallel");
 	}
 	
 	public void runWRF() throws IOException, URISyntaxException, InterruptedException {
