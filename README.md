@@ -8,7 +8,7 @@ A simple script for running WRF.  This is written in <i>Java 8</i>.
 * ant
 * javac (via the [Java 8 SDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html))
 
-If you don't have these, see [Getting the required programs](#gtrp) for how to get them.
+If you don't have these, see [Getting the Required Programs](#gtrp) for how to get them.
 
 #### <a name="rl"></a>Required Libraries
 * [Lexer](https://github.com/Toberumono/Lexer)
@@ -16,7 +16,7 @@ If you don't have these, see [Getting the required programs](#gtrp) for how to g
 * [Namelist Parser](https://github.com/Toberumono/Namelist-Parser)
 * [Additional Structures](https://github.com/Toberumono/Additional-Structures)
 
-If you don't have these, see [Getting the required libraries](#gtrl) for how to get them.
+If you don't have these, see [Getting the Required Libraries](#gtrl) for how to get them.
 
 #### Compiling the Program
 1. Make sure that you have the [Required Programs](#rp) and [Required Libraries](#rl)
@@ -29,15 +29,15 @@ If you don't have these, see [Getting the required libraries](#gtrl) for how to 
 <i>See the settings.json file included in the git-pull for more detailed information on each option.</i>
 
 1. Open the settings file (using the settings.json file included in the git-pull is ideal)
-	1. if you are using a different file, just copy the contents of settings.json into it
+	1. if you are using a different file, just copy the contents of settings.json into it.
 2. Configure the parallelization options in general->parallel:
-	1. If you did not compile WRF in DMPAR mode, set "is-dmpar" to false and continue to step 3
-	2. Set "processors" to the number of processors you would like to allow WRF to use
+	1. If you did not compile WRF in DMPAR mode, set "is-dmpar" to false and continue to step 3.
+	2. Set "processors" to the number of processors you would like to allow WRF to use.
 3. Configure paths:
-	1. Set the "wrf" path to the *run* directory of your WRF installation
-	2. Set the "wps" path to the root directory of your WPS installation
-	3. Set the "working" path to an empty or non-existent directory
-	4. Set the "grib_data" path to a sub-directory of the "working" directory (this still has to be the full path)
+	1. Set the "wrf" path to the *run* directory of your WRF installation.
+	2. Set the "wps" path to the root directory of your WPS installation.
+	3. Set the "working" path to an empty or non-existent directory.
+	4. Set the "grib_data" path to a sub-directory of the "working" directory (this still has to be the full path).
 4. Configure timing:
 	1. Go through and set the variables as appropriate.  If you are unsure about "rounding", leave it enabled.  (Actually, in the default implementation of the wget function, this *must* be enabled)
 	2. Configure the offset if you so desire, or disable it.  It is not required by any components of the script.
@@ -46,21 +46,21 @@ If you don't have these, see [Getting the required libraries](#gtrl) for how to 
 		```
 		echo -e "\t\t\"bash\" : \"$(which bash)\",\n\t\t\"rm\" : \"$(which rm)\",\n\t\t\"wget\" : \"$(which wget)\""
 		```
-	2. Paste the output of that command into the "commands" section
+	2. Paste the output of that command into the "commands" section.
 
 #### Running
-1. cd to the directory into which you pulled the WRF Runner repository
-2. run `java -jar WRFRunner.jar settings.json` (where settings.json is the path to your settings file)
+1. cd to the directory into which you pulled the WRF Runner repository.
+2. run `java -jar WRFRunner.jar settings.json` (where settings.json is the path to your settings file).
 
 ## Help
 ### <a name="gtrp"></a>Getting the Required Programs
 - Linux:
-	1. install the appropriate [Java 8 SDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
-	2. run `sudo apt-get install build-essential wget ant`
+	1. install the appropriate [Java 8 SDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
+	2. run `sudo apt-get install build-essential wget ant`.
 - Mac:
-	1. install [Homebrew](http://brew.sh/) if you haven't already
-	2. run `brew install wget`
-	3. run `brew install ant`
+	1. install [Homebrew](http://brew.sh/) if you haven't already.
+	2. run `brew install wget`.
+	3. run `brew install ant`.
 
 ### <a name="gtrl"></a>Getting the Required Libraries
 <b>This script only applies to Unix-based operating systems (Mac OSX, Linux, Unix, probably some others)</b>
