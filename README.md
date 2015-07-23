@@ -4,6 +4,7 @@ A simple script for running WRF.  This is written in <i>Java 8</i>.
 ## Usage
 ### Setup
 #### <a name="rp"></a>Required programs (these are all command line utilities)
+
 * wget
 * ant
 * javac (via the [Java 8 SDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html))
@@ -11,17 +12,18 @@ A simple script for running WRF.  This is written in <i>Java 8</i>.
 If you don't have these, see [Getting the Required Programs](#gtrp) for how to get them.
 
 #### <a name="rl"></a>Required Libraries
+
 * [Lexer](https://github.com/Toberumono/Lexer)
-* [JSON library](https://github.com/Toberumono/JSON-Library)
+* [JSON Library](https://github.com/Toberumono/JSON-Library)
 * [Namelist Parser](https://github.com/Toberumono/Namelist-Parser)
 * [Additional Structures](https://github.com/Toberumono/Additional-Structures)
 
 If you don't have these, see [Getting the Required Libraries](#gtrl) for how to get them.
 
 #### Compiling the Program
-1. Make sure that you have the [Required Programs](#rp) and [Required Libraries](#rl)
+1. Make sure that you have the [Required Programs](#rp) and [Required Libraries](#rl).  If you don't, follow the directions in [Getting the Required Programs](#gtrp) and [Getting the Required Libraries](#gtrl) respectively.
 2. cd into the directory with all of the .jars from the [Required Libraries](#rl)
-3. run this script: `mkdir WRF-Runner; cd WRF-Runner; git init; git pull https://github.com/Toberumono/WRF-Runner.git; ant;`
+3. Run this script: `mkdir WRF-Runner; cd WRF-Runner; git init; git pull https://github.com/Toberumono/WRF-Runner.git; ant;`
 
 ### Running a WRF process
 #### Configuring
@@ -73,11 +75,11 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 
 ### <a name="gtrl"></a>Getting the Required Libraries
 
-<b>This script only applies to Unix-based operating systems (Mac OSX, Linux, Unix, probably some others)</b>
-Further, this script assumes you have ANT installed (if you don't, I highly recommend using [Homebrew](http://brew.sh/) to install it on Macs).
+<b>This script only applies to Unix-based operating systems (Mac OSX, Linux, Unix, probably some others)</b></br>
+Further, this script assumes you have the [Required Programs](#rp) installed.  If you don't, follow the instructions in [Getting the Required Programs](#gtrp) first.
 
-1. cd into the directory in which you would like to build the libraries
-2. Run the following in terminal (you can just copy and paste it):
+1. cd into the directory in which you would like to build the libraries (Creating an empty directory is strongly recommended).
+2. Run the following in terminal (you can just copy and paste it, but remember to hit enter after pasting it in even if stuff starts running):
 ```bash
 mkdir Additional-Structures;
 cd Additional-Structures;
