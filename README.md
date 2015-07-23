@@ -72,8 +72,10 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 	5. run `brew install git`.
 
 ### <a name="gtrl"></a>Getting the Required Libraries
+
 <b>This script only applies to Unix-based operating systems (Mac OSX, Linux, Unix, probably some others)</b>
 Further, this script assumes you have ANT installed (if you don't, I highly recommend using [Homebrew](http://brew.sh/) to install it on Macs).
+
 1. cd into the directory in which you would like to build the libraries
 2. Run the following in terminal (you can just copy and paste it):
 ```bash
