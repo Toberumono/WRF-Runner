@@ -7,7 +7,7 @@ A simple script for running WRF.  This is written in <i>Java 8</i>.
 
 * wget
 * ant
-* javac (via the [Java 8 SDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html))
+* javac (via the [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html))
 
 If you don't have these, see [Getting the Required Programs](#gtrp) for how to get them.
 
@@ -59,7 +59,7 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 ### <a name="gtrp"></a>Getting the Required Programs
 
 - Linux (note: you may need to replace the names of the downloaded files or the directories they unpacked to to match the versions that you downloaded):
-	1. Download the appropriate [Java 8 SDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
+	1. Download the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 	2. Unpack the archive into /usr/local/jvm.  Run: `sudo mkdir /usr/local/jvm; sudo tar zxvf jdk-8u51-linux-x64.tar.gz -C /usr/local/jvm`
 	3. Link the executables. Run: `sudo ln -s /usr/lib/jvm/jdk1.8.0_51/bin/java /usr/bin/java; sudo ln -s /usr/lib/jvm/jdk1.8.0_51/bin/javac /usr/bin/javac`.
 	4. Download the appropriate version of [ANT](https://ant.apache.org/bindownload.cgi).
@@ -67,7 +67,7 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 	6. Link the executables. Run: `sudo ln -s /usr/local/ant/bin/ant /usr/bin/ant`.
 	7. Install wget and git. Run: `sudo apt-get install build-essential wget git`.
 - Mac:
-	1. install the appropriate [Java 8 SDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
+	1. install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 	2. install [Homebrew](http://brew.sh/).
 	3. run `brew install wget`.
 	4. run `brew install ant`.
