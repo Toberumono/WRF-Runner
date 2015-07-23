@@ -60,7 +60,7 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 
 - Linux (note: you may need to replace the names of the downloaded files or the directories they unpacked to to match the versions that you downloaded):
 	1. Download the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
-	2. Unpack the archive into /usr/local/jvm.  Run: `sudo mkdir /usr/local/jvm; sudo tar zxvf jdk-8u51-linux-x64.tar.gz -C /usr/local/jvm`
+	2. Unpack the archive into /usr/lib/jvm.  Run: `sudo mkdir /usr/lib/jvm; sudo tar zxvf jdk-8u51-linux-x64.tar.gz -C /usr/lib/jvm`
 	3. Link the executables. Run: `sudo ln -s /usr/lib/jvm/jdk1.8.0_51/bin/java /usr/bin/java; sudo ln -s /usr/lib/jvm/jdk1.8.0_51/bin/javac /usr/bin/javac`.
 	4. Download the appropriate version of [ANT](https://ant.apache.org/bindownload.cgi).
 	5. Unpack the archive into /usr/local/ant.  Run: `tar zxvf apache-ant-1.9.6-bin.tar.gz; sudo mv apache-ant-1.9.6 /usr/local/ant`.
