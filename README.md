@@ -27,6 +27,7 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 #### Configuring
 <i>Note</i>: This describes only the minimal amount of configuration required for a successful run.  There are several options not visited here.</br>
 <i>The configuration.json file included in the git-pull contains detailed information on each option.</i>
+
 1. Edit the WRF and WPS Namelist files such that they could be used for a single run (basically, set everything other than the start and end dates and times in both the Namelist.input and Namelist.wps files)
 2. Open the configuration file (configuration.json) in the directory into which you pulled the WRF Runner project data.
 	1. if you want to use a different file, just copy the contents of configuration.json into it before continuing and remember to change the configuration file path in the run step.
@@ -54,6 +55,7 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 
 ## Help
 ### <a name="gtrp"></a>Getting the Required Programs
+
 - Linux (note: you may need to replace the names of the downloaded files or the directories they unpacked to to match the versions that you downloaded):
 	1. Download the appropriate [Java 8 SDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 	2. Unpack the archive into /usr/local/jvm.  Run: `sudo mkdir /usr/local/jvm; sudo tar zxvf jdk-8u51-linux-x64.tar.gz -C /usr/local/jvm`
