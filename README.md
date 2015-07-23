@@ -116,4 +116,4 @@ Therefore, to change the library directory, simply change the value of location 
 	<i>library names</i>
 </fileset>
 ```
-<i>*block, but do </i>not* do so**.
+<b>block, but do not do so</b>.
