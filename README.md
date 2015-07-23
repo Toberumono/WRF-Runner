@@ -54,14 +54,20 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 
 ## Help
 ### <a name="gtrp"></a>Getting the Required Programs
-- Linux:
-	1. install the appropriate [Java 8 SDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
-	2. run `sudo apt-get install build-essential wget ant`.
+- Linux (note: you may need to replace the names of the downloaded files or the directories they unpacked to to match the versions that you downloaded):
+	1. Download the appropriate [Java 8 SDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
+	2. Unpack the archive into /usr/local/jvm.  Run: `sudo mkdir /usr/local/jvm; sudo tar zxvf jdk-8u51-linux-x64.tar.gz -C /usr/local/jvm`
+	3. Link the executables. Run: `sudo ln -s /usr/lib/jvm/jdk1.8.0_51/bin/java /usr/bin/java; sudo ln -s /usr/lib/jvm/jdk1.8.0_51/bin/javac /usr/bin/javac`.
+	4. Download the appropriate version of [ANT](https://ant.apache.org/bindownload.cgi).
+	5. Unpack the archive into /usr/local/ant.  Run: `tar zxvf apache-ant-1.9.6-bin.tar.gz; sudo mv apache-ant-1.9.6 /usr/local/ant`.
+	6. Link the executables. Run: `sudo ln -s /usr/local/ant/bin/ant /usr/bin/ant`.
+	7. Install wget and git. Run: `sudo apt-get install build-essential wget git`.
 - Mac:
 	1. install the appropriate [Java 8 SDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
-	2. install [Homebrew](http://brew.sh/) if you haven't already.
+	2. install [Homebrew](http://brew.sh/).
 	3. run `brew install wget`.
 	4. run `brew install ant`.
+	5. run `brew install git`.
 
 ### <a name="gtrl"></a>Getting the Required Libraries
 <b>This script only applies to Unix-based operating systems (Mac OSX, Linux, Unix, probably some others)</b>
