@@ -16,7 +16,7 @@ If you don't have these, see [Getting the Required Programs](#gtrp) for how to g
 * [Lexer](https://github.com/Toberumono/Lexer)
 * [JSON Library](https://github.com/Toberumono/JSON-Library)
 * [Namelist Parser](https://github.com/Toberumono/Namelist-Parser)
-* [Additional Structures](https://github.com/Toberumono/Additional-Structures)
+* [Structures](https://github.com/Toberumono/Structures)
 
 If you don't have these, see [Getting the Required Libraries](#gtrl) for how to get them.
 
@@ -30,26 +30,28 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 <i>Note</i>: This describes only the minimal amount of configuration required for a successful run.  There are several options not visited here.</br>
 <i>The configuration.json file included in the git-pull contains detailed information on each option.</i>
 
-1. Edit the WRF and WPS Namelist files such that they could be used for a single run (basically, set everything other than the start and end dates and times in both the Namelist.input and Namelist.wps files)
-2. Open the configuration file (configuration.json) in the directory into which you pulled the WRF Runner project data.
+1. This program downloads data that needs the NAM Vtable in WPS by default.  To ensure that the correct Vtable is used, run: `ln -sf ./ungrib/Variable_Tables/Vtable.NAM ./Vtable` in the WPS installation directory.
+2. Edit the WRF and WPS Namelist files such that they could be used for a single run (basically, set everything other than the start and end dates and times in both the Namelist.input and Namelist.wps files)
+3. Open the configuration file (configuration.json) in the directory into which you pulled the WRF Runner project data.
 	1. if you want to use a different file, just copy the contents of configuration.json into it before continuing and remember to change the configuration file path in the run step.
-3. Configure the parallelization options in general->parallel:
+4. Configure the parallelization options in general->parallel:
 	1. If you did not compile WRF in DMPAR mode, set "is-dmpar" to false and continue to step 3.
 	2. Set "processors" to the number of processors you would like to allow WRF to use.
-4. Configure paths:
+5. Configure paths:
 	1. Set the "wrf" path to the *run* directory of your WRF installation.
 	2. Set the "wps" path to the root directory of your WPS installation.
 	3. Set the "working" path to an empty or non-existent directory.
 	4. Set the "grib_data" path to an empty directory, preferably a sub-directory of the working directory (either way, this requires the full path)
-5. Configure timing:
+6. Configure timing:
 	1. Go through and set the variables as appropriate.  If you are unsure about "rounding", leave it enabled.  (Actually, in the default implementation of the wget function, this *must* be enabled)
 	2. Configure the offset if you so desire, or disable it.  It is not required by any components of the script.
-6. Configure commands:
+7. Configure commands:
 	1. To get the paths to each command, run the following:</br>
 		```
 		echo -e "\t\t\"bash\" : \"$(which bash)\",\n\t\t\"rm\" : \"$(which rm)\",\n\t\t\"wget\" : \"$(which wget)\""
 		```
 	2. Paste the output of that command into the "commands" section.
+8. That's it.
 
 #### Running
 1. cd to the directory into which you pulled the WRF Runner repository.
@@ -81,10 +83,10 @@ Further, this script assumes you have the [Required Programs](#rp) installed.  I
 1. cd into the directory in which you would like to build the libraries (Creating an empty directory is strongly recommended).
 2. Run the following in terminal (you can just copy and paste it, but remember to hit enter after pasting it in even if stuff starts running):
 ```bash
-mkdir Additional-Structures;
-cd Additional-Structures;
+mkdir Structures;
+cd Structures;
 git init;
-git pull https://github.com/Toberumono/Additional-Structures.git;
+git pull https://github.com/Toberumono/Structures.git;
 ant;
 cd ../;
 mkdir Lexer;

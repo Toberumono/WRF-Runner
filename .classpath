@@ -4,6 +4,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Namelist Parser"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/JSONLib"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Additional Structures"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Structures"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

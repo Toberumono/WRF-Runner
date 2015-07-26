@@ -1,31 +1,53 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="create jar" name="Create Runnable Jar for Project WRF Runner">
-	<!--this file was created by Eclipse Runnable JAR Export Wizard-->
-	<!--ANT 1.9.4 is required                                        -->
+<!--Be sure to set name and use_libs before using this file.-->
+<project default="create_jar" name="Generalized ANT Buildfile, modified for my WRF Runner project" xmlns:if="ant:if" xmlns:unless="ant:unless">
+	<!--ANT 1.9.1+ is required                                      -->
+	<!--Most properties in this file have a default value, but can also be set from the command line.-->
+	<!--When setting the prefix from the command line, it must include a trailing '/'.-->
+	<!--When setting the .jar's name from the command line, it must include the '.jar' suffix.-->
 
-	<property name="src" location="src" />
-	<property name="bin" location="bin" />
-	<property name="doc" value="doc" />
-	<property name="libs" location="../" />
-	<property name="jar" value="WRFRunner.jar" />
+	<!--Change this value to the desired name of the .jar file. Include the '.jar' suffix.-->
+	<property unless:set="name" name="name" value="WRFRunner.jar" />
+
+	<!--Change this value to true if the project uses external libraries.-->
+	<!--This cannot be changed from the command line.-->
+	<property name="use_libs" value="true" />
+
+	<!--Path parameters.  These generally won't need to be changed-->
+	<property unless:set="src" name="src" location="src" />
+	<property unless:set="bin" name="bin" location="bin" />
+	<property unless:set="doc" name="doc" value="doc" />
+	<property unless:set="libs" name="libs" value="../" />
+	<property unless:set="prefix" name="prefix" value="../" />
+	<property unless:set="clean" name="clean" value="true" />
+	<property unless:set="package_libs" name="package_libs" value="false" />
+
+	<!--Construct the location of the output .jar file-->
+	<property if:set="jar" name="jar" location="${jar}" />
+	<property unless:set="jar" name="jar" location="${prefix}${name}" />
+
+	<!--Convert the libs property to a location-->
+	<property name="libs" location="${libs}" />
+
 	<fileset id="libraries" dir="${libs}">
-		<include name="AdditionalStructures.jar" />
+		<!--Add the names of the libraries to be included here.-->
+		<include name="Structures.jar" />
 		<include name="NamelistParser.jar" />
-		<include name="lexer.jar" />
+		<include name="Lexer.jar" />
 		<include name="JSONLib.jar" />
 	</fileset>
 
-	<!--Files that should be excluded from the build go here-->
 	<patternset id="Build Excludes">
+		<!--Add the names of files to exclude from the src directory here.-->
 		<exclude name="testCases/**" />
 	</patternset>
 	
 	<target name="javadoc">
-		<javadoc access="protected" author="true" destdir="${doc}" packagenames="toberumono.*" source="1.8" splitindex="true" use="true" version="true">
+		<javadoc access="protected" author="true" destdir="${doc}" packagenames="*" source="1.8" splitindex="true" use="true" version="true">
 			<fileset dir="${src}">
 				<patternset refid="Build Excludes" />
 			</fileset>
-			<classpath>
+			<classpath if:true="${use_libs}">
 				<fileset refid="libraries" />
 			</classpath>
 		</javadoc>
@@ -35,22 +57,21 @@
 		<mkdir dir="${bin}" />
 		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" debug="true" debuglevel="lines,vars,source">
 			<patternset refid="Build Excludes" />
-			<classpath>
+			<classpath if:true="${use_libs}">
 				<fileset refid="libraries" />
 			</classpath>
 		</javac>
 	</target>
 
-	<target name="create jar" depends="clean,javadoc,build">
+	<target name="create_jar" depends="clean,javadoc,build">
 		<jar destfile="${jar}" filesetmanifest="mergewithoutmain">
 			<manifest>
-				<attribute name="Main-Class" value="toberumono.wrf.Runner" />
 				<attribute name="Class-Path" value="." />
 			</manifest>
 			<fileset dir="${bin}" />
 			<fileset dir="." includes="${doc}/**" />
 			<fileset dir="${src}" />
-			<restrict>
+			<restrict if:true="${package_libs}">
 				<name regex=".*\.(class|java)" />
 				<archives>
 					<zips>
@@ -60,21 +81,10 @@
 			</restrict>
 		</jar>
 	</target>
-	
-	<target name="create jar nolibs" depends="clean,javadoc,build">
-		<jar destfile="${jar}" filesetmanifest="mergewithoutmain">
-			<manifest>
-				<attribute name="Main-Class" value="toberumono.wrf.Runner" />
-				<attribute name="Class-Path" value="." />
-			</manifest>
-			<fileset dir="${bin}" />
-			<fileset dir="." includes="${doc}/**" />
-			<fileset dir="${src}" />
-		</jar>
-	</target>
 
 	<target name="clean" description="Remove all files created by the build process.">
-		<delete dir="${bin}" />
-		<delete dir="${doc}" />
+		<echo unless:true="${clean}" level="info" message="Cleaning disabled." />
+		<delete if:true="${clean}" dir="${bin}" />
+		<delete if:true="${clean}" dir="${doc}" />
 	</target>
 </project>

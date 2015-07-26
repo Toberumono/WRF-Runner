@@ -10,7 +10,6 @@ import java.nio.file.Paths;
 import java.util.Calendar;
 import java.util.Locale;
 
-import toberumono.additional.structures.tuples.Pair;
 import toberumono.json.JSONObject;
 import toberumono.json.JSONSystem;
 import toberumono.namelist.parser.Namelist;
@@ -18,6 +17,7 @@ import toberumono.namelist.parser.NamelistInnerList;
 import toberumono.namelist.parser.NamelistInnerMap;
 import toberumono.namelist.parser.NamelistParser;
 import toberumono.namelist.parser.NamelistType;
+import toberumono.structures.tuples.Pair;
 
 public class Runner {
 	protected JSONObject configuration, general, paths, commands, features, parallel;
