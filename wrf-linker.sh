@@ -10,6 +10,6 @@ else
 		mkdir "$1"
 	fi
 	echo "Linking into $1"
-	ln -s "$(brew --prefix)/bin/WRFRunner.jar" "$1/WRFRunner.jar"
-	ln -s "$(brew --prefix)/etc/wrf-runner/configuration.json" "$1/configuration.json"
+	ln -sf "$(brew --prefix)/lib/WRFRunner.jar" "$1/WRFRunner.jar"
+	ln -sf "$(brew --prefix)/etc/wrf-runner/configuration.json" "$1/configuration.json"
 fi
