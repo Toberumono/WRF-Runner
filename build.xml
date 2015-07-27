@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!--Be sure to set name and use_libs before using this file.-->
+<!--Be sure to set name and use.libs before using this file.-->
 <project default="create_jar" name="Generalized ANT Buildfile, modified for my WRF Runner project" xmlns:if="ant:if" xmlns:unless="ant:unless">
 	<!--ANT 1.9.1+ is required                                      -->
 	<!--Most properties in this file have a default value, but can also be set from the command line.-->
@@ -11,7 +11,10 @@
 
 	<!--Change this value to true if the project uses external libraries.-->
 	<!--This cannot be changed from the command line.-->
-	<property name="use_libs" value="true" />
+	<property name="use.libs" value="true" />
+
+	<!--Change this value to true if the project is assuming Homebrew was used to install its libraries.-->
+	<property unless:set="use.hombrew" name="use.homebrew" value="false" />
 
 	<!--Path parameters.  These generally won't need to be changed-->
 	<property unless:set="src" name="src" location="src" />
@@ -29,26 +32,26 @@
 	<!--Convert the libs property to a location-->
 	<property name="libs" location="${libs}" />
 
-	<fileset id="libraries" dir="${libs}">
+	<patternset id="libraries">
 		<!--Add the names of the libraries to be included here.-->
 		<include name="Structures.jar" />
 		<include name="NamelistParser.jar" />
 		<include name="Lexer.jar" />
 		<include name="JSONLib.jar" />
-	</fileset>
+	</patternset>
 
 	<patternset id="Build Excludes">
 		<!--Add the names of files to exclude from the src directory here.-->
 		<exclude name="testCases/**" />
 	</patternset>
-	
+
 	<target name="javadoc">
 		<javadoc access="protected" author="true" destdir="${doc}" packagenames="*" source="1.8" splitindex="true" use="true" version="true">
 			<fileset dir="${src}">
 				<patternset refid="Build Excludes" />
 			</fileset>
-			<classpath if:true="${use_libs}">
-				<fileset refid="libraries" />
+			<classpath if:true="${use.libs}">
+				<fileset refid="library" />
 			</classpath>
 		</javadoc>
 	</target>
@@ -57,13 +60,32 @@
 		<mkdir dir="${bin}" />
 		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" debug="true" debuglevel="lines,vars,source">
 			<patternset refid="Build Excludes" />
-			<classpath if:true="${use_libs}">
-				<fileset refid="libraries" />
+			<classpath if:true="${use.libs}">
+				<fileset refid="library" />
 			</classpath>
 		</javac>
 	</target>
 
-	<target name="create_jar" depends="clean,javadoc,build">
+	<target if="${use.homebrew}" name="find.brew">
+		<exec executable="which" outputproperty="brew.path">
+			<arg value="brew" />
+		</exec>
+		<exec executable="${brew.path}" outputproperty="brew.prefix">
+			<arg value="--prefix" />
+		</exec>
+		<property name="brew.libs" location="${brew.prefix}/lib/" />
+		<fileset id="library" dir="${brew.libs}">
+			<patternset refid="libraries" />
+		</fileset>
+	</target>
+
+	<target unless="${use.homebrew}" name="find.libs">
+		<fileset id="library" dir="${libs}">
+			<patternset refid="libraries" />
+		</fileset>
+	</target>
+
+	<target name="create_jar" depends="find.brew,find.libs,clean,javadoc,build">
 		<jar destfile="${jar}" filesetmanifest="mergewithoutmain">
 			<manifest>
 				<attribute name="Class-Path" value="." />
@@ -75,7 +97,7 @@
 				<name regex=".*\.(class|java)" />
 				<archives>
 					<zips>
-						<fileset refid="libraries" />
+						<fileset refid="library" />
 					</zips>
 				</archives>
 			</restrict>

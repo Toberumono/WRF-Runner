@@ -1,5 +1,5 @@
 # <a name="readme"></a><a name="Readme"></a>WRF-Runner
-A simple script for running WRF.  This is written in <i>Java 8</i>.
+A simple script for running WRF.  This is written in *Java 8* and is designed for use on personal systems - due to the nature of large-scale systems, there is no guarantee that this will be compatible with its job-management system.
 
 ## Usage
 ### Setup
