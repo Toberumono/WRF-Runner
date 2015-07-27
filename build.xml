@@ -50,9 +50,7 @@
 			<fileset dir="${src}">
 				<patternset refid="Build Excludes" />
 			</fileset>
-			<classpath if:true="${use.libs}">
-				<fileset refid="library" />
-			</classpath>
+			<classpath if:true="${use.libs}" refid="cp" />
 		</javadoc>
 	</target>
 
@@ -60,9 +58,7 @@
 		<mkdir dir="${bin}" />
 		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" debug="true" debuglevel="lines,vars,source">
 			<patternset refid="Build Excludes" />
-			<classpath if:true="${use.libs}">
-				<fileset refid="library" />
-			</classpath>
+			<classpath if:true="${use.libs}" refid="cp" />
 		</javac>
 	</target>
 
@@ -74,22 +70,30 @@
 			<arg value="--prefix" />
 		</exec>
 		<property name="brew.libs" location="${brew.prefix}/lib/" />
-		<fileset id="library" dir="${brew.libs}">
-			<patternset refid="libraries" />
-		</fileset>
+		<path id="cp">
+			<fileset id="library" dir="${brew.libs}">
+				<patternset refid="libraries" />
+			</fileset>
+		</path>
 	</target>
 
 	<target unless="${use.homebrew}" name="find.libs">
-		<fileset id="library" dir="${libs}">
-			<patternset refid="libraries" />
-		</fileset>
+		<path id="cp">
+			<fileset id="library" dir="${libs}">
+				<patternset refid="libraries" />
+			</fileset>
+		</path>
 	</target>
 
 	<target name="create_jar" depends="find.brew,find.libs,clean,javadoc,build">
+		<manifestclasspath property="classpath" jarfile="${jar}">
+			<classpath refid="cp" />
+		</manifestclasspath>
 		<jar destfile="${jar}" filesetmanifest="mergewithoutmain">
 			<manifest>
 				<attribute name="Main-Class" value="toberumono.wrf.Runner" />
-				<attribute name="Class-Path" value="." />
+				<attribute if:true="${use.libs}" name="Class-Path" value="${classpath}" />
+				<attribute unless:true="${use.libs}" name="Class-Path" value="." />
 			</manifest>
 			<fileset dir="${bin}" />
 			<fileset dir="." includes="${doc}/**" />
