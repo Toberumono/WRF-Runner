@@ -28,7 +28,7 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 ### Running a WRF process
 #### Configuring
 <i>Note</i>: This describes only the minimal amount of configuration required for a successful run.  There are several options not visited here.</br>
-<i>The configuration.json file included in the git-pull contains detailed information on each option.</i>
+<i>See [Description of Configuration Variables](#docv) for information on each option.</i>
 
 1. This program downloads data that needs the NAM Vtable in WPS by default.  To ensure that the correct Vtable is used, run: `ln -sf ./ungrib/Variable_Tables/Vtable.NAM ./Vtable` in the WPS installation directory.
 2. Edit the WRF and WPS Namelist files such that they could be used for a single run (basically, set everything other than the start and end dates and times in both the Namelist.input and Namelist.wps files)
@@ -45,7 +45,7 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 6. Configure timing:
 	1. Go through and set the variables as appropriate.  If you are unsure about "rounding", leave it enabled.  (Actually, in the default implementation of the wget function, this *must* be enabled)
 	2. Configure the offset if you so desire, or disable it.  It is not required by any components of the script.
-7. Configure commands:
+7. <a name="cc"></a>Configure commands:
 	1. To get the paths to each command, run the following:</br>
 		```
 		echo -e "\t\t\"bash\" : \"$(which bash)\",\n\t\t\"rm\" : \"$(which rm)\",\n\t\t\"wget\" : \"$(which wget)\""
@@ -58,6 +58,41 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 2. run `java -jar WRFRunner.jar configuration.json` (where configuration.json is the path to your configuration file).
 
 ## Help
+### <a name="docv"></a>Description of Configuration Variables
+
++ general
+	+ features: These are toggles for the pieces of the script, mostly useful in debugging.  Generally, the first three must be enabled for an actual run.
+		- wget: Toggle the wget step
+		- wps: Toggle the WPS step
+		- wrf: Toggle the WRF step
+		- cleanup: If this is true, then the script will automatically delete downloaded or other intermediate files that are no longer needed.
+	+ parallel:
+		- is-dmpar: This tells the script whether WRF and WPS were set up with DMPAR mode.  This is effectively the toggle for all parallel components.
+		- boot-lam: True indicates that the mpich call should include the boot flag.  This should only be used on personal machines that will not have another mpich process running on them.
+		- processors: The number of processors to allow WRF to use.  If you intend to continue using the computer on which you are running the simulation while the simulation is in progress, leave your system at least 2 processors.
+	+ wait-for-WRF: True indicates that the script should wait for WRF to complete.  This *must* be true for it to perform the final stage of cleanup.  Otherwise, this is a matter of preference.
++ paths: Absolute paths to the executable directories for WRF and WPS as well as the working and grib data directories.  These must not end in '/'.  
+	- wrf: The path to the WRF *run* directory.
+	- wps: The path to the WPS *root* directory.
+	- working: A path to an arbitrary, preferably empty folder into which temporary files can be placed.
+	- grib_data: A path to an arbitrary, preferably empty folder into which downloaded grib data can be placed.
++ timing: Settings for calculating the appropriate start and end times of the simulation.
+	+ rounding: This is used to set the first non-zero field in the time settings and give it a simple offset.
+		- enabled: Toggles this feature
+		- diff: A quick offset setting, can be previous, current, or next.  Generally, leaving this on current is advisable.
+		- magnitude: The first non-zero value.  While this can be second, minute, hour, day, month, or year, day is generally recommended.
+	+ offset: These are used to fine-tune the start time of the simulation.  These values *can* be negative.
+		- enabled: Toggles this feature
+		- days: Number of days to shift the start time by.  This field's magnitude should generally never exceed 2.
+		- hours: Number of hours to shift the start time by.  This field's magnitude should generally never exceed 48.
+		- minutes: While it is possible to set an offset with minutes, this is highly inadvisable and will cause the simulation to fail with the default dataset.
+		- seconds: While it is possible to set an offset with seconds, this is highly inadvisable and will cause the simulation to fail with the default dataset.
++ commands: Paths to the executables used in this script.  These can different across systems.  See [Configuring commands](#cc) for a script that will print out these values such they can by copy-pasted in.
+	- bash
+	- rm
+	- wget
+
+
 ### <a name="gtrp"></a>Getting the Required Programs
 
 - Linux (note: you may need to replace the names of the downloaded files or the directories they unpacked to to match the versions that you downloaded):
