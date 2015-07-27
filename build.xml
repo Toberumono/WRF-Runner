@@ -86,7 +86,7 @@
 	</target>
 
 	<target name="create_jar" depends="find.brew,find.libs,clean,javadoc,build">
-		<manifestclasspath property="classpath" jarfile="${jar}">
+		<manifestclasspath property="classpath" jarfile="${jar}" maxParentLevels="7">
 			<classpath refid="cp" />
 		</manifestclasspath>
 		<jar destfile="${jar}" filesetmanifest="mergewithoutmain">
