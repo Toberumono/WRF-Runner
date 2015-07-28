@@ -132,7 +132,10 @@ public class Runner {
 		geogList.set(0, new Pair<>(NamelistType.String, newPath.toAbsolutePath().normalize().toString()));
 		NamelistInnerList metList = wps.get("metgrid").get("opt_output_from_metgrid_path");
 		newPath = wrfPath.resolve(metList.get(0).getY().toString());
-		metList.set(0, new Pair<>(NamelistType.String, newPath.toAbsolutePath().normalize().toString()));
+		String path = newPath.toAbsolutePath().normalize().toString();
+		if (!path.endsWith(System.getProperty("file.separator")))
+			path += System.getProperty("file.separator");
+		metList.set(0, new Pair<>(NamelistType.String, path));
 		return wps;
 	}
 	
