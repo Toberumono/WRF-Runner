@@ -69,6 +69,7 @@
 		</javac>
 	</target>
 
+	<property name="build.libs" value="" />
 	<target if="${use.homebrew}" name="find.brew">
 		<exec unless:set="brew.path" executable="which" outputproperty="brew.path">
 			<arg value="brew" />
@@ -82,12 +83,15 @@
 	<target if="${use.libs}" name="construct.classpath" depends="find.brew">
 		<echo if:true="${use.homebrew}" level="info" message="Using libraries from homebrew." />
 		<echo unless:true="${use.homebrew}" level="info" message="Using libraries from ${libs}" />
+		<echo message="${build.libs}" />
 		<property unless:set="build.libs" name="build.libs" location="${libs}" />
 		<path id="build.classpath">
 			<fileset id="library" dir="${build.libs}">
 				<patternset refid="libraries" />
 			</fileset>
 		</path>
+		<propertyregex property="build.libs" input="${build.libs}"
+		    regex="(.*)/$$" select="\1" />
 		<pathconvert property="manifest.classpath" pathsep=" ">
 			<path refid="build.classpath" />
 			<mapper>
