@@ -45,6 +45,7 @@
 		<include name="NamelistParser.jar" />
 		<include name="Lexer.jar" />
 		<include name="JSONLib.jar" />
+		<include name="Utils.jar" />
 	</patternset>
 
 	<patternset id="Build Excludes">
