@@ -93,7 +93,7 @@
 		<jar destfile="${jar}" filesetmanifest="mergewithoutmain">
 			<manifest>
 				<attribute name="Main-Class" value="toberumono.wrf.Runner" />
-				<attribute if:true="${use.libs}" name="Class-Path" value="${classpath}" />
+				<attribute if:true="${use.libs}" name="Class-Path" value="${cpp}" />
 				<attribute unless:true="${use.libs}" name="Class-Path" value="." />
 			</manifest>
 			<fileset dir="${bin}" />
