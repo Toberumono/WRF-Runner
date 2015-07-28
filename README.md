@@ -7,7 +7,9 @@ A simple script for running WRF.  This is written in *Java 8* and is designed fo
 
 * wget
 * ant
-* javac (via the [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html))
+* ruby
+* curl
+* javac update 45 or higher (via the [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html))
 
 If you don't have these, see [Getting the Required Programs](#gtrp) for how to get them.
 
@@ -21,15 +23,17 @@ If you don't have these, see [Getting the Required Programs](#gtrp) for how to g
 If you don't have these, see [Getting the Required Libraries](#gtrl) for how to get them.
 
 #### Compiling the Program
-1. Make sure that you have the [Required Programs](#rp) and [Required Libraries](#rl).  If you don't, follow the directions in [Getting the Required Programs](#gtrp) and [Getting the Required Libraries](#gtrl) respectively.
-2. cd into the directory with all of the .jars from the [Required Libraries](#rl)
-3. Run this script:
+1. Make sure that you have the [Required Programs](#rp).
+	+ If you don't, follow the directions in [Getting the Required Programs](#gtrp).
+2. Run `brew tap toberumono/tap` (This only needs to be run once.)
+	+ If you're on Linux and it cannot find the brew command, run `export PATH=$HOME/.linuxbrew/bin:$PATH`.
+3. Run `brew install wrf-runner`
+	+ Linuxbrew may have trouble with a few dependencies, running `brew install` for each dependency, while annoying, will fix that problem.
+4. cd into the directory into which you want to install the WRF-Runner program
+5. Run `wrf-linker.sh ./`
+6. Proceed to [Running a WRF process](#rawrfp)
 
-```bash
-mkdir WRF-Runner; cd WRF-Runner; git init; git pull https://github.com/Toberumono/WRF-Runner.git; ant;
-```
-
-### Running a WRF process
+### <a name="rawrfp"></a>Running a WRF process
 #### Configuring
 <i>Note</i>: This describes only the minimal amount of configuration required for a successful run.  There are several options not visited here.</br>
 <i>See [Description of Configuration Variables](#docv) for information on each option.</i>
@@ -101,60 +105,20 @@ mkdir WRF-Runner; cd WRF-Runner; git init; git pull https://github.com/Toberumon
 
 - Linux (note: you may need to replace the names of the downloaded files or the directories they unpacked to to match the versions that you downloaded):
 	1. Download the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
-	2. Unpack the archive into /usr/lib/jvm.  Run: `sudo mkdir /usr/lib/jvm; sudo tar zxvf jdk-8u51-linux-x64.tar.gz -C /usr/lib/jvm`
-	3. Link the executables. Run: `sudo ln -s /usr/lib/jvm/jdk1.8.0_51/bin/java /usr/bin/java; sudo ln -s /usr/lib/jvm/jdk1.8.0_51/bin/javac /usr/bin/javac`.
-	4. Download the appropriate version of [ANT](https://ant.apache.org/bindownload.cgi).
-	5. Unpack the archive into /usr/local/ant.  Run: `tar zxvf apache-ant-1.9.6-bin.tar.gz; sudo mv apache-ant-1.9.6 /usr/local/ant`.
-	6. Link the executables. Run: `sudo ln -s /usr/local/ant/bin/ant /usr/bin/ant`.
-	7. Install wget and git. Run: `sudo apt-get install build-essential wget git`.
-- Mac:
+	2. Unpack the archive into /usr/lib/jvm.  Run:</br>
+	```bash
+	sudo mkdir /usr/lib/jvm; sudo tar zxvf jdk-8u51-linux-x64.tar.gz -C /usr/lib/jvm
+	```
+	3. Link the executables. Run:</br>
+	```bash
+	sudo ln -sf /usr/lib/jvm/jdk1.8.0_51/bin/java /usr/bin/java; sudo ln -sf /usr/lib/jvm/jdk1.8.0_51/bin/javac /usr/bin/javac
+	```
+	4. Install wget, git, ruby, and curl. Run: `sudo apt-get install build-essential wget git ruby curl`.
+		+ This instruction will likely prompt to install a bunch of additional libraries.  This is normal.
+	5. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew).  **There is no need to edit the .bashrc or .zshrc files unless you expect to run Linuxbrew frequently**.
+	6. Link the executables. Run: `export PATH=$HOME/.linuxbrew/bin:$PATH` (This is why there's no need to edit .bashrc and .zshrc).
+- Mac: Ruby and Curl are already installed on Mac, so we don't need to worry about those.
 	1. install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 	2. install [Homebrew](http://brew.sh/).
-	3. run `brew install wget`.
-	4. run `brew install ant`.
-	5. run `brew install git`.
-
-### <a name="gtrl"></a>Getting the Required Libraries
-
-<b>This script only applies to Unix-based operating systems (Mac OSX, Linux, Unix, probably some others)</b></br>
-Further, this script assumes you have the [Required Programs](#rp) installed.  If you don't, follow the instructions in [Getting the Required Programs](#gtrp) first.
-
-1. cd into the directory in which you would like to build the libraries (Creating an empty directory is strongly recommended).
-2. Run the following in terminal (you can just copy and paste it, but remember to hit enter after pasting it in even if stuff starts running):
-```bash
-mkdir Structures;
-cd Structures;
-git init;
-git pull https://github.com/Toberumono/Structures.git;
-ant;
-cd ../;
-mkdir Lexer;
-cd Lexer;
-git init;
-git pull https://github.com/Toberumono/Lexer.git;
-ant;
-cd ../;
-mkdir JSON-Library;
-cd JSON-Library;
-git init;
-git pull https://github.com/Toberumono/JSON-Library.git;
-ant;
-cd ../;
-mkdir Namelist-Parser;
-cd Namelist-Parser;
-git init;
-git pull https://github.com/Toberumono/Namelist-Parser.git;
-ant;
-cd ../;
-```
-
-### <a name="ctld"></a>Changing the Library Directory
-If one of my projects uses additional libraries, I include the line `<property name="libs" location="../" />` towards the top.
-Therefore, to change the library directory, simply change the value of location for that property.
-<b>It is tempting to change the</b>
-```xml
-<fileset id="libraries" dir="${libs}">
-	<i>library names</i>
-</fileset>
-```
-<b>block, but do not do so</b>.
+	3. run `brew install wget git ant`.
+		+ You may need to remove some of the programs from that command if you already have them installed.
