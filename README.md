@@ -113,11 +113,10 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 	```bash
 	sudo ln -sf /usr/lib/jvm/jdk1.8.0_51/bin/java /usr/bin/java; sudo ln -sf /usr/lib/jvm/jdk1.8.0_51/bin/javac /usr/bin/javac
 	```
-	4. Install wget, git, ruby, and curl. Run:</br>
+	4. Install wget, git, ruby, and curl. Run: (For systems that use `yum`, replace `apt-get install` with `yum install`)</br>
 	```bash
-	sudo apt-get install build-essential wget git ruby curl
+	sudo apt-get install build-essential curl git m4 ruby texinfo libbz2-dev libcurl4-openssl-dev libexpat-dev libncurses-dev zlib1g-dev
 	```
-		+ This instruction will likely prompt to install a bunch of additional libraries.  This is normal.
 	5. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew).  **There is no need to edit the .bashrc or .zshrc files unless you expect to run Linuxbrew frequently**.
 	6. Link the executables. Run: `export PATH=$HOME/.linuxbrew/bin:$PATH` (This is why there's no need to edit .bashrc and .zshrc).
 - Mac: Ruby and Curl are already installed on Mac, so we don't need to worry about those.
