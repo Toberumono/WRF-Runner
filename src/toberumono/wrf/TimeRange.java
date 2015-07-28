@@ -93,6 +93,8 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 		end.add(Calendar.MINUTE, ((Number) tc.get("run_minutes").get(0).getY()).intValue());
 		end.add(Calendar.HOUR_OF_DAY, ((Number) tc.get("run_hours").get(0).getY()).intValue());
 		end.add(Calendar.DAY_OF_MONTH, ((Number) tc.get("run_days").get(0).getY()).intValue());
+		super.setX(start);
+		super.setY(end);
 	}
 	
 	//To avoid at least some of the copy-paste
