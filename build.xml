@@ -69,7 +69,6 @@
 		</javac>
 	</target>
 
-	<property name="build.libs" value="" />
 	<target if="${use.homebrew}" name="find.brew">
 		<exec unless:set="brew.path" executable="which" outputproperty="brew.path">
 			<arg value="brew" />
