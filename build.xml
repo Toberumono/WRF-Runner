@@ -26,7 +26,7 @@
 	<property unless:set="prefix" name="prefix" value="../" />
 	<!--Whether to force a complete rebuild every run-->
 	<property unless:set="clean" name="clean" value="true" />
-	
+
 	<!--What to pack into the .jar in addition to the compiled code.-->
 	<property unless:set="package.doc" name="package.doc" value="true" />
 	<property unless:set="package.src" name="package.src" value="true" />
@@ -78,7 +78,7 @@
 		</exec>
 		<property name="build.libs" location="${brew.prefix}/lib/" />
 	</target>
-	
+
 	<target if="${use.libs}" name="construct.classpath" depends="find.brew">
 		<echo if:true="${use.homebrew}" level="info" message="Using libraries from homebrew." />
 		<echo unless:true="${use.homebrew}" level="info" message="Using libraries from ${libs}" />
@@ -89,13 +89,13 @@
 			</fileset>
 		</path>
 		<pathconvert property="manifest.classpath" pathsep=" ">
-		  <path refid="build.classpath"/>
-		  <mapper>
-		    <chainedmapper>
-		       <flattenmapper/>
-		       <globmapper from="*.jar" to="${build.libs}/*.jar"/>
-		    </chainedmapper>
-		  </mapper>
+			<path refid="build.classpath" />
+			<mapper>
+				<chainedmapper>
+					<flattenmapper />
+					<globmapper from="*.jar" to="${build.libs}/*.jar" />
+				</chainedmapper>
+			</mapper>
 		</pathconvert>
 	</target>
 
