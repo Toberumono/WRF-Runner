@@ -95,11 +95,10 @@ public class Runner {
 		TimeRange tr = new TimeRange(input, Calendar.getInstance(), (JSONObject) configuration.get("timing"));
 		Path working = tr.makeWorkingFolder(Paths.get(((String) paths.get("working").value())).toAbsolutePath(), wrfPath.getParent(), wpsPath, (String) commands.get("bash").value());
 		Path gribPath = working.resolve("grib");
-		wpsPath = working.resolve("WPS");
 		wrfPath = working.resolve("WRFV3").resolve("run");
 		
 		NamelistParser.writeNamelist(writeWRFOutputPath(tr.updateWRFNamelistTimeRange(input, doms), working.resolve("output")), wrfPath.resolve("namelist.input"));
-		NamelistParser.writeNamelist(writeWPSGeogDataPath(tr.updateWPSNamelistTimeRange(wps, doms), wpsPath), wpsPath.resolve("namelist.wps"));
+		NamelistParser.writeNamelist(writeWPSPaths(tr.updateWPSNamelistTimeRange(wps, doms), wpsPath), (wpsPath = working.resolve("WPS")).resolve("namelist.wps"));
 		
 		if (((Boolean) features.get("wget").value()))
 			runWGet(tr, gribPath, input);
@@ -115,11 +114,13 @@ public class Runner {
 			Files.walkFileTree(wrfPath.getParent(), new RecursiveEraser());
 	}
 	
-	public static Namelist writeWPSGeogDataPath(Namelist wps, Path wpsPath) {
-		NamelistInnerMap geogrid = wps.get("geogrid");
-		NamelistInnerList geogList = geogrid.get("geog_data_path");
+	public static Namelist writeWPSPaths(Namelist wps, Path wpsPath) {
+		NamelistInnerList geogList = wps.get("geogrid").get("geog_data_path");
 		Path newPath = wpsPath.resolve(geogList.get(0).getY().toString());
 		geogList.set(0, new Pair<>(NamelistType.String, newPath.toAbsolutePath().normalize().toString()));
+		NamelistInnerList metList = wps.get("metgrid").get("opt_output_from_metgrid_path");
+		newPath = wpsPath.resolve(metList.get(0).getY().toString());
+		metList.set(0, new Pair<>(NamelistType.String, newPath.toAbsolutePath().normalize().toString()));
 		return wps;
 	}
 	
