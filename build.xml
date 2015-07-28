@@ -95,7 +95,7 @@
 		  <mapper>
 		    <chainedmapper>
 		       <flattenmapper/>
-		       <globmapper from="*.jar" to="lib/*.jar"/>
+		       <globmapper from="*.jar" to="${libs}/*.jar"/>
 		    </chainedmapper>
 		  </mapper>
 		</pathconvert>
