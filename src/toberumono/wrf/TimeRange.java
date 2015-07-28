@@ -223,6 +223,7 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 		final Path wrfO = Files.createDirectories(root.resolve("WRFV3"));
 		final Path wpsO = Files.createDirectories(root.resolve("WPS"));
 		Files.createDirectories(root.resolve("grib"));
+		Files.createDirectories(root.resolve("output"));
 		final ProcessBuilder wrfPB = Runner.makePB(root.toFile());
 		TransferFileWalker tfw = new TransferFileWalker(wrfO, (s, t) -> {
 			try {
