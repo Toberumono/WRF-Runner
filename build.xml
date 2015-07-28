@@ -82,7 +82,6 @@
 	<target if="${use.libs}" name="construct.classpath" depends="find.brew">
 		<echo if:true="${use.homebrew}" level="info" message="Using libraries from homebrew." />
 		<echo unless:true="${use.homebrew}" level="info" message="Using libraries from ${libs}" />
-		<echo message="${build.libs}" />
 		<property unless:set="build.libs" name="build.libs" location="${libs}" />
 		<path id="build.classpath">
 			<fileset id="library" dir="${build.libs}">
@@ -99,6 +98,7 @@
 				</chainedmapper>
 			</mapper>
 		</pathconvert>
+		<echo message="${manifest.classpath}" />
 	</target>
 
 	<target name="create_jar" depends="construct.classpath,clean,javadoc,build">
