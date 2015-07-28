@@ -14,6 +14,7 @@
 	<property name="use.libs" value="true" />
 
 	<!--Change this value to true if the project is assuming Homebrew was used to install its libraries.-->
+	<!--Note: Homebrew's brew command /must/ be on the user's PATH in order for this to work.-->
 	<property unless:set="use.hombrew" name="use.homebrew" value="false" />
 
 	<!--Path parameters.  These generally won't need to be changed-->
@@ -21,14 +22,19 @@
 	<property unless:set="bin" name="bin" location="bin" />
 	<property unless:set="doc" name="doc" value="doc" />
 	<property unless:set="libs" name="libs" value="../" />
+	<!--The path into which the .jar should be placed-->
 	<property unless:set="prefix" name="prefix" value="../" />
+	<!--Whether to force a complete rebuild every run-->
 	<property unless:set="clean" name="clean" value="true" />
-	<property unless:set="package_libs" name="package_libs" value="false" />
+	
+	<!--What to pack into the .jar in addition to the compiled code.-->
+	<property unless:set="package.doc" name="package.doc" value="true" />
+	<property unless:set="package.src" name="package.src" value="true" />
+	<property unless:set="package.libs" name="package.libs" value="false" />
 
 	<!--Construct the location of the output .jar file-->
 	<property if:set="jar" name="jar" location="${jar}" />
 	<property unless:set="jar" name="jar" location="${prefix}${name}" />
-	<property unless:set="dest" name="dest" location="${jar}" />
 
 	<!--Convert the libs property to a location-->
 	<property name="libs" location="${libs}" />
@@ -51,7 +57,7 @@
 			<fileset dir="${src}">
 				<patternset refid="Build Excludes" />
 			</fileset>
-			<classpath if:true="${use.libs}" refid="cp" />
+			<classpath if:true="${use.libs}" refid="build.classpath" />
 		</javadoc>
 	</target>
 
@@ -59,39 +65,31 @@
 		<mkdir dir="${bin}" />
 		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" debug="true" debuglevel="lines,vars,source">
 			<patternset refid="Build Excludes" />
-			<classpath if:true="${use.libs}" refid="cp" />
+			<classpath if:true="${use.libs}" refid="build.classpath" />
 		</javac>
 	</target>
 
 	<target if="${use.homebrew}" name="find.brew">
-		<exec executable="which" outputproperty="brew.path">
+		<exec unless:set="brew.path" executable="which" outputproperty="brew.path">
 			<arg value="brew" />
 		</exec>
-		<exec executable="${brew.path}" outputproperty="brew.prefix">
+		<exec unless:set="brew.prefix" executable="${brew.path}" outputproperty="brew.prefix">
 			<arg value="--prefix" />
 		</exec>
-		<property name="brew.libs" location="${brew.prefix}/lib/" />
-		<path id="cp">
-			<fileset id="library" dir="${brew.libs}">
+		<property name="build.libs" location="${brew.prefix}/lib/" />
+	</target>
+	
+	<target if="${use.libs}" name="construct.classpath" depends="find.brew">
+		<echo if:true="${use.homebrew}" level="info" message="Using libraries from homebrew." />
+		<echo unless:true="${use.homebrew}" level="info" message="Using libraries from ${libs}" />
+		<property unless:set="build.libs" name="build.libs" location="${libs}" />
+		<path id="build.classpath">
+			<fileset id="library" dir="${build.libs}">
 				<patternset refid="libraries" />
 			</fileset>
 		</path>
-	</target>
-
-	<target unless="${use.homebrew}" name="find.libs">
-		<path id="cp">
-			<fileset id="library" dir="${libs}">
-				<patternset refid="libraries" />
-			</fileset>
-		</path>
-	</target>
-
-	<target name="create_jar" depends="find.brew,find.libs,clean,javadoc,build">
-		<manifestclasspath property="classpath" jarfile="${dest}" maxParentLevels="7">
-			<classpath refid="cp" />
-		</manifestclasspath>
 		<pathconvert property="manifest.classpath" pathsep=" ">
-		  <path refid="cp"/>
+		  <path refid="build.classpath"/>
 		  <mapper>
 		    <chainedmapper>
 		       <flattenmapper/>
@@ -99,6 +97,9 @@
 		    </chainedmapper>
 		  </mapper>
 		</pathconvert>
+	</target>
+
+	<target name="create_jar" depends="construct.classpath,clean,javadoc,build">
 		<jar destfile="${jar}" filesetmanifest="mergewithoutmain">
 			<manifest>
 				<attribute name="Main-Class" value="toberumono.wrf.Runner" />
@@ -106,9 +107,9 @@
 				<attribute unless:true="${use.libs}" name="Class-Path" value="." />
 			</manifest>
 			<fileset dir="${bin}" />
-			<fileset dir="." includes="${doc}/**" />
-			<fileset dir="${src}" />
-			<restrict if:true="${package_libs}">
+			<fileset if:true="${package.doc}" dir="." includes="${doc}/**" />
+			<fileset if:true="${package.src}" dir="${src}" />
+			<restrict if:true="${package.libs}">
 				<name regex=".*\.(class|java)" />
 				<archives>
 					<zips>
