@@ -90,10 +90,19 @@
 		<manifestclasspath property="classpath" jarfile="${dest}" maxParentLevels="7">
 			<classpath refid="cp" />
 		</manifestclasspath>
+		<pathconvert property="manifest.classpath" pathsep=" ">
+		  <path refid="cp"/>
+		  <mapper>
+		    <chainedmapper>
+		       <flattenmapper/>
+		       <globmapper from="*.jar" to="lib/*.jar"/>
+		    </chainedmapper>
+		  </mapper>
+		</pathconvert>
 		<jar destfile="${jar}" filesetmanifest="mergewithoutmain">
 			<manifest>
 				<attribute name="Main-Class" value="toberumono.wrf.Runner" />
-				<attribute if:true="${use.libs}" name="Class-Path" value="${cpp}" />
+				<attribute if:true="${use.libs}" name="Class-Path" value="${manifest.classpath}" />
 				<attribute unless:true="${use.libs}" name="Class-Path" value="." />
 			</manifest>
 			<fileset dir="${bin}" />
