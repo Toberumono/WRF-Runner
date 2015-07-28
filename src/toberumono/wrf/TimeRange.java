@@ -26,7 +26,6 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	 *            a {@link Calendar} object with the current date/time data
 	 * @param timing
 	 *            a {@link JSONObject} holding the timing data in from the configuration file
-	 * @return a {@link Pair} of {@link Calendar Calendars} that hold the calculated start and end times of the simulation
 	 */
 	public TimeRange(Namelist namelist, Calendar current, JSONObject timing) {
 		Calendar start = (Calendar) current.clone();
@@ -223,6 +222,7 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 		final Path root = Files.createDirectories(working.resolve(getWPSStartDate()));
 		final Path wrfO = Files.createDirectories(root.resolve("WRFV3"));
 		final Path wpsO = Files.createDirectories(root.resolve("WPS"));
+		Files.createDirectories(root.resolve("grib"));
 		final ProcessBuilder wrfPB = Runner.makePB(root.toFile());
 		TransferFileWalker tfw = new TransferFileWalker(wrfO, (s, t) -> {
 			try {

@@ -18,6 +18,7 @@ import toberumono.namelist.parser.NamelistInnerMap;
 import toberumono.namelist.parser.NamelistParser;
 import toberumono.namelist.parser.NamelistType;
 import toberumono.structures.tuples.Pair;
+import toberumono.utils.files.RecursiveEraser;
 
 public class Runner {
 	protected JSONObject configuration, general, paths, commands, features, parallel;
@@ -93,26 +94,41 @@ public class Runner {
 		
 		TimeRange tr = new TimeRange(input, Calendar.getInstance(), (JSONObject) configuration.get("timing"));
 		Path working = tr.makeWorkingFolder(Paths.get(((String) paths.get("working").value())).toAbsolutePath(), wrfPath.getParent(), wpsPath, (String) commands.get("bash").value());
-				
-		NamelistParser.writeNamelist(tr.updateWRFNamelistTimeRange(input, doms), working.resolve("WRFV3").resolve("run").resolve("namelist.input"));
-		NamelistParser.writeNamelist(tr.updateWPSNamelistTimeRange(wps, doms), working.resolve("WPS").resolve("namelist.wps"));
+		Path gribPath = working.resolve("grib");
+		wpsPath = working.resolve("WPS");
+		wrfPath = working.resolve("WRFV3").resolve("run");
+		
+		NamelistParser.writeNamelist(writeWRFOutputPath(tr.updateWRFNamelistTimeRange(input, doms), working.resolve("output")), wrfPath.resolve("namelist.input"));
+		NamelistParser.writeNamelist(writeWPSGeogDataPath(tr.updateWPSNamelistTimeRange(wps, doms), wpsPath), wpsPath.resolve("namelist.wps"));
 		
 		if (((Boolean) features.get("wget").value()))
-			runWGet(tr, input);
+			runWGet(tr, gribPath, input);
 		
 		if (((Boolean) features.get("wps").value()))
-			runWPS(wps, wpsPath, tr);
+			runWPS(wps, wpsPath, gribPath, tr);
+		else if (((Boolean) features.get("cleanup").value()))
+			wpsCleanup(wpsPath, gribPath);
 		
 		if (((Boolean) features.get("wrf").value()))
 			runWRF(input, wrfPath, tr);
+		else if (((Boolean) features.get("cleanup").value()))
+			Files.walkFileTree(wrfPath.getParent(), new RecursiveEraser());
+	}
+	
+	public static Namelist writeWPSGeogDataPath(Namelist wps, Path wpsPath) {
+		NamelistInnerMap geogrid = wps.get("geogrid");
+		NamelistInnerList geogList = geogrid.get("geog_data_path");
+		Path newPath = wpsPath.resolve(geogList.get(0).getY().toString());
+		geogList.set(0, new Pair<>(NamelistType.String, newPath.toAbsolutePath().normalize().toString()));
+		return wps;
 	}
 	
 	public static Namelist writeWRFOutputPath(Namelist input, Path output) {
 		NamelistInnerMap tc = input.get("time_control");
 		NamelistInnerList outpath = new NamelistInnerList();
 		String dir = output.toAbsolutePath().normalize().toString();
-		if (!dir.endsWith("/"))
-			dir += "/";
+		if (!dir.endsWith(System.getProperty("file.separator")))
+			dir += System.getProperty("file.separator");
 		outpath.add(new Pair<>(NamelistType.String, dir + "wrfout_d<domain>_<date>"));
 		tc.put("history_outname", outpath);
 		return input;
@@ -131,7 +147,7 @@ public class Runner {
 	 * @throws InterruptedException
 	 *             if one of the processes is interrupted
 	 */
-	public void runWGet(TimeRange tr, Namelist input) throws IOException, InterruptedException {
+	public void runWGet(TimeRange tr, Path gribPath, Namelist input) throws IOException, InterruptedException {
 		NamelistInnerMap tc = input.get("time_control");
 		//We construct the duration in hours here and add the start hour so that we only need to do the addition for the offset once instead of max_dom times.
 		int hoursDuration = ((Number) tc.get("run_days").get(0).getY()).intValue() + ((Number) tc.get("run_hours").get(0).getY()).intValue() + ((Number) tc.get("start_hour").get(0).getY()).intValue();
@@ -139,7 +155,6 @@ public class Runner {
 			throw new RuntimeException("Run length must be such that when it is converted to hours, it is divisible by 3.");
 		
 		//Create the grib directory if it doesn't already exist and initialize a ProcessBuilder to use that directory 
-		Path gribPath = Paths.get((String) paths.get("grib_data").value()).toAbsolutePath().normalize();
 		Files.createDirectories(gribPath);
 		ProcessBuilder wgetPB = makePB(gribPath.toFile());
 		Calendar start = tr.getX();
@@ -168,9 +183,9 @@ public class Runner {
 	 * @throws InterruptedException
 	 *             if one of the processes is interrupted
 	 */
-	public void runWPS(Namelist wps, Path wpsPath, TimeRange tr) throws IOException, InterruptedException {
+	public void runWPS(Namelist wps, Path wpsPath, Path gribPath, TimeRange tr) throws IOException, InterruptedException {
 		ProcessBuilder wpsPB = makePB(wpsPath.toFile());
-		Path gribPath = Paths.get((String) paths.get("grib_data").value()).toAbsolutePath().normalize();
+		gribPath = gribPath.toAbsolutePath().normalize();
 		runPB(wpsPB, "./link_grib.csh", gribPath.toString() + "/");
 		//Run ungrib and geogrid in parallel
 		wpsPB.command("./ungrib.exe", "2>&1", "|", "tee", "./ungrib.log");
@@ -179,15 +194,19 @@ public class Runner {
 		ungrib.waitFor();
 		runPB(wpsPB, "./metgrid.exe", "2>&1", "|", "tee", "./metgrid.log");
 		if (((Boolean) features.get("cleanup").value())) {
-			runPB(wpsPB, (String) commands.get("bash").value(), "-c", "rm -f GRIBFILE*");
-			runPB(wpsPB, (String) commands.get("bash").value(), "-c", "rm -f " + ((String) wps.get("ungrib").get("prefix").get(0).getY()) + "*");
 			if (wps.get("share").get("opt_output_from_geogrid_path") != null)
 				runPB(wpsPB, (String) commands.get("bash").value(), "-c", "rm -f "
-						+ Paths.get(((String) wps.get("share").get("opt_output_from_geogrid_path").get(0).getY()), "geo_").toString() + "*");
+						+ wpsPath.resolve(((String) wps.get("share").get("opt_output_from_geogrid_path").get(0).getY())).resolve("geo_").toString() + "*");
 			else
 				runPB(wpsPB, (String) commands.get("bash").value(), "-c", "rm -f geo_*");
-			runPB(wpsPB, (String) commands.get("bash").value(), "-c", "rm -r -f \"" + gribPath.toString() + "\"");
+			wpsCleanup(wpsPath, gribPath);
 		}
+	}
+	
+	public void wpsCleanup(Path wpsPath, Path gribPath) throws IOException {
+		RecursiveEraser re = new RecursiveEraser();
+		Files.walkFileTree(wpsPath, re);
+		Files.walkFileTree(gribPath, re);
 	}
 	
 	/**
@@ -221,7 +240,7 @@ public class Runner {
 		if (((Boolean) general.get("wait-for-WRF").value())) {
 			runPB(wrfPB, wrfCommand);
 			if (((Boolean) features.get("cleanup").value()))
-				runPB(wrfPB, (String) commands.get("bash").value(), "-c", "rm -f met_em*");
+				Files.walkFileTree(wrfPath.getParent(), new RecursiveEraser());
 		}
 		else {
 			wrfPB.command(wrfCommand);
