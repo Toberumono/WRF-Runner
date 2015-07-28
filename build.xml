@@ -28,6 +28,7 @@
 	<!--Construct the location of the output .jar file-->
 	<property if:set="jar" name="jar" location="${jar}" />
 	<property unless:set="jar" name="jar" location="${prefix}${name}" />
+	<property unless:set="dest" name="dest" location="${jar}" />
 
 	<!--Convert the libs property to a location-->
 	<property name="libs" location="${libs}" />
@@ -86,7 +87,7 @@
 	</target>
 
 	<target name="create_jar" depends="find.brew,find.libs,clean,javadoc,build">
-		<manifestclasspath property="classpath" jarfile="${jar}" maxParentLevels="7">
+		<manifestclasspath property="classpath" jarfile="${dest}" maxParentLevels="7">
 			<classpath refid="cp" />
 		</manifestclasspath>
 		<jar destfile="${jar}" filesetmanifest="mergewithoutmain">
