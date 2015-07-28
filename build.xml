@@ -94,11 +94,9 @@
 				<chainedmapper>
 					<flattenmapper />
 					<globmapper from="*.jar" to="${build.libs}/*.jar" />
-					<globmapper from="//" to="/" />
 				</chainedmapper>
 			</mapper>
 		</pathconvert>
-		<echo message="${manifest.classpath}" />
 	</target>
 
 	<target name="create_jar" depends="construct.classpath,clean,javadoc,build">
