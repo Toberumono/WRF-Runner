@@ -98,7 +98,7 @@ public class Runner {
 		wrfPath = working.resolve("WRFV3").resolve("run");
 		
 		NamelistParser.writeNamelist(writeWRFOutputPath(tr.updateWRFNamelistTimeRange(input, doms), working.resolve("output")), wrfPath.resolve("namelist.input"));
-		NamelistParser.writeNamelist(writeWPSPaths(tr.updateWPSNamelistTimeRange(wps, doms), wpsPath), (wpsPath = working.resolve("WPS")).resolve("namelist.wps"));
+		NamelistParser.writeNamelist(writeWPSPaths(tr.updateWPSNamelistTimeRange(wps, doms), wpsPath, wrfPath), (wpsPath = working.resolve("WPS")).resolve("namelist.wps"));
 		
 		if (((Boolean) features.get("wget").value()))
 			runWGet(tr, gribPath, input);
@@ -114,12 +114,24 @@ public class Runner {
 			Files.walkFileTree(wrfPath.getParent(), new RecursiveEraser());
 	}
 	
-	public static Namelist writeWPSPaths(Namelist wps, Path wpsPath) {
+	/**
+	 * This method modifies the original {@link Namelist} object directly - it does not create a copy. The return value is
+	 * the same object - it's just for convenience in chaining.
+	 * 
+	 * @param wps
+	 *            the WPS {@link Namelist}
+	 * @param wpsPath
+	 *            the <i>original</i> WPS path
+	 * @param wrfPath
+	 *            the <i>symlinked</i> WRF path (Working/WRFV3/run)
+	 * @return the WPS {@link Namelist}
+	 */
+	public static Namelist writeWPSPaths(Namelist wps, Path wpsPath, Path wrfPath) {
 		NamelistInnerList geogList = wps.get("geogrid").get("geog_data_path");
 		Path newPath = wpsPath.resolve(geogList.get(0).getY().toString());
 		geogList.set(0, new Pair<>(NamelistType.String, newPath.toAbsolutePath().normalize().toString()));
 		NamelistInnerList metList = wps.get("metgrid").get("opt_output_from_metgrid_path");
-		newPath = wpsPath.resolve(metList.get(0).getY().toString());
+		newPath = wrfPath.resolve(metList.get(0).getY().toString());
 		metList.set(0, new Pair<>(NamelistType.String, newPath.toAbsolutePath().normalize().toString()));
 		return wps;
 	}
