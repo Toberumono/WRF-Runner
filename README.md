@@ -24,9 +24,10 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 1. Make sure that you have the [Required Programs](#rp) and [Required Libraries](#rl).  If you don't, follow the directions in [Getting the Required Programs](#gtrp) and [Getting the Required Libraries](#gtrl) respectively.
 2. cd into the directory with all of the .jars from the [Required Libraries](#rl)
 3. Run this script:
-  ```bash
-  mkdir WRF-Runner; cd WRF-Runner; git init; git pull https://github.com/Toberumono/WRF-Runner.git; ant;
-  ```
+
+```bash
+mkdir WRF-Runner; cd WRF-Runner; git init; git pull https://github.com/Toberumono/WRF-Runner.git; ant;
+```
 
 ### Running a WRF process
 #### Configuring
