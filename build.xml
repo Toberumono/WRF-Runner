@@ -90,8 +90,6 @@
 				<patternset refid="libraries" />
 			</fileset>
 		</path>
-		<propertyregex property="build.libs" input="${build.libs}"
-		    regex="(.*)/$$" select="\1" />
 		<pathconvert property="manifest.classpath" pathsep=" ">
 			<path refid="build.classpath" />
 			<mapper>
