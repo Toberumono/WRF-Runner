@@ -123,4 +123,4 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 	1. install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 	2. install [Homebrew](http://brew.sh/).
 	3. run `brew install wget git ant`.
-		+ You may need to remove some of the programs from that command if you already have them installed.
+		+ Check if you have git installed prior to running this script.  If you do, just run `brew install wget ant` instead.
