@@ -54,16 +54,18 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 	1. Go through and set the variables as appropriate.  If you are unsure about "rounding", leave it enabled.  (Actually, in the default implementation of the wget function, this *must* be enabled)
 	2. Configure the offset if you so desire, or disable it.  It is not required by any components of the script.
 7. <a name="cc"></a>Configure commands:
-	1. To get the paths to each command, run the following:</br>
+	1. Run: `wrf-linker.sh --configure-commands`
+		+ If you installed this without homebrew, you will have to manually enter the paths into your configuration file.  To get them, run:</br>
 		```
 		echo -e "\t\t\"bash\" : \"$(which bash)\",\n\t\t\"rm\" : \"$(which rm)\",\n\t\t\"wget\" : \"$(which wget)\""
 		```
-	2. Paste the output of that command into the "commands" section.
+		+ Conveniently, you can paste the output of that command over the existing values in the commands section.
 8. That's it.
 
 #### Running
 1. cd to the directory into which you pulled the WRF Runner repository.
-2. run `java -jar WRFRunner.jar configuration.json` (where configuration.json is the path to your configuration file).
+2. run `java -jar WRFRunner.jar configuration.json`
+	+ If you set up your own configuration file, replace configuration.json with the path to your configuration file.
 
 ## Help
 ### <a name="docv"></a>Description of Configuration Variables

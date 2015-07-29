@@ -8,9 +8,9 @@ if [ $# -ne 1 ]; then
 	echo "Invalid arguments.  Please enter the directory into which the WRF Runner configuration and executable files should be linked.  This directory need not exist prior to running the script."
 elif [ "$1" == "--configure-commands" ]; then
 	echo "Writing command paths to configuration.json"
-	perl -0777 -i -pe 's/("(bash)")[^\n]*,\n/$1 : "$(which $2)",\n/is' "$config"
-	perl -0777 -i -pe 's/("(rm)")[^\n]*,\n/$1 : "$(which $2)",\n/is' "$config"
-	perl -0777 -i -pe 's/("(wget)")[^\n]*\n/$1 : "$(which $2)"\n/is' "$config"
+	perl -0777 -i -pe "s{\"(bash)\"[^,]*,\n}{\"\$1\" : \"$(which bash)\",\n}igs" "$config"
+	perl -0777 -i -pe "s{\"(rm)\"[^,]*,\n}{\"\$1\" : \"$(which rm)\",\n}igs" "$config"
+	perl -0777 -i -pe "s{\"(wget)\"[^\n]*\n}{\"\$1\" : \"$(which wget)\"\n}igs" "$config"
 else
 	if [ ! -e "$1" ] || [ ! -d "$1" ]; then
 		echo "Making $1"
