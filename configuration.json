@@ -11,13 +11,13 @@
 			"boot-lam" : true,
 			"processors" : 3
 		}, 
-		"wait-for-WRF" : true
+		"wait-for-WRF" : true,
+		"max-outputs" : 15
 	},
 	"paths" : {
 		"wrf" : "/Users/toberumono/WRFV3",
 		"wps" : "/Users/toberumono/WPS",
-		"working" : "/Users/toberumono/Working",
-		"grib_data" : "/Users/toberumono/Working/grib"
+		"working" : "/Users/toberumono/Working"
 	},
 	"timing" : {
 		"rounding" : {

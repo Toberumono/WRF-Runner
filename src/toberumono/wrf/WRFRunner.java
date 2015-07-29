@@ -17,6 +17,7 @@ import toberumono.namelist.parser.NamelistInnerList;
 import toberumono.namelist.parser.NamelistInnerMap;
 import toberumono.namelist.parser.NamelistParser;
 import toberumono.namelist.parser.NamelistType;
+import toberumono.structures.collections.lists.SortedList;
 import toberumono.structures.tuples.Pair;
 import toberumono.utils.files.RecursiveEraser;
 
@@ -139,6 +140,20 @@ public class WRFRunner {
 			runWRF(input, wrfPath, tr);
 		else if (((Boolean) features.get("cleanup").value()))
 			Files.walkFileTree(paths.wrf, new RecursiveEraser());
+		int maxOutputs = (int) general.get("max-outputs").value();
+		if (maxOutputs < 1)
+			return;
+		SortedList<Path> sl = new SortedList<>((f, s) -> {
+			try {
+				return Files.getLastModifiedTime(f).compareTo(Files.getLastModifiedTime(s)); //Sort the Paths by last modified.  The first element will always be the oldest this way.
+			}
+			catch (IOException e) {
+				return 0;
+			}
+		});
+		while (sl.size() > maxOutputs)
+			Files.walkFileTree(sl.remove(0), new RecursiveEraser());
+		Files.newDirectoryStream(paths.root).forEach(sl::add);
 	}
 	
 	/**
