@@ -20,6 +20,7 @@ import toberumono.namelist.parser.NamelistType;
 import toberumono.structures.collections.lists.SortedList;
 import toberumono.structures.tuples.Pair;
 import toberumono.utils.files.RecursiveEraser;
+import toberumono.utils.files.TransferFileWalker;
 
 /**
  * A "script" for automatically running WRF and WPS installations.<br>
@@ -139,7 +140,7 @@ public class WRFRunner {
 		if (((Boolean) features.get("wrf").value()))
 			runWRF(input, paths, tr);
 		else if (((Boolean) features.get("cleanup").value()))
-			Files.walkFileTree(paths.wrf, new RecursiveEraser());
+			wrfCleanup(paths);
 		int maxOutputs = ((Number) general.get("max-outputs").value()).intValue();
 		if (maxOutputs < 1)
 			return;
@@ -191,13 +192,13 @@ public class WRFRunner {
 	 * @return the WRF {@link Namelist}
 	 */
 	public static Namelist writeWRFOutputPath(Namelist input, Path output) {
-		NamelistInnerMap tc = input.get("time_control");
+		/*NamelistInnerMap tc = input.get("time_control");
 		NamelistInnerList outpath = new NamelistInnerList();
 		String dir = output.toAbsolutePath().normalize().toString();
 		if (!dir.endsWith(System.getProperty("file.separator")))
 			dir += System.getProperty("file.separator");
 		outpath.add(new Pair<>(NamelistType.String, dir + "wrfout_d<domain>_<date>"));
-		tc.put("history_outname", outpath);
+		tc.put("history_outname", outpath);*/
 		return input;
 	}
 	
@@ -286,6 +287,12 @@ public class WRFRunner {
 		Files.walkFileTree(paths.grib, re);
 	}
 	
+	public void wrfCleanup(WRFPaths paths) throws IOException {
+		TransferFileWalker tfw = new TransferFileWalker(paths.output, Files::move, p -> p.getFileName().toString().toLowerCase().startsWith("wrfout"), p -> true, null, null);
+		Files.walkFileTree(paths.wrf, tfw);
+		Files.walkFileTree(paths.wrf, new RecursiveEraser());
+	}
+	
 	/**
 	 * This executes the commands needed to run a real-data WRF installation.
 	 * 
@@ -317,7 +324,7 @@ public class WRFRunner {
 		if (((Boolean) general.get("wait-for-WRF").value())) {
 			runPB(wrfPB, wrfCommand);
 			if (((Boolean) features.get("cleanup").value()))
-				Files.walkFileTree(paths.wrf, new RecursiveEraser());
+				wrfCleanup(paths);
 		}
 		else {
 			wrfPB.command(wrfCommand);
