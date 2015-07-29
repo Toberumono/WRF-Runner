@@ -6,7 +6,7 @@ prefix="$(brew --prefix)"
 config="$prefix/etc/wrf-runner/configuration.json" 
 if [ $# -ne 1 ]; then
 	echo "Invalid arguments.  Please enter the directory into which the WRF Runner configuration and executable files should be linked.  This directory need not exist prior to running the script."
-elif [ "$1" == "--configure-commands"]; then
+elif [ "$1" == "--configure-commands" ]; then
 	echo "Writing command paths to configuration.json"
 	perl -0777 -i -pe 's/("(bash)")[^\n]*\n/$1 : "$(which $2)",\n/is' "$config"
 	perl -0777 -i -pe 's/("(rm)")[^\n]*\n/$1 : "$(which $2)",\n/is' "$config"
