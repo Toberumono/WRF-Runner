@@ -255,12 +255,12 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	public WRFPaths makeWorkingFolder(final Path working, final Path wrf, final Path wps) throws IOException {
 		final Path root = Files.createDirectories(working.resolve(getWPSStartDate().replaceAll(":", "_"))); //Having colons in the path messes up WRF, so... Underscores.
 		WRFPaths paths = new WRFPaths(root, Files.createDirectories(root.resolve("WRFV3").normalize()), Files.createDirectories(root.resolve("WPS").normalize()), Files.createDirectories(root.resolve("grib").normalize()), root);
-		TransferFileWalker tfw = new TransferFileWalker(paths.wrf, (s, t) -> Files.createLink(t, s), p -> {
+		TransferFileWalker tfw = new TransferFileWalker(paths.wrf, (s, t) -> Files.createLink(t, s.toRealPath()), p -> {
 			String test = p.getFileName().toString().toLowerCase();
 			return !(test.startsWith("namelist") || test.endsWith(".log") || test.startsWith("wrfout") || test.startsWith("wrfin") || test.startsWith("wrfrst"));
 		}, p -> p.equals(wrf) || wrf.relativize(p).toString().contains("run"), null, null);
 		Files.walkFileTree(wrf, tfw);
-		tfw = new TransferFileWalker(paths.wps, (s, t) -> Files.createLink(t, s), p -> {
+		tfw = new TransferFileWalker(paths.wps, (s, t) -> Files.createLink(t, s.toRealPath()), p -> {
 			Path fname = wrf.relativize(p).getFileName();
 			return !fname.toString().startsWith("namelist") && !fname.toString().endsWith(".log");
 		}, p -> p.equals(paths.wps), null, null); //Only grab files in the root of the WPS installation
