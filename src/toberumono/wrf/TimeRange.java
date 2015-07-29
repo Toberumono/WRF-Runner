@@ -262,12 +262,12 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 		TransferFileWalker tfw = new TransferFileWalker(paths.wrf, (s, t) -> Files.createLink(t, s.toRealPath()), p -> {
 			String test = p.getFileName().toString().toLowerCase();
 			return !(test.startsWith("namelist") || test.startsWith("wrfout") || test.startsWith("wrfin") || test.startsWith("wrfrst") || extensionTest(test));
-		}, p -> p.equals(wrf) || wrf.resolve(p).toString().contains("run"), null, l);
+		}, p -> !p.getFileName().toString().equals("src"), null, l);
 		Files.walkFileTree(wrf, tfw);
 		tfw = new TransferFileWalker(paths.wps, (s, t) -> Files.createSymbolicLink(t, s.toRealPath()), p -> {
 			Path fname = wrf.relativize(p).getFileName();
 			return !(fname.toString().startsWith("namelist") || extensionTest(fname.toString()));
-		}, p -> p.equals(wps), null, l);//!p.getFileName().toString().equals("src"), null, null); //Don't grab source folders
+		}, p -> !p.getFileName().toString().equals("src"), null, l); //Don't grab source folders
 		Files.walkFileTree(wps, tfw);
 		return paths;
 	}
