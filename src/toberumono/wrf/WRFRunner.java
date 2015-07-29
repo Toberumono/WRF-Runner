@@ -132,12 +132,12 @@ public class WRFRunner {
 			runWGet(tr, paths, input);
 		
 		if (((Boolean) features.get("wps").value()))
-			runWPS(wps, wpsPath, paths, tr);
+			runWPS(wps, paths, tr);
 		else if (((Boolean) features.get("cleanup").value()))
 			wpsCleanup(paths);
 		
 		if (((Boolean) features.get("wrf").value()))
-			runWRF(input, wrfPath, tr);
+			runWRF(input, paths, tr);
 		else if (((Boolean) features.get("cleanup").value()))
 			Files.walkFileTree(paths.wrf, new RecursiveEraser());
 		int maxOutputs = ((Number) general.get("max-outputs").value()).intValue();
@@ -243,8 +243,6 @@ public class WRFRunner {
 	 * 
 	 * @param wps
 	 *            the WPS {@link Namelist} file
-	 * @param wpsPath
-	 *            a {@link Path} to the root of the original WPS installation
 	 * @param paths
 	 *            the paths to the working directories in use by this {@link WRFRunner}
 	 * @param tr
@@ -254,7 +252,7 @@ public class WRFRunner {
 	 * @throws InterruptedException
 	 *             if one of the processes is interrupted
 	 */
-	public void runWPS(Namelist wps, Path wpsPath, WRFPaths paths, TimeRange tr) throws IOException, InterruptedException {
+	public void runWPS(Namelist wps, WRFPaths paths, TimeRange tr) throws IOException, InterruptedException {
 		ProcessBuilder wpsPB = makePB(paths.wps.toFile());
 		runPB(wpsPB, "./link_grib.csh", paths.grib.toString() + System.getProperty("file.separator"));
 		//Run ungrib and geogrid in parallel
@@ -293,8 +291,8 @@ public class WRFRunner {
 	 * 
 	 * @param input
 	 *            the WRF {@link Namelist} file
-	 * @param wrfPath
-	 *            the path to the <i>run</i> directory of the WRF installation
+	 * @param paths
+	 *            the paths to the working directories in use by this {@link WRFRunner}
 	 * @param tr
 	 *            {@link TimeRange} that represents the start and end times of the simulation
 	 * @throws IOException
@@ -302,8 +300,8 @@ public class WRFRunner {
 	 * @throws InterruptedException
 	 *             if one of the processes is interrupted
 	 */
-	public void runWRF(Namelist input, Path wrfPath, TimeRange tr) throws IOException, InterruptedException {
-		ProcessBuilder wrfPB = makePB(wrfPath.toFile());
+	public void runWRF(Namelist input, WRFPaths paths, TimeRange tr) throws IOException, InterruptedException {
+		ProcessBuilder wrfPB = makePB(paths.wrf.resolve("run").toFile());
 		runPB(wrfPB, "./real.exe", "2>&1", "|", "tee", "./real.log");
 		String[] wrfCommand = new String[0];
 		//Calculate which command to use
@@ -319,7 +317,7 @@ public class WRFRunner {
 		if (((Boolean) general.get("wait-for-WRF").value())) {
 			runPB(wrfPB, wrfCommand);
 			if (((Boolean) features.get("cleanup").value()))
-				Files.walkFileTree(wrfPath.getParent(), new RecursiveEraser());
+				Files.walkFileTree(paths.wrf, new RecursiveEraser());
 		}
 		else {
 			wrfPB.command(wrfCommand);
