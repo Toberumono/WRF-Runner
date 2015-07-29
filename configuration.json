@@ -14,7 +14,7 @@
 		"wait-for-WRF" : true
 	},
 	"paths" : {
-		"wrf" : "/Users/toberumono/WRFV3/run",
+		"wrf" : "/Users/toberumono/WRFV3",
 		"wps" : "/Users/toberumono/WPS",
 		"working" : "/Users/toberumono/Working",
 		"grib_data" : "/Users/toberumono/Working/grib"

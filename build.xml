@@ -103,7 +103,7 @@
 	<target name="create_jar" depends="construct.classpath,clean,javadoc,build">
 		<jar destfile="${jar}" filesetmanifest="mergewithoutmain">
 			<manifest>
-				<attribute name="Main-Class" value="toberumono.wrf.Runner" />
+				<attribute name="Main-Class" value="toberumono.wrf.WRFRunner" />
 				<attribute if:true="${use.libs}" name="Class-Path" value="${manifest.classpath}" />
 				<attribute unless:true="${use.libs}" name="Class-Path" value="." />
 			</manifest>

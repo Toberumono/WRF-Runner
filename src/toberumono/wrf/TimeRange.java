@@ -14,6 +14,11 @@ import toberumono.namelist.parser.NamelistType;
 import toberumono.structures.tuples.Pair;
 import toberumono.utils.files.TransferFileWalker;
 
+/**
+ * A collection of methods that perform operations using the start and/or end times of a simulation.
+ * 
+ * @author Toberumono
+ */
 public class TimeRange extends Pair<Calendar, Calendar> {
 	
 	/**
@@ -104,28 +109,52 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 			cal.add(field, -1);
 	}
 	
+	/**
+	 * Constructs a {@link TimeRange} from a start and end {@link Calendar}
+	 * 
+	 * @param start
+	 *            the start {@link Calendar}
+	 * @param end
+	 *            the end {@link Calendar}
+	 */
 	public TimeRange(Calendar start, Calendar end) {
 		super(start, end);
 	}
 	
+	/**
+	 * @return the start {@link Calendar}
+	 * @see #getX()
+	 */
 	public Calendar getStart() {
 		return getX();
 	}
 	
+	/**
+	 * @return the end {@link Calendar}
+	 * @see #getY()
+	 */
 	public Calendar getEnd() {
 		return getY();
 	}
 	
+	/**
+	 * @return the WPS date-string corresponding to the start {@link Calendar}
+	 * @see #makeWPSDateString(Calendar)
+	 */
 	public String getWPSStartDate() {
-		return makeWPSDate(getStart());
-	}
-	
-	public String getWPSEndDate() {
-		return makeWPSDate(getEnd());
+		return makeWPSDateString(getStart());
 	}
 	
 	/**
-	 * Writes the given <tt>tr</tt> into a WPS {@link Namelist}.<br>
+	 * @return the WPS date-string corresponding to the end {@link Calendar}
+	 * @see #makeWPSDateString(Calendar)
+	 */
+	public String getWPSEndDate() {
+		return makeWPSDateString(getEnd());
+	}
+	
+	/**
+	 * Writes this {@link TimeRange} into a WPS {@link Namelist}.<br>
 	 * Note: this method <i>does</i> modify the passed {@link Namelist} without cloning it, but does not write anything to
 	 * disk.
 	 * 
@@ -150,7 +179,7 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	}
 	
 	/**
-	 * Writes the given <tt>tr</tt> into a WRF {@link Namelist}.<br>
+	 * Writes this {@link TimeRange} into a WRF {@link Namelist}.<br>
 	 * Note: this method <i>does</i> modify the passed {@link Namelist} without cloning it, but does not write anything to
 	 * disk.
 	 * 
@@ -202,9 +231,9 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	 * 
 	 * @param cal
 	 *            a {@link Calendar}
-	 * @return a WPS {@link Namelist} file-style date string
+	 * @return a date string usable in a WPS {@link Namelist} file
 	 */
-	public static final String makeWPSDate(Calendar cal) {
+	public static final String makeWPSDateString(Calendar cal) {
 		return String.format(Locale.US, "%d-%02d-%02d_%02d:%02d:%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH),
 				cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), cal.get(Calendar.SECOND));
 	}
@@ -213,46 +242,29 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	 * Creates the output folder for the current run and returns a path to it.
 	 * 
 	 * @param working
-	 *            a {@link Path} to the working directory in configuration.json.
-	 * @return a {@link Path} to the root of the working directory for this run.
+	 *            a {@link Path} to the root working directory, in which a timestamped folder will be created to hold the
+	 *            linked WRF and WPS installations, grib files, and output files
+	 * @param wrf
+	 *            a {@link Path} to the original WRF installation root directory
+	 * @param wps
+	 *            a {@link Path} to the original WPS installation root directory
+	 * @return a {@link Path} to the root of the timestamped working directory for this run.
 	 * @throws IOException
 	 *             if an I/O error occurs
 	 */
-	public Path makeWorkingFolder(final Path working, final Path wrf, final Path wps, final String bash) throws IOException, InterruptedException {
-		final Path root = Files.createDirectories(working.resolve(getWPSStartDate()));
-		final Path wrfO = Files.createDirectories(root.resolve("WRFV3"));
-		final Path wpsO = Files.createDirectories(root.resolve("WPS"));
-		Files.createDirectories(root.resolve("grib"));
-		Files.createDirectories(root.resolve("output"));
-		final ProcessBuilder wrfPB = Runner.makePB(root.toFile());
-		TransferFileWalker tfw = new TransferFileWalker(wrfO, (s, t) -> {
-			try {
-				Runner.runPB(wrfPB, bash, "-c", "ln -sf \"" + s.toString() + "\" \"" + t.toString() + "\"");
-			}
-			catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			return t;
-		}, p -> {
-			String test = wrf.relativize(p).toString();
-			if (test.contains("namelist") || !test.contains("run"))
-				return p.equals(wrf);
-			return true;
-		}, null, null);
+	public WRFPaths makeWorkingFolder(final Path working, final Path wrf, final Path wps) throws IOException {
+		final Path root = Files.createDirectories(working.resolve(getWPSStartDate().replaceAll(":", "_"))); //Having colons in the path messes up WRF, so... Underscores.
+		WRFPaths paths = new WRFPaths(root, Files.createDirectories(root.resolve("WRFV3")), Files.createDirectories(root.resolve("WPS")), Files.createDirectories(root.resolve("grib")), root);
+		TransferFileWalker tfw = new TransferFileWalker(paths.wrf, Files::createLink, p -> {
+			String test = p.getFileName().toString().toLowerCase();
+			return !(test.startsWith("namelist") || test.endsWith(".log") || test.startsWith("wrfout") || test.startsWith("wrfin") || test.startsWith("wrfrst"));
+		}, p -> p.equals(wrf) || wrf.relativize(p).toString().contains("run"), null, null);
 		Files.walkFileTree(wrf, tfw);
-		tfw = new TransferFileWalker(wpsO, (s, t) -> {
-			try {
-				Runner.runPB(wrfPB, bash, "-c", "ln -sf \"" + s.toString() + "\" \"" + t.toString() + "\"");
-			}
-			catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			return t;
-		}, p -> {
+		tfw = new TransferFileWalker(paths.wps, Files::createLink, p -> {
 			Path fname = wrf.relativize(p).getFileName();
-			return fname == null || !fname.toString().contains("namelist");
-		}, null, null);
+			return !fname.toString().startsWith("namelist") && !fname.toString().endsWith(".log");
+		}, p -> p.equals(paths.wps), null, null); //Only grab files in the root of the WPS installation
 		Files.walkFileTree(wps, tfw);
-		return root;
+		return paths;
 	}
 }

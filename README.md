@@ -80,7 +80,7 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 		- processors: The number of processors to allow WRF to use.  If you intend to continue using the computer on which you are running the simulation while the simulation is in progress, leave your system at least 2 processors.
 	+ wait-for-WRF: True indicates that the script should wait for WRF to complete.  This *must* be true for it to perform the final stage of cleanup.  Otherwise, this is a matter of preference.
 + paths: Absolute paths to the executable directories for WRF and WPS as well as the working and grib data directories.  These must not end in '/'.  
-	- wrf: The path to the WRF *run* directory.
+	- wrf: The path to the WRF *root* directory.
 	- wps: The path to the WPS *root* directory.
 	- working: A path to an arbitrary, preferably empty folder into which temporary files can be placed.
 	- grib_data: A path to an arbitrary, preferably empty folder into which downloaded grib data can be placed.
