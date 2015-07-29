@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Logger;
 
 import toberumono.json.JSONObject;
 import toberumono.namelist.parser.Namelist;
@@ -253,17 +255,19 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	 *             if an I/O error occurs
 	 */
 	public WRFPaths makeWorkingFolder(final Path working, final Path wrf, final Path wps) throws IOException {
+		Logger l = Logger.getLogger("WRFRunner");
+		l.addHandler(new ConsoleHandler());
 		final Path root = Files.createDirectories(working.resolve(getWPSStartDate().replaceAll(":", "_"))); //Having colons in the path messes up WRF, so... Underscores.
 		WRFPaths paths = new WRFPaths(root, root.resolve("WRFV3").normalize(), root.resolve("WPS").normalize(), root.resolve("grib").normalize(), root, true);
 		TransferFileWalker tfw = new TransferFileWalker(paths.wrf, (s, t) -> Files.createLink(t, s.toRealPath()), p -> {
 			String test = p.getFileName().toString().toLowerCase();
 			return !(test.startsWith("namelist") || test.startsWith("wrfout") || test.startsWith("wrfin") || test.startsWith("wrfrst") || extensionTest(test));
-		}, p -> p.equals(wrf) || wrf.resolve(p).toString().contains("run"), null, null);
+		}, p -> p.equals(wrf) || wrf.resolve(p).toString().contains("run"), null, l);
 		Files.walkFileTree(wrf, tfw);
 		tfw = new TransferFileWalker(paths.wps, (s, t) -> Files.createSymbolicLink(t, s.toRealPath()), p -> {
 			Path fname = wrf.relativize(p).getFileName();
 			return !(fname.toString().startsWith("namelist") || extensionTest(fname.toString()));
-		}, p -> p.equals(paths.wps), null, null);//!p.getFileName().toString().equals("src"), null, null); //Don't grab source folders
+		}, p -> p.equals(paths.wps), null, l);//!p.getFileName().toString().equals("src"), null, null); //Don't grab source folders
 		Files.walkFileTree(wps, tfw);
 		return paths;
 	}
