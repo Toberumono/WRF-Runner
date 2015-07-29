@@ -140,7 +140,7 @@ public class WRFRunner {
 			runWRF(input, wrfPath, tr);
 		else if (((Boolean) features.get("cleanup").value()))
 			Files.walkFileTree(paths.wrf, new RecursiveEraser());
-		int maxOutputs = (int) general.get("max-outputs").value();
+		int maxOutputs = ((Number) general.get("max-outputs").value()).intValue();
 		if (maxOutputs < 1)
 			return;
 		SortedList<Path> sl = new SortedList<>((f, s) -> {
