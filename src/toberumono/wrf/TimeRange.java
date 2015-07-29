@@ -258,12 +258,12 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 		TransferFileWalker tfw = new TransferFileWalker(paths.wrf, (s, t) -> Files.createLink(t, s.toRealPath()), p -> {
 			String test = p.getFileName().toString().toLowerCase();
 			return !(test.startsWith("namelist") || test.endsWith(".log") || test.startsWith("wrfout") || test.startsWith("wrfin") || test.startsWith("wrfrst"));
-		}, p -> p.equals(wrf) || wrf.relativize(p).toString().contains("run"), null, null);
+		}, p -> p.equals(wrf) || wrf.resolve(p).toString().contains("run"), null, null);
 		Files.walkFileTree(wrf, tfw);
 		tfw = new TransferFileWalker(paths.wps, (s, t) -> Files.createLink(t, s.toRealPath()), p -> {
 			Path fname = wrf.relativize(p).getFileName();
-			return !fname.toString().startsWith("namelist") && !fname.toString().endsWith(".log");
-		}, p -> p.equals(paths.wps), null, null); //Only grab files in the root of the WPS installation
+			return !(fname.toString().startsWith("namelist") || fname.toString().endsWith(".log"));
+		}, p -> p.equals(wps), null, null); //Only grab files in the root of the WPS installation
 		Files.walkFileTree(wps, tfw);
 		return paths;
 	}
