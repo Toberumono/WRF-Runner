@@ -267,7 +267,7 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 		tfw = new TransferFileWalker(paths.wps, (s, t) -> Files.createSymbolicLink(t, s.toRealPath()), p -> {
 			Path fname = wrf.relativize(p).getFileName();
 			return !(fname.toString().startsWith("namelist") || extensionTest(fname.toString()));
-		}, p -> p.equals(paths.wps), null, l);//!p.getFileName().toString().equals("src"), null, null); //Don't grab source folders
+		}, p -> p.equals(wps), null, l);//!p.getFileName().toString().equals("src"), null, null); //Don't grab source folders
 		Files.walkFileTree(wps, tfw);
 		return paths;
 	}
