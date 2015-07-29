@@ -277,6 +277,8 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	 */
 	public boolean extensionTest(String fileName) {
 		String extension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+		if (extension.equals("csh"))
+			return false;
 		return extension.charAt(0) == 'f' || extension.charAt(0) == 'c' || extension.equals("log");
 	}
 }
