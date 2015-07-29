@@ -260,10 +260,10 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 			return !(test.startsWith("namelist") || test.startsWith("wrfout") || test.startsWith("wrfin") || test.startsWith("wrfrst") || extensionTest(test));
 		}, p -> p.equals(wrf) || wrf.resolve(p).toString().contains("run"), null, null);
 		Files.walkFileTree(wrf, tfw);
-		tfw = new TransferFileWalker(paths.wps, (s, t) -> Files.createLink(t, s.toRealPath()), p -> {
+		tfw = new TransferFileWalker(paths.wps, (s, t) -> Files.createSymbolicLink(t, s.toRealPath()), p -> {
 			Path fname = wrf.relativize(p).getFileName();
 			return !(fname.toString().startsWith("namelist") || extensionTest(fname.toString()));
-		}, p -> !p.getFileName().toString().equals("src"), null, null); //Don't grab source folders
+		}, p -> p.equals(paths.wps), null, null);//!p.getFileName().toString().equals("src"), null, null); //Don't grab source folders
 		Files.walkFileTree(wps, tfw);
 		return paths;
 	}
