@@ -259,7 +259,7 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 		l.addHandler(new ConsoleHandler());
 		final Path root = Files.createDirectories(working.resolve(getWPSStartDate().replaceAll(":", "_"))); //Having colons in the path messes up WRF, so... Underscores.
 		WRFPaths paths = new WRFPaths(root, root.resolve("WRFV3").normalize(), root.resolve("WPS").normalize(), root.resolve("grib").normalize(), root, true);
-		TransferFileWalker tfw = new TransferFileWalker(paths.wrf, (s, t) -> Files.createLink(t, s.toRealPath()), p -> {
+		TransferFileWalker tfw = new TransferFileWalker(paths.wrf, (s, t) -> Files.createSymbolicLink(t, s.toRealPath()), p -> {
 			String test = p.getFileName().toString().toLowerCase();
 			return !(test.startsWith("namelist") || test.startsWith("wrfout") || test.startsWith("wrfin") || test.startsWith("wrfrst") || extensionTest(test));
 		}, p -> !p.getFileName().toString().equals("src"), null, l);
