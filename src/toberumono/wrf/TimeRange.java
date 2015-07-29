@@ -254,17 +254,29 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	 */
 	public WRFPaths makeWorkingFolder(final Path working, final Path wrf, final Path wps) throws IOException {
 		final Path root = Files.createDirectories(working.resolve(getWPSStartDate().replaceAll(":", "_"))); //Having colons in the path messes up WRF, so... Underscores.
-		WRFPaths paths = new WRFPaths(root, Files.createDirectories(root.resolve("WRFV3").normalize()), Files.createDirectories(root.resolve("WPS").normalize()), Files.createDirectories(root.resolve("grib").normalize()), root);
+		WRFPaths paths = new WRFPaths(root, root.resolve("WRFV3").normalize(), root.resolve("WPS").normalize(), root.resolve("grib").normalize(), root, true);
 		TransferFileWalker tfw = new TransferFileWalker(paths.wrf, (s, t) -> Files.createLink(t, s.toRealPath()), p -> {
 			String test = p.getFileName().toString().toLowerCase();
-			return !(test.startsWith("namelist") || test.endsWith(".log") || test.startsWith("wrfout") || test.startsWith("wrfin") || test.startsWith("wrfrst"));
+			return !(test.startsWith("namelist") || test.startsWith("wrfout") || test.startsWith("wrfin") || test.startsWith("wrfrst") || extensionTest(test));
 		}, p -> p.equals(wrf) || wrf.resolve(p).toString().contains("run"), null, null);
 		Files.walkFileTree(wrf, tfw);
 		tfw = new TransferFileWalker(paths.wps, (s, t) -> Files.createLink(t, s.toRealPath()), p -> {
 			Path fname = wrf.relativize(p).getFileName();
-			return !(fname.toString().startsWith("namelist") || fname.toString().endsWith(".log"));
-		}, p -> p.equals(wps), null, null); //Only grab files in the root of the WPS installation
+			return !(fname.toString().startsWith("namelist") || extensionTest(fname.toString()));
+		}, p -> !p.getFileName().toString().equals("src"), null, null); //Don't grab source folders
 		Files.walkFileTree(wps, tfw);
 		return paths;
+	}
+	
+	/**
+	 * Just tests for certain extensions.
+	 * 
+	 * @param fileName
+	 *            the file name to test
+	 * @return {@code true} if one of those extensions was found
+	 */
+	public boolean extensionTest(String fileName) {
+		String extension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+		return extension.charAt(0) == 'f' || extension.charAt(0) == 'c' || extension.equals("log");
 	}
 }

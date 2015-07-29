@@ -1,5 +1,7 @@
 package toberumono.wrf;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
@@ -30,8 +32,12 @@ public class WRFPaths {
 	 *            a {@link Path} to the grib subfolder in <tt>root</tt>
 	 * @param output
 	 *            a {@link Path} to the output subfolder in <tt>root</tt>
+	 * @param create
+	 *            if {@code true}, then this will call {@link Files#createDirectories} for each {@link Path}
+	 * @throws IOException
+	 *             if a directory could not be created
 	 */
-	public WRFPaths(Path root, Path wrf, Path wps, Path grib, Path output) {
+	public WRFPaths(Path root, Path wrf, Path wps, Path grib, Path output, boolean create) throws IOException {
 		if (root == null)
 			throw new NullPointerException("The root path cannot be null.");
 		this.root = root.toAbsolutePath().normalize();
@@ -39,5 +45,12 @@ public class WRFPaths {
 		this.wps = (wps == null ? root.resolve("WPS") : wps).toAbsolutePath().normalize();
 		this.grib = (grib == null ? root.resolve("grib") : grib).toAbsolutePath().normalize();
 		this.output = (output == null ? root.resolve("output") : output).toAbsolutePath().normalize();
+		if (create) {
+			Files.createDirectories(root);
+			Files.createDirectories(wrf);
+			Files.createDirectories(wps);
+			Files.createDirectories(grib);
+			Files.createDirectories(output);
+		}
 	}
 }
