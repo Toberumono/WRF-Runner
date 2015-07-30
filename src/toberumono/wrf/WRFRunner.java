@@ -180,9 +180,14 @@ public class WRFRunner {
 		geogList.set(0, new Pair<>(NamelistType.String, newPath.toAbsolutePath().normalize().toString()));
 		//Ensure that the geogrid output is staying in the WPS working directory
 		NamelistInnerList geoOutList = wps.get("share").get("opt_output_from_geogrid_path");
-		geoOutList.set(0, new Pair<>(NamelistType.String, "./"));
+		if (geoOutList != null)
+			geoOutList.set(0, new Pair<>(NamelistType.String, "./"));
 		//Ensure that the metgrid output is going into the WRF working directory
 		NamelistInnerList metList = wps.get("metgrid").get("opt_output_from_metgrid_path");
+		if (metList == null) {
+			metList = new NamelistInnerList();
+			wps.get("metgrid").put("opt_output_from_metgrid_path", metList);
+		}
 		String path = wrfPath.resolve("run").toString();
 		if (!path.endsWith(System.getProperty("file.separator")))
 			path += System.getProperty("file.separator");
