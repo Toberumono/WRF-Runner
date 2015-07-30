@@ -256,7 +256,7 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	 */
 	public WRFPaths makeWorkingFolder(final Path working, final Path wrf, final Path wps) throws IOException {
 		Logger l = Logger.getLogger("WRFRunner");
-		l.addHandler(new ConsoleHandler());
+		//l.addHandler(new ConsoleHandler());
 		final Path root = Files.createDirectories(working.resolve(getWPSStartDate().replaceAll(":", "_"))); //Having colons in the path messes up WRF, so... Underscores.
 		WRFPaths paths = new WRFPaths(root, root.resolve("WRFV3").normalize(), root.resolve("WPS").normalize(), root.resolve("grib").normalize(), root, true);
 		TransferFileWalker tfw = new TransferFileWalker(paths.wrf, (s, t) -> Files.createSymbolicLink(t, s.toRealPath()), p -> {

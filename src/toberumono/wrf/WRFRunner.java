@@ -1,9 +1,13 @@
 package toberumono.wrf;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -126,17 +130,17 @@ public class WRFRunner {
 		TimeRange tr = new TimeRange(input, Calendar.getInstance(), (JSONObject) configuration.get("timing"));
 		WRFPaths paths = tr.makeWorkingFolder(Paths.get(((String) this.paths.get("working").value())).toAbsolutePath(), wrfPath, wpsPath);
 		
-		NamelistParser.writeNamelist(writeWRFOutputPath(tr.updateWRFNamelistTimeRange(input, doms), paths.output), paths.wrf.resolve("run").resolve("namelist.input"));
+		NamelistParser.writeNamelist(tr.updateWRFNamelistTimeRange(input, doms), paths.wrf.resolve("run").resolve("namelist.input"));
 		NamelistParser.writeNamelist(writeWPSPaths(tr.updateWPSNamelistTimeRange(wps, doms), wpsPath, paths.wrf), paths.wps.resolve("namelist.wps"));
 		
 		if (((Boolean) features.get("wget").value()))
 			runWGet(tr, paths, input);
-		
+			
 		if (((Boolean) features.get("wps").value()))
 			runWPS(wps, paths, tr);
 		else if (((Boolean) features.get("cleanup").value()))
 			wpsCleanup(paths);
-		
+			
 		if (((Boolean) features.get("wrf").value()))
 			runWRF(input, paths, tr);
 		else if (((Boolean) features.get("cleanup").value()))
@@ -170,36 +174,20 @@ public class WRFRunner {
 	 * @return the WPS {@link Namelist}
 	 */
 	public static Namelist writeWPSPaths(Namelist wps, Path wpsPath, Path wrfPath) {
+		//Convert the geog_data_path to an absolute path so that WPS doesn't break trying to find a path relative to its original location
 		NamelistInnerList geogList = wps.get("geogrid").get("geog_data_path");
 		Path newPath = wpsPath.resolve(geogList.get(0).getY().toString());
 		geogList.set(0, new Pair<>(NamelistType.String, newPath.toAbsolutePath().normalize().toString()));
+		//Ensure that the geogrid output is staying in the WPS working directory
+		NamelistInnerList geoOutList = wps.get("share").get("opt_output_from_geogrid_path");
+		geoOutList.set(0, new Pair<>(NamelistType.String, "./"));
+		//Ensure that the metgrid output is going into the WRF working directory
 		NamelistInnerList metList = wps.get("metgrid").get("opt_output_from_metgrid_path");
 		String path = wrfPath.resolve("run").toString();
 		if (!path.endsWith(System.getProperty("file.separator")))
 			path += System.getProperty("file.separator");
 		metList.set(0, new Pair<>(NamelistType.String, path));
 		return wps;
-	}
-	
-	/**
-	 * This method modifies the original {@link Namelist} object directly - it does not create a copy. The return value is
-	 * the same object - it's just for convenience in chaining.
-	 * 
-	 * @param input
-	 *            the WRF {@link Namelist}
-	 * @param output
-	 *            a {@link Path} to the output directory of this {@link WRFRunner}
-	 * @return the WRF {@link Namelist}
-	 */
-	public static Namelist writeWRFOutputPath(Namelist input, Path output) {
-		/*NamelistInnerMap tc = input.get("time_control");
-		NamelistInnerList outpath = new NamelistInnerList();
-		String dir = output.toAbsolutePath().normalize().toString();
-		if (!dir.endsWith(System.getProperty("file.separator")))
-			dir += System.getProperty("file.separator");
-		outpath.add(new Pair<>(NamelistType.String, dir + "wrfout_d<domain>_<date>"));
-		tc.put("history_outname", outpath);*/
-		return input;
 	}
 	
 	/**
@@ -223,10 +211,9 @@ public class WRFRunner {
 		int hoursDuration = ((Number) tc.get("run_days").get(0).getY()).intValue() + ((Number) tc.get("run_hours").get(0).getY()).intValue() + ((Number) tc.get("start_hour").get(0).getY()).intValue();
 		if (((Number) tc.get("run_minutes").get(0).getY()).intValue() != 0 || ((Number) tc.get("run_seconds").get(0).getY()).intValue() != 0 || hoursDuration % 3 != 0)
 			throw new RuntimeException("Run length must be such that when it is converted to hours, it is divisible by 3.");
-		
+			
 		//Create the grib directory if it doesn't already exist and initialize a ProcessBuilder to use that directory 
 		Files.createDirectories(paths.grib);
-		ProcessBuilder wgetPB = makePB(paths.grib.toFile());
 		Calendar start = tr.getX();
 		//Construct the prefix of the url
 		String url = "http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.";
@@ -234,8 +221,10 @@ public class WRFRunner {
 		String suffix = ".tm00.grib2";
 		//Download each datafile
 		for (int i = ((Number) tc.get("start_hour").get(0).getY()).intValue(); i <= hoursDuration; i += 3) {
-			String[] command = {(String) commands.get("wget").value(), "--no-check-certificate", "-N", url + String.format(Locale.US, "%02d", i) + suffix};
-			System.out.println(runPB(wgetPB, command));
+			String name = url + String.format(Locale.US, "%02d", i) + suffix;
+			try (ReadableByteChannel rbc = Channels.newChannel(new URL(name).openStream()); FileOutputStream fos = new FileOutputStream(paths.grib.resolve(name).toFile());) {
+				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+			}
 		}
 	}
 	
@@ -262,14 +251,8 @@ public class WRFRunner {
 		runPB(wpsPB, "./geogrid.exe", "2>&1", "|", "tee", "./geogrid.log");
 		ungrib.waitFor();
 		runPB(wpsPB, "./metgrid.exe", "2>&1", "|", "tee", "./metgrid.log");
-		if (((Boolean) features.get("cleanup").value())) {
-			if (wps.get("share").get("opt_output_from_geogrid_path") != null)
-				runPB(wpsPB, (String) commands.get("bash").value(), "-c", "rm -f "
-						+ paths.wps.resolve(((String) wps.get("share").get("opt_output_from_geogrid_path").get(0).getY())).resolve("geo_").toString() + "*");
-			else
-				runPB(wpsPB, (String) commands.get("bash").value(), "-c", "rm -f geo_*");
+		if (((Boolean) features.get("cleanup").value()))
 			wpsCleanup(paths);
-		}
 	}
 	
 	/**
@@ -287,6 +270,16 @@ public class WRFRunner {
 		Files.walkFileTree(paths.grib, re);
 	}
 	
+	/**
+	 * Cleans up the {@link WRFPaths#wrf} after moving the outputs to {@link WRFPaths#output} via a
+	 * {@link TransferFileWalker} via a {@link RecursiveEraser}. Therefore, this should <i>only</i> not be called on the
+	 * source installation.
+	 * 
+	 * @param paths
+	 *            the paths to the working directories in use by this {@link WRFRunner}
+	 * @throws IOException
+	 *             if an I/O error occurs while cleaning up
+	 */
 	public void wrfCleanup(WRFPaths paths) throws IOException {
 		TransferFileWalker tfw = new TransferFileWalker(paths.output, Files::move, p -> p.getFileName().toString().toLowerCase().startsWith("wrfout"), p -> true, null, null);
 		Files.walkFileTree(paths.wrf, tfw);

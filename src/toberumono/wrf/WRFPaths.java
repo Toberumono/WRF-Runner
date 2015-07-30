@@ -11,9 +11,25 @@ import java.nio.file.Path;
  */
 public class WRFPaths {
 	/**
-	 * The stored {@link Path Paths}
+	 * The timestamped working directory
 	 */
-	@SuppressWarnings("javadoc") public final Path root, wrf, wps, grib, output;
+	public final Path root;
+	/**
+	 * The WRF working directory
+	 */
+	public final Path wrf;
+	/**
+	 * The WPS working directory
+	 */
+	public final Path wps;
+	/**
+	 * The directory into which the grib data is downloaded
+	 */
+	public final Path grib;
+	/**
+	 * The directory into which the wrfout files are moved
+	 */
+	public final Path output;
 	
 	/**
 	 * While the <tt>root</tt> {@link Path} must be provided, the default values for all of the other {@link Path Paths} can
