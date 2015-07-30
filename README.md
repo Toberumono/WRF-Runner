@@ -53,16 +53,9 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 6. Configure timing:
 	1. Go through and set the variables as appropriate.  If you are unsure about "rounding", leave it enabled.  (Actually, in the default implementation of the wget function, this *must* be enabled)
 	2. Configure the offset if you so desire, or disable it.  It is not required by any components of the script.
-7. <a name="cc"></a>Configure commands:
-	1. Run: `wrf-linker.sh --configure-commands`
-		+ If you installed this without homebrew, you will have to manually enter the paths into your configuration file.  To get them, run:</br>
-		```
-		echo -e "\t\t\"bash\" : \"$(which bash)\",\n\t\t\"rm\" : \"$(which rm)\",\n\t\t\"wget\" : \"$(which wget)\""
-		```
-		+ Conveniently, you can paste the output of that command over the existing values in the commands section.
-8. That's it.
+8. That's it.  Proceed to [Running](#r)
 
-#### Running
+#### <a name="r"></a>Running
 1. cd to the directory into which you pulled the WRF Runner repository.
 2. run `java -jar WRFRunner.jar configuration.json`
 	+ If you set up your own configuration file, replace configuration.json with the path to your configuration file.
@@ -98,10 +91,6 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 		- hours: Number of hours to shift the start time by.  This field's magnitude should generally never exceed 48.
 		- minutes: While it is possible to set an offset with minutes, this is highly inadvisable and will cause the simulation to fail with the default dataset.
 		- seconds: While it is possible to set an offset with seconds, this is highly inadvisable and will cause the simulation to fail with the default dataset.
-+ commands: Paths to the executables used in this script.  These can different across systems.  See [Configuring commands](#cc) for a script that will print out these values such they can by copy-pasted in.
-	- bash
-	- rm
-	- wget
 
 
 ### <a name="gtrp"></a>Getting the Required Programs

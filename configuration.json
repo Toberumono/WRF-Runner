@@ -32,10 +32,5 @@
 			"minutes" : 0,
 			"seconds" : 0
 		}
-	},
-	"commands" : {
-		"bash" : "/bin/bash",
-		"rm" : "/bin/rm",
-		"wget" : "/usr/local/bin/wget"
 	}
 }

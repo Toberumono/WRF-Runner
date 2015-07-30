@@ -38,7 +38,7 @@ import toberumono.utils.files.TransferFileWalker;
  * @author Toberumono
  */
 public class WRFRunner {
-	protected JSONObject configuration, general, paths, commands, features, parallel;
+	protected JSONObject configuration, general, paths, features, parallel;
 	protected Path configurationFile;
 	protected final Logger log;
 	
@@ -111,7 +111,6 @@ public class WRFRunner {
 		this.configurationFile = configurationFile;
 		configuration = (JSONObject) JSONSystem.loadJSON(this.configurationFile);
 		paths = (JSONObject) configuration.get("paths");
-		commands = (JSONObject) configuration.get("commands");
 		general = (JSONObject) configuration.get("general");
 		features = (JSONObject) general.get("features");
 		parallel = (JSONObject) general.get("parallel");
@@ -129,10 +128,9 @@ public class WRFRunner {
 	 */
 	public void runWRF() throws IOException, InterruptedException {
 		Path wrfPath = Paths.get(((String) paths.get("wrf").value())).toAbsolutePath();
-		Path runPath = wrfPath.resolve("run");
 		Path wpsPath = Paths.get(((String) paths.get("wps").value())).toAbsolutePath();
 		
-		Path wrfNamelistPath = runPath.resolve("namelist.input");
+		Path wrfNamelistPath = wrfPath.resolve("run").resolve("namelist.input");
 		Namelist input = NamelistParser.parseNamelist(wrfNamelistPath);
 		Path wpsNamelistPath = wpsPath.resolve("namelist.wps");
 		Namelist wps = NamelistParser.parseNamelist(wpsNamelistPath);
@@ -149,13 +147,14 @@ public class WRFRunner {
 			
 		if (((Boolean) features.get("wps").value()))
 			runWPS(wps, paths, tr);
-		else if (((Boolean) features.get("cleanup").value()))
+		else
 			wpsCleanup(paths);
 			
 		if (((Boolean) features.get("wrf").value()))
 			runWRF(input, paths, tr);
-		else if (((Boolean) features.get("cleanup").value()))
+		else
 			wrfCleanup(paths);
+			
 		int maxOutputs = ((Number) general.get("max-outputs").value()).intValue();
 		if (maxOutputs < 1)
 			return;
@@ -164,12 +163,12 @@ public class WRFRunner {
 				return Files.getLastModifiedTime(f).compareTo(Files.getLastModifiedTime(s)); //Sort the Paths by last modified.  The first element will always be the oldest this way.
 			}
 			catch (IOException e) {
-				return 0;
+				return f.compareTo(s); //Given that we already timestamp everything, ordering them lexicographically is a perfectly fine failsafe.
 			}
 		});
+		Files.newDirectoryStream(paths.root).forEach(sl::add);
 		while (sl.size() > maxOutputs)
 			Files.walkFileTree(sl.remove(0), new RecursiveEraser());
-		Files.newDirectoryStream(paths.root).forEach(sl::add);
 	}
 	
 	/**
@@ -237,18 +236,34 @@ public class WRFRunner {
 		String suffix = ".tm00.grib2";
 		//Download each datafile
 		for (int i = ((Number) tc.get("start_hour").get(0).getY()).intValue(); i <= hoursDuration; i += 3) {
-			String name = "nam.t00z.awip3d" + String.format(Locale.US, "%02d", i) + suffix, URL = url + "/" + name;
-			Path dest = paths.grib.resolve(name);
-			log.info("Started Transfer: " + URL + " -> " + dest.toString());
-			try (ReadableByteChannel rbc = Channels.newChannel(new URL(URL).openStream()); FileOutputStream fos = new FileOutputStream(dest.toString());) {
-				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-				log.info("Completed Transfer: " + URL + " -> " + dest.toString());
-			}
-			catch (Throwable t) {
-				log.severe("Failed Transfer: " + URL + " -> " + dest.toString());
-				log.log(Level.FINE, t.getMessage(), t);
-				throw t;
-			}
+			String name = "nam.t00z.awip3d" + String.format(Locale.US, "%02d", i) + suffix;
+			downloadGribFile(new URL(url + "/" + name), paths);
+		}
+	}
+	
+	/**
+	 * Transfers a file from the given {@link URL} and places it in the grib directory ({@link WRFPaths#grib}).
+	 * 
+	 * @param url
+	 *            the {@link URL} to transfer
+	 * @param paths
+	 *            the paths to the working directories in use by this {@link WRFRunner}
+	 * @throws IOException
+	 *             if the transfer fails
+	 */
+	public void downloadGribFile(URL url, WRFPaths paths) throws IOException {
+		String name = url.toString();
+		name = name.substring(name.lastIndexOf('/') + 1);
+		Path dest = paths.grib.resolve(name);
+		log.info("Started Transfer: " + url + " -> " + dest.toString());
+		try (ReadableByteChannel rbc = Channels.newChannel(url.openStream()); FileOutputStream fos = new FileOutputStream(dest.toString());) {
+			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+			log.info("Completed Transfer: " + url + " -> " + dest.toString());
+		}
+		catch (Throwable t) {
+			log.severe("Failed Transfer: " + url + " -> " + dest.toString());
+			log.log(Level.FINE, t.getMessage(), t);
+			throw t;
 		}
 	}
 	
@@ -275,8 +290,7 @@ public class WRFRunner {
 		runPB(wpsPB, "./geogrid.exe", "2>&1", "|", "tee", "./geogrid.log");
 		ungrib.waitFor();
 		runPB(wpsPB, "./metgrid.exe", "2>&1", "|", "tee", "./metgrid.log");
-		if (((Boolean) features.get("cleanup").value()))
-			wpsCleanup(paths);
+		wpsCleanup(paths);
 	}
 	
 	/**
@@ -289,6 +303,8 @@ public class WRFRunner {
 	 *             if an I/O error occurs while cleaning up
 	 */
 	public void wpsCleanup(WRFPaths paths) throws IOException {
+		if (!((Boolean) features.get("cleanup").value()))
+			return;
 		RecursiveEraser re = new RecursiveEraser();
 		Files.walkFileTree(paths.wps, re);
 		Files.walkFileTree(paths.grib, re);
@@ -305,9 +321,9 @@ public class WRFRunner {
 	 *             if an I/O error occurs while cleaning up
 	 */
 	public void wrfCleanup(WRFPaths paths) throws IOException {
-		TransferFileWalker tfw = new TransferFileWalker(paths.output, Files::move, p -> p.getFileName().toString().toLowerCase().startsWith("wrfout"), p -> true, null, null);
-		Files.walkFileTree(paths.wrf, tfw);
-		Files.walkFileTree(paths.wrf, new RecursiveEraser());
+		Files.walkFileTree(paths.wrf, new TransferFileWalker(paths.output, Files::move, p -> p.getFileName().toString().toLowerCase().startsWith("wrfout"), p -> true, null, null));
+		if (((Boolean) features.get("cleanup").value()))
+			Files.walkFileTree(paths.wrf, new RecursiveEraser());
 	}
 	
 	/**
@@ -345,8 +361,7 @@ public class WRFRunner {
 			catch (Throwable t) {
 				log.log(Level.SEVERE, "WRF error", t);
 			}
-			if (((Boolean) features.get("cleanup").value()))
-				wrfCleanup(paths);
+			wrfCleanup(paths);
 		}
 		else {
 			wrfPB.command(wrfCommand);
