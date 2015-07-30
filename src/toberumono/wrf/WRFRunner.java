@@ -339,7 +339,12 @@ public class WRFRunner {
 			wrfCommand = new String[]{"./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
 		//If we are waiting for WRF, we can also clean up after it.
 		if (((Boolean) general.get("wait-for-WRF").value())) {
-			runPB(wrfPB, wrfCommand);
+			try {
+				runPB(wrfPB, wrfCommand);
+			}
+			catch (Throwable t) {
+				log.log(Level.SEVERE, "WRF error", t);
+			}
 			if (((Boolean) features.get("cleanup").value()))
 				wrfCleanup(paths);
 		}
