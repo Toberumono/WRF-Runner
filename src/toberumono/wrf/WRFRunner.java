@@ -3,6 +3,8 @@ package toberumono.wrf;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.ProcessBuilder.Redirect;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -13,6 +15,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import toberumono.json.JSONObject;
 import toberumono.json.JSONSystem;
@@ -38,6 +42,7 @@ import toberumono.utils.files.TransferFileWalker;
 public class WRFRunner {
 	protected JSONObject configuration, general, paths, commands, features, parallel;
 	protected Path configurationFile;
+	protected final Logger log;
 	
 	/**
 	 * All that is needed to run this "script".
@@ -66,6 +71,7 @@ public class WRFRunner {
 	 *             if the configuration file cannot be read from disk
 	 */
 	public WRFRunner(Path configurationFile) throws IOException {
+		log = Logger.getLogger("WRFRunner");
 		refreshConfiguration(configurationFile);
 	}
 	
@@ -74,6 +80,13 @@ public class WRFRunner {
 	 */
 	public Path getConfigurationFile() {
 		return configurationFile;
+	}
+	
+	/**
+	 * @return the the {@link Logger} used by the {@link WRFRunner}
+	 */
+	public final Logger getLog() {
+		return log;
 	}
 	
 	/**
@@ -127,7 +140,7 @@ public class WRFRunner {
 		Namelist wps = NamelistParser.parseNamelist(wpsNamelistPath);
 		int doms = ((Number) input.get("domains").get("max_dom").get(0).getY()).intValue();
 		
-		TimeRange tr = new TimeRange(input, Calendar.getInstance(), (JSONObject) configuration.get("timing"));
+		TimeRange tr = new TimeRange(input, Calendar.getInstance(), (JSONObject) configuration.get("timing"), log.getLogger("WRFRunner.TimeRange"));
 		WRFPaths paths = tr.makeWorkingFolder(Paths.get(((String) this.paths.get("working").value())).toAbsolutePath(), wrfPath, wpsPath);
 		
 		NamelistParser.writeNamelist(tr.updateWRFNamelistTimeRange(input, doms), paths.wrf.resolve("run").resolve("namelist.input"));
@@ -222,13 +235,20 @@ public class WRFRunner {
 		Calendar start = tr.getX();
 		//Construct the prefix of the url
 		String url = "http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.";
-		url += String.format(Locale.US, "%d%02d%02d", start.get(Calendar.YEAR), start.get(Calendar.MONTH) + 1, start.get(Calendar.DAY_OF_MONTH)) + "/nam.t00z.awip3d";
+		url += String.format(Locale.US, "%d%02d%02d", start.get(Calendar.YEAR), start.get(Calendar.MONTH) + 1, start.get(Calendar.DAY_OF_MONTH));
 		String suffix = ".tm00.grib2";
 		//Download each datafile
 		for (int i = ((Number) tc.get("start_hour").get(0).getY()).intValue(); i <= hoursDuration; i += 3) {
-			String name = url + String.format(Locale.US, "%02d", i) + suffix;
-			try (ReadableByteChannel rbc = Channels.newChannel(new URL(name).openStream()); FileOutputStream fos = new FileOutputStream(paths.grib.resolve(name).toFile());) {
+			String name = "/nam.t00z.awip3d" + String.format(Locale.US, "%02d", i) + suffix, URL = url + name;
+			Path dest = paths.grib.resolve(name);
+			log.info("Starting Transfer: " + URL + " -> " + dest.toString());
+			try (ReadableByteChannel rbc = Channels.newChannel(new URL(URL).openStream()); FileOutputStream fos = new FileOutputStream(dest.toString());) {
 				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+			}
+			catch (Throwable t) {
+				log.severe("Failed Transfer: " + URL + " -> " + dest.toString());
+				log.log(Level.FINE, t.getMessage(), t);
+				throw t;
 			}
 		}
 	}

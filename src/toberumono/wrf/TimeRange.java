@@ -21,6 +21,7 @@ import toberumono.utils.files.TransferFileWalker;
  * @author Toberumono
  */
 public class TimeRange extends Pair<Calendar, Calendar> {
+	protected final Logger log;
 	
 	/**
 	 * Calculates the appropriate start and end times for the simulation from the configuration data and WRF {@link Namelist}
@@ -33,7 +34,8 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	 * @param timing
 	 *            a {@link JSONObject} holding the timing data in from the configuration file
 	 */
-	public TimeRange(Namelist namelist, Calendar current, JSONObject timing) {
+	public TimeRange(Namelist namelist, Calendar current, JSONObject timing, Logger log) {
+		this.log = log;
 		Calendar start = (Calendar) current.clone();
 		NamelistInnerMap tc = namelist.get("time_control");
 		JSONObject rounding = (JSONObject) timing.get("rounding");
@@ -118,8 +120,9 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	 * @param end
 	 *            the end {@link Calendar}
 	 */
-	public TimeRange(Calendar start, Calendar end) {
+	public TimeRange(Calendar start, Calendar end, Logger log) {
 		super(start, end);
+		this.log = log;
 	}
 	
 	/**
@@ -254,19 +257,18 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	 *             if an I/O error occurs
 	 */
 	public WRFPaths makeWorkingFolder(final Path working, final Path wrf, final Path wps) throws IOException {
-		Logger l = Logger.getLogger("WRFRunner");
 		final Path root = Files.createDirectories(working.resolve(getWPSStartDate().replaceAll(":", "_"))); //Having colons in the path messes up WRF, so... Underscores.
 		WRFPaths paths = new WRFPaths(root, root.resolve("WRFV3").normalize(), root.resolve("WPS").normalize(), root.resolve("grib").normalize(), root, true);
 		
 		Files.walkFileTree(wrf, new TransferFileWalker(paths.wrf, TransferFileWalker.SYMLINK, p -> {
 			String test = p.getFileName().toString().toLowerCase();
 			return !(test.startsWith("namelist") || test.startsWith("wrfout") || test.startsWith("wrfin") || test.startsWith("wrfrst") || extensionTest(test));
-		} , p -> !p.getFileName().toString().equals("src"), null, l));
+		} , p -> !p.getFileName().toString().equals("src"), null, log));
 		
 		Files.walkFileTree(wps, new TransferFileWalker(paths.wps, TransferFileWalker.SYMLINK, p -> {
 			Path fname = wrf.relativize(p).getFileName();
 			return !(fname.toString().startsWith("namelist") || extensionTest(fname.toString()));
-		} , p -> !p.getFileName().toString().equals("src"), null, l));
+		} , p -> !p.getFileName().toString().equals("src"), null, log));
 		return paths;
 	}
 	
