@@ -3,8 +3,6 @@ package toberumono.wrf;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.ProcessBuilder.Redirect;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -241,9 +239,10 @@ public class WRFRunner {
 		for (int i = ((Number) tc.get("start_hour").get(0).getY()).intValue(); i <= hoursDuration; i += 3) {
 			String name = "nam.t00z.awip3d" + String.format(Locale.US, "%02d", i) + suffix, URL = url + "/" + name;
 			Path dest = paths.grib.resolve(name);
-			log.info("Starting Transfer: " + URL + " -> " + dest.toString());
+			log.info("Started Transfer: " + URL + " -> " + dest.toString());
 			try (ReadableByteChannel rbc = Channels.newChannel(new URL(URL).openStream()); FileOutputStream fos = new FileOutputStream(dest.toString());) {
 				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+				log.info("Completed Transfer: " + URL + " -> " + dest.toString());
 			}
 			catch (Throwable t) {
 				log.severe("Failed Transfer: " + URL + " -> " + dest.toString());
