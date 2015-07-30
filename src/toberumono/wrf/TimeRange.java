@@ -5,7 +5,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Calendar;
 import java.util.Locale;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Logger;
 
 import toberumono.json.JSONObject;
@@ -83,7 +82,7 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 				}
 				start.set(Calendar.YEAR, 0);
 			}
-		
+			
 		//Update the start time with the offset
 		JSONObject offset = (JSONObject) timing.get("offset");
 		if (((Boolean) offset.get("enabled").value()).booleanValue()) {
@@ -256,19 +255,18 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	 */
 	public WRFPaths makeWorkingFolder(final Path working, final Path wrf, final Path wps) throws IOException {
 		Logger l = Logger.getLogger("WRFRunner");
-		//l.addHandler(new ConsoleHandler());
 		final Path root = Files.createDirectories(working.resolve(getWPSStartDate().replaceAll(":", "_"))); //Having colons in the path messes up WRF, so... Underscores.
 		WRFPaths paths = new WRFPaths(root, root.resolve("WRFV3").normalize(), root.resolve("WPS").normalize(), root.resolve("grib").normalize(), root, true);
-		TransferFileWalker tfw = new TransferFileWalker(paths.wrf, (s, t) -> Files.createSymbolicLink(t, s.toRealPath()), p -> {
+		
+		Files.walkFileTree(wrf, new TransferFileWalker(paths.wrf, TransferFileWalker.SYMLINK, p -> {
 			String test = p.getFileName().toString().toLowerCase();
 			return !(test.startsWith("namelist") || test.startsWith("wrfout") || test.startsWith("wrfin") || test.startsWith("wrfrst") || extensionTest(test));
-		}, p -> !p.getFileName().toString().equals("src"), null, l);
-		Files.walkFileTree(wrf, tfw);
-		tfw = new TransferFileWalker(paths.wps, (s, t) -> Files.createSymbolicLink(t, s.toRealPath()), p -> {
+		} , p -> !p.getFileName().toString().equals("src"), null, l));
+		
+		Files.walkFileTree(wps, new TransferFileWalker(paths.wps, TransferFileWalker.SYMLINK, p -> {
 			Path fname = wrf.relativize(p).getFileName();
 			return !(fname.toString().startsWith("namelist") || extensionTest(fname.toString()));
-		}, p -> !p.getFileName().toString().equals("src"), null, l); //Don't grab source folders
-		Files.walkFileTree(wps, tfw);
+		} , p -> !p.getFileName().toString().equals("src"), null, l));
 		return paths;
 	}
 	
