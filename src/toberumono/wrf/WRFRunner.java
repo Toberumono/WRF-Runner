@@ -239,7 +239,7 @@ public class WRFRunner {
 		String suffix = ".tm00.grib2";
 		//Download each datafile
 		for (int i = ((Number) tc.get("start_hour").get(0).getY()).intValue(); i <= hoursDuration; i += 3) {
-			String name = "/nam.t00z.awip3d" + String.format(Locale.US, "%02d", i) + suffix, URL = url + name;
+			String name = "nam.t00z.awip3d" + String.format(Locale.US, "%02d", i) + suffix, URL = url + "/" + name;
 			Path dest = paths.grib.resolve(name);
 			log.info("Starting Transfer: " + URL + " -> " + dest.toString());
 			try (ReadableByteChannel rbc = Channels.newChannel(new URL(URL).openStream()); FileOutputStream fos = new FileOutputStream(dest.toString());) {
