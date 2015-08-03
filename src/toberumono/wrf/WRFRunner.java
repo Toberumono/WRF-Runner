@@ -321,7 +321,7 @@ public class WRFRunner {
 	 *             if an I/O error occurs while cleaning up
 	 */
 	public void wrfCleanup(WRFPaths paths) throws IOException {
-		Files.walkFileTree(paths.wrf, new TransferFileWalker(paths.output, Files::move, p -> p.getFileName().toString().toLowerCase().startsWith("wrfout"), p -> true, null, null));
+		Files.walkFileTree(paths.wrf.resolve("run"), new TransferFileWalker(paths.output, Files::move, p -> p.getFileName().toString().toLowerCase().startsWith("wrfout"), p -> true, null, null));
 		if (((Boolean) features.get("cleanup").value()))
 			Files.walkFileTree(paths.wrf, new RecursiveEraser());
 	}
