@@ -300,6 +300,8 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 			return false;
 		if (filename.startsWith("wrf") && filename.indexOf('.') == -1) //This eliminates all wrfbdy, wrfin, wrfout, wrfrst files.
 			return true;
+		if (filename.startsWith("rsl.out") || filename.startsWith("rsl.error"))
+			return true;
 		return filename.startsWith("namelist") || filename.startsWith("readme") || extension.charAt(0) == 'f' || extension.charAt(0) == 'c' || extension.equals("log");
 	}
 }
