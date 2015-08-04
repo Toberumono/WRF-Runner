@@ -264,32 +264,42 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	 *             if an I/O error occurs
 	 */
 	public WRFPaths makeWorkingFolder(final Path working, final Path wrf, final Path wps) throws IOException {
-		final Path root = Files.createDirectories(working.resolve(getWPSStartDate().replaceAll(":", "_"))); //Having colons in the path messes up WRF, so... Underscores.
-		WRFPaths paths = new WRFPaths(root, root.resolve("WRFV3").normalize(), root.resolve("WPS").normalize(), root.resolve("grib").normalize(), root, true);
-		
-		Files.walkFileTree(wrf, new TransferFileWalker(paths.wrf, BasicTransferActions.SYMLINK, p -> {
-			String test = p.getFileName().toString().toLowerCase();
-			return !(test.startsWith("namelist") || test.startsWith("wrfout") || test.startsWith("wrfin") || test.startsWith("wrfrst") || extensionTest(test));
-		} , p -> !p.getFileName().toString().equals("src"), null, log));
-		
-		Files.walkFileTree(wps, new TransferFileWalker(paths.wps, BasicTransferActions.SYMLINK, p -> {
-			String fname = p.getFileName().toString();
-			return !(fname.startsWith("namelist") || extensionTest(fname));
-		} , p -> !p.getFileName().toString().equals("src"), null, log));
+		final Path root = Files.createDirectories(working.resolve(getWPSStartDate().replaceAll(":", "_")).normalize()); //Having colons in the path messes up WRF, so... Underscores.
+		WRFPaths paths = new WRFPaths(root, root.resolve("WRFV3"), root.resolve("WPS"), root.resolve("grib"), root, true);
+		linkWorkingDirectory(wrf, paths.wrf);
+		linkWorkingDirectory(wps, paths.wps);
 		return paths;
 	}
 	
 	/**
-	 * Just tests for certain extensions.
+	 * Performs the operation used to link the working directories back to the source installation.<br>
+	 * This uses {@link BasicTransferActions#SYMLINK}.
 	 * 
-	 * @param fileName
-	 *            the file name to test
-	 * @return {@code true} if one of those extensions was found
+	 * @param source
+	 *            a {@link Path} to the source installation
+	 * @param target
+	 *            a {@link Path} to the target working directory
+	 * @throws IOException
+	 *             if an error occured while creating the links.
 	 */
-	public boolean extensionTest(String fileName) {
-		String extension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+	public void linkWorkingDirectory(Path source, Path target) throws IOException {
+		Files.walkFileTree(source, new TransferFileWalker(target, BasicTransferActions.SYMLINK,
+				p -> !filenameTest(p.getFileName().toString()), p -> !p.getFileName().toString().equals("src"), null, log));
+	}
+	
+	/**
+	 * Tests the filename for patterns that indicate that the file should be excluded from the linking operation.
+	 * 
+	 * @param filename
+	 *            the filename to test
+	 * @return {@code true} if the name matches one of the patterns
+	 */
+	public boolean filenameTest(String filename) {
+		String extension = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
 		if (extension.equals("csh"))
 			return false;
-		return extension.charAt(0) == 'f' || extension.charAt(0) == 'c' || extension.equals("log");
+		if (filename.startsWith("wrf") && filename.indexOf('.') == -1) //This eliminates all wrfbdy, wrfin, wrfout, wrfrst files.
+			return true;
+		return filename.startsWith("namelist") || filename.startsWith("readme") || extension.charAt(0) == 'f' || extension.charAt(0) == 'c' || extension.equals("log");
 	}
 }
