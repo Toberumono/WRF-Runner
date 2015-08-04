@@ -18,11 +18,12 @@ import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
 
 /**
- * A collection of methods that perform operations using the start and/or end times of a simulation.
+ * An individual WRF simulation. This extends a {@link Pair} of {@link Calendar Calendars} because the start and end times
+ * are the main differentiating factor between simulations.
  * 
  * @author Toberumono
  */
-public class TimeRange extends Pair<Calendar, Calendar> {
+public class Simulation extends Pair<Calendar, Calendar> {
 	protected final Logger log;
 	
 	/**
@@ -36,9 +37,9 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	 * @param timing
 	 *            a {@link JSONObject} holding the timing data in from the configuration file
 	 * @param log
-	 *            the {@link Logger} to use in the {@link TimeRange TimeRange's} operations
+	 *            the {@link Logger} to use in the {@link Simulation TimeRange's} operations
 	 */
-	public TimeRange(Namelist namelist, Calendar current, JSONObject timing, Logger log) {
+	public Simulation(Namelist namelist, Calendar current, JSONObject timing, Logger log) {
 		this.log = log;
 		log.setLevel(Level.WARNING);
 		Calendar start = (Calendar) current.clone();
@@ -118,16 +119,16 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	}
 	
 	/**
-	 * Constructs a {@link TimeRange} from a start and end {@link Calendar}
+	 * Constructs a {@link Simulation} from a start and end {@link Calendar}
 	 * 
 	 * @param start
 	 *            the start {@link Calendar}
 	 * @param end
 	 *            the end {@link Calendar}
 	 * @param log
-	 *            the {@link Logger} to use in the {@link TimeRange TimeRange's} operations
+	 *            the {@link Logger} to use in the {@link Simulation TimeRange's} operations
 	 */
-	public TimeRange(Calendar start, Calendar end, Logger log) {
+	public Simulation(Calendar start, Calendar end, Logger log) {
 		super(start, end);
 		this.log = log;
 	}
@@ -165,7 +166,7 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	}
 	
 	/**
-	 * Writes this {@link TimeRange} into a WPS {@link Namelist}.<br>
+	 * Writes this {@link Simulation} into a WPS {@link Namelist}.<br>
 	 * Note: this method <i>does</i> modify the passed {@link Namelist} without cloning it, but does not write anything to
 	 * disk.
 	 * 
@@ -190,7 +191,7 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	}
 	
 	/**
-	 * Writes this {@link TimeRange} into a WRF {@link Namelist}.<br>
+	 * Writes this {@link Simulation} into a WRF {@link Namelist}.<br>
 	 * Note: this method <i>does</i> modify the passed {@link Namelist} without cloning it, but does not write anything to
 	 * disk.
 	 * 
@@ -283,12 +284,14 @@ public class TimeRange extends Pair<Calendar, Calendar> {
 	 *             if an error occured while creating the links.
 	 */
 	public void linkWorkingDirectory(Path source, Path target) throws IOException {
+		//We don't need anything from the src directories, so we exclude them.
 		Files.walkFileTree(source, new TransferFileWalker(target, BasicTransferActions.SYMLINK,
 				p -> !filenameTest(p.getFileName().toString()), p -> !p.getFileName().toString().equals("src"), null, log));
 	}
 	
 	/**
-	 * Tests the filename for patterns that indicate that the file should be excluded from the linking operation.
+	 * Tests the filename for patterns that indicate that the file should be excluded from the linking operation.<br>
+	 * Basically, we want to minimize the number of links we're creating.
 	 * 
 	 * @param filename
 	 *            the filename to test

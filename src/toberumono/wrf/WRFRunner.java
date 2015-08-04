@@ -136,22 +136,22 @@ public class WRFRunner {
 		Namelist wps = NamelistParser.parseNamelist(wpsNamelistPath);
 		int doms = ((Number) input.get("domains").get("max_dom").get(0).getY()).intValue();
 		
-		TimeRange tr = new TimeRange(input, Calendar.getInstance(), (JSONObject) configuration.get("timing"), log.getLogger("WRFRunner.TimeRange"));
-		WRFPaths paths = tr.makeWorkingFolder(Paths.get(((String) this.paths.get("working").value())).toAbsolutePath(), wrfPath, wpsPath);
+		Simulation sim = new Simulation(input, Calendar.getInstance(), (JSONObject) configuration.get("timing"), log.getLogger("WRFRunner.TimeRange"));
+		WRFPaths paths = sim.makeWorkingFolder(Paths.get(((String) this.paths.get("working").value())).toAbsolutePath(), wrfPath, wpsPath);
 		
-		NamelistParser.writeNamelist(tr.updateWRFNamelistTimeRange(input, doms), paths.wrf.resolve("run").resolve("namelist.input"));
-		NamelistParser.writeNamelist(writeWPSPaths(tr.updateWPSNamelistTimeRange(wps, doms), wpsPath, paths.wrf), paths.wps.resolve("namelist.wps"));
+		NamelistParser.writeNamelist(sim.updateWRFNamelistTimeRange(input, doms), paths.wrf.resolve("run").resolve("namelist.input"));
+		NamelistParser.writeNamelist(writeWPSPaths(sim.updateWPSNamelistTimeRange(wps, doms), wpsPath, paths.wrf), paths.wps.resolve("namelist.wps"));
 		
 		if (((Boolean) features.get("wget").value()))
-			runWGet(tr, paths, input);
+			runWGet(sim, paths, input);
 			
 		if (((Boolean) features.get("wps").value()))
-			runWPS(wps, paths, tr);
+			runWPS(wps, paths, sim);
 		else
 			wpsCleanup(paths);
 			
 		if (((Boolean) features.get("wrf").value()))
-			runWRF(input, paths, tr);
+			runWRF(input, paths, sim);
 		else
 			wrfCleanup(paths);
 			
@@ -209,8 +209,8 @@ public class WRFRunner {
 	 * This downloads the necessary grib data for running the current simulation.<br>
 	 * Override this method to change how grib data is downloaded (e.g. change the source, timing offset)
 	 * 
-	 * @param tr
-	 *            {@link TimeRange} that represents the start and end times of the simulation
+	 * @param sim
+	 *            the current {@link Simulation}
 	 * @param paths
 	 *            the paths to the working directories in use by this {@link WRFRunner}
 	 * @param input
@@ -220,7 +220,7 @@ public class WRFRunner {
 	 * @throws InterruptedException
 	 *             if one of the processes is interrupted
 	 */
-	public void runWGet(TimeRange tr, WRFPaths paths, Namelist input) throws IOException, InterruptedException {
+	public void runWGet(Simulation sim, WRFPaths paths, Namelist input) throws IOException, InterruptedException {
 		NamelistInnerMap tc = input.get("time_control");
 		//We construct the duration in hours here and add the start hour so that we only need to do the addition for the offset once instead of max_dom times.
 		int hoursDuration = ((Number) tc.get("run_days").get(0).getY()).intValue() + ((Number) tc.get("run_hours").get(0).getY()).intValue() + ((Number) tc.get("start_hour").get(0).getY()).intValue();
@@ -229,7 +229,7 @@ public class WRFRunner {
 			
 		//Create the grib directory if it doesn't already exist and initialize a ProcessBuilder to use that directory 
 		Files.createDirectories(paths.grib);
-		Calendar start = tr.getX();
+		Calendar start = sim.getX();
 		//Construct the prefix of the url
 		String url = "http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.";
 		url += String.format(Locale.US, "%d%02d%02d", start.get(Calendar.YEAR), start.get(Calendar.MONTH) + 1, start.get(Calendar.DAY_OF_MONTH));
@@ -274,14 +274,14 @@ public class WRFRunner {
 	 *            the WPS {@link Namelist} file
 	 * @param paths
 	 *            the paths to the working directories in use by this {@link WRFRunner}
-	 * @param tr
-	 *            {@link TimeRange} that represents the start and end times of the simulation
+	 * @param sim
+	 *            the current {@link Simulation}
 	 * @throws IOException
 	 *             if the WPS directory or any of the programs within it could not be opened or executed
 	 * @throws InterruptedException
 	 *             if one of the processes is interrupted
 	 */
-	public void runWPS(Namelist wps, WRFPaths paths, TimeRange tr) throws IOException, InterruptedException {
+	public void runWPS(Namelist wps, WRFPaths paths, Simulation sim) throws IOException, InterruptedException {
 		ProcessBuilder wpsPB = makePB(paths.wps.toFile());
 		runPB(wpsPB, "./link_grib.csh", paths.grib.toString() + System.getProperty("file.separator"));
 		//Run ungrib and geogrid in parallel
@@ -333,14 +333,14 @@ public class WRFRunner {
 	 *            the WRF {@link Namelist} file
 	 * @param paths
 	 *            the paths to the working directories in use by this {@link WRFRunner}
-	 * @param tr
-	 *            {@link TimeRange} that represents the start and end times of the simulation
+	 * @param sim
+	 *            the current {@link Simulation}
 	 * @throws IOException
 	 *             if the WRF run directory or any of the programs within it could not be opened or executed
 	 * @throws InterruptedException
 	 *             if one of the processes is interrupted
 	 */
-	public void runWRF(Namelist input, WRFPaths paths, TimeRange tr) throws IOException, InterruptedException {
+	public void runWRF(Namelist input, WRFPaths paths, Simulation sim) throws IOException, InterruptedException {
 		ProcessBuilder wrfPB = makePB(paths.wrf.resolve("run").toFile());
 		runPB(wrfPB, "./real.exe", "2>&1", "|", "tee", "./real.log");
 		String[] wrfCommand = new String[0];
