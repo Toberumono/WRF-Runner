@@ -136,7 +136,7 @@ public class WRFRunner {
 		Namelist wps = NamelistParser.parseNamelist(wpsNamelistPath);
 		int doms = ((Number) input.get("domains").get("max_dom").get(0).getY()).intValue();
 		
-		Simulation sim = new Simulation(input, Calendar.getInstance(), (JSONObject) configuration.get("timing"), log.getLogger("WRFRunner.TimeRange"));
+		Simulation sim = new Simulation(input, Calendar.getInstance(), (JSONObject) configuration.get("timing"), log.getLogger("WRFRunner.Simulation"));
 		WRFPaths paths = sim.makeWorkingFolder(Paths.get(((String) this.paths.get("working").value())).toAbsolutePath(), wrfPath, wpsPath);
 		
 		NamelistParser.writeNamelist(sim.updateWRFNamelistTimeRange(input, doms), paths.wrf.resolve("run").resolve("namelist.input"));
