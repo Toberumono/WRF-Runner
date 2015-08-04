@@ -23,6 +23,7 @@ import toberumono.namelist.parser.NamelistInnerList;
 import toberumono.namelist.parser.NamelistInnerMap;
 import toberumono.namelist.parser.NamelistParser;
 import toberumono.namelist.parser.NamelistType;
+import toberumono.structures.SortingMethods;
 import toberumono.structures.collections.lists.SortedList;
 import toberumono.structures.tuples.Pair;
 import toberumono.utils.files.RecursiveEraser;
@@ -129,6 +130,7 @@ public class WRFRunner {
 	public void runWRF() throws IOException, InterruptedException {
 		Path wrfPath = Paths.get(((String) paths.get("wrf").value())).toAbsolutePath();
 		Path wpsPath = Paths.get(((String) paths.get("wps").value())).toAbsolutePath();
+		Path workingPath = Paths.get(((String) this.paths.get("working").value())).normalize().toAbsolutePath();
 		
 		Path wrfNamelistPath = wrfPath.resolve("run").resolve("namelist.input");
 		Namelist input = NamelistParser.parseNamelist(wrfNamelistPath);
@@ -137,7 +139,7 @@ public class WRFRunner {
 		int doms = ((Number) input.get("domains").get("max_dom").get(0).getY()).intValue();
 		
 		Simulation sim = new Simulation(input, Calendar.getInstance(), (JSONObject) configuration.get("timing"), log.getLogger("WRFRunner.Simulation"));
-		WRFPaths paths = sim.makeWorkingFolder(Paths.get(((String) this.paths.get("working").value())).toAbsolutePath(), wrfPath, wpsPath);
+		WRFPaths paths = sim.makeWorkingFolder(workingPath, wrfPath, wpsPath);
 		
 		NamelistParser.writeNamelist(sim.updateWRFNamelistTimeRange(input, doms), paths.wrf.resolve("run").resolve("namelist.input"));
 		NamelistParser.writeNamelist(writeWPSPaths(sim.updateWPSNamelistTimeRange(wps, doms), wpsPath, paths.wrf), paths.wps.resolve("namelist.wps"));
@@ -158,15 +160,8 @@ public class WRFRunner {
 		int maxOutputs = ((Number) general.get("max-outputs").value()).intValue();
 		if (maxOutputs < 1)
 			return;
-		SortedList<Path> sl = new SortedList<>((f, s) -> {
-			try {
-				return Files.getLastModifiedTime(f).compareTo(Files.getLastModifiedTime(s)); //Sort the Paths by last modified.  The first element will always be the oldest this way.
-			}
-			catch (IOException e) {
-				return f.compareTo(s); //Given that we already timestamp everything, ordering them lexicographically is a perfectly fine failsafe.
-			}
-		});
-		Files.newDirectoryStream(paths.root).forEach(sl::add);
+		SortedList<Path> sl = new SortedList<>(SortingMethods.PATH_MODIFIED_TIME_ASCENDING);
+		Files.newDirectoryStream(workingPath).forEach(sl::add);
 		while (sl.size() > maxOutputs)
 			Files.walkFileTree(sl.remove(0), new RecursiveEraser());
 	}
