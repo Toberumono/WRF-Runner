@@ -57,7 +57,7 @@ public class WRFRunner {
 	 *             if a process gets interrupted
 	 */
 	public static void main(String[] args) throws IOException, URISyntaxException, InterruptedException {
-		WRFRunner runner = new WRFRunner(Paths.get(args[0]));
+		WRFRunner runner = new WRFRunner(Paths.get(args.length > 0 ? args[0] : "configuration.json"));
 		runner.runWRF();
 	}
 	
