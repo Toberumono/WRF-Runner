@@ -298,7 +298,8 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	 * @return {@code true} if the name matches one of the patterns
 	 */
 	public boolean filenameTest(String filename) {
-		String extension = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
+		filename = filename.toLowerCase();
+		String extension = filename.substring(filename.lastIndexOf('.') + 1);
 		if (extension.equals("csh"))
 			return false;
 		if (filename.startsWith("wrf") && filename.indexOf('.') == -1) //This eliminates all wrfbdy, wrfin, wrfout, wrfrst files.
