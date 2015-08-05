@@ -39,8 +39,8 @@ import toberumono.utils.files.TransferFileWalker;
  * @author Toberumono
  */
 public class WRFRunner {
-	protected JSONObject configuration, general, paths, features, parallel;
-	protected Path configurationFile;
+	protected JSONObject configuration, general, paths, features, parallel, timing, grib;
+	protected Path configurationPath;
 	protected final Logger log;
 	
 	/**
@@ -77,8 +77,8 @@ public class WRFRunner {
 	/**
 	 * @return the {@link Path} to the current configuration file
 	 */
-	public Path getConfigurationFile() {
-		return configurationFile;
+	public Path getConfigurationPath() {
+		return configurationPath;
 	}
 	
 	/**
@@ -93,10 +93,10 @@ public class WRFRunner {
 	 * 
 	 * @throws IOException
 	 *             if the configuration file cannot be read from disk
-	 * @see #getConfigurationFile()
+	 * @see #getConfigurationPath()
 	 */
 	public void refreshConfiguration() throws IOException {
-		refreshConfiguration(configurationFile);
+		refreshConfiguration(configurationPath);
 	}
 	
 	/**
@@ -109,12 +109,14 @@ public class WRFRunner {
 	 *             if the configuration file cannot be read from disk
 	 */
 	public void refreshConfiguration(Path configurationFile) throws IOException {
-		this.configurationFile = configurationFile;
-		configuration = (JSONObject) JSONSystem.loadJSON(this.configurationFile);
+		this.configurationPath = configurationFile;
+		configuration = (JSONObject) JSONSystem.loadJSON(this.configurationPath);
 		paths = (JSONObject) configuration.get("paths");
 		general = (JSONObject) configuration.get("general");
 		features = (JSONObject) general.get("features");
 		parallel = (JSONObject) general.get("parallel");
+		timing = (JSONObject) configuration.get("timing");
+		grib = (JSONObject) configuration.get("grib");
 	}
 	
 	/**
@@ -130,7 +132,7 @@ public class WRFRunner {
 	public void runWRF() throws IOException, InterruptedException {
 		Path wrfPath = Paths.get(((String) paths.get("wrf").value())).toAbsolutePath();
 		Path wpsPath = Paths.get(((String) paths.get("wps").value())).toAbsolutePath();
-		Path workingPath = Paths.get(((String) this.paths.get("working").value())).normalize().toAbsolutePath();
+		Path workingPath = Paths.get(((String) paths.get("working").value())).normalize().toAbsolutePath();
 		
 		Path wrfNamelistPath = wrfPath.resolve("run").resolve("namelist.input");
 		Namelist input = NamelistParser.parseNamelist(wrfNamelistPath);
@@ -138,7 +140,11 @@ public class WRFRunner {
 		Namelist wps = NamelistParser.parseNamelist(wpsNamelistPath);
 		int doms = ((Number) input.get("domains").get("max_dom").get(0).getY()).intValue();
 		
-		Simulation sim = new Simulation(input, Calendar.getInstance(), (JSONObject) configuration.get("timing"), log.getLogger("WRFRunner.Simulation"));
+		Logger simLogger = log.getLogger("WRFRunner.Simulation");
+		simLogger.setLevel(Level.WARNING);
+		Simulation sim = new Simulation(input, Calendar.getInstance(), timing, simLogger);
+		if (configuration.isModified())
+			JSONSystem.writeJSON(configuration, configurationPath);
 		WRFPaths paths = sim.makeWorkingFolder(workingPath, wrfPath, wpsPath);
 		
 		NamelistParser.writeNamelist(sim.updateWRFNamelistTimeRange(input, doms), paths.wrf.resolve("run").resolve("namelist.input"));

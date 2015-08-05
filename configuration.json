@@ -9,7 +9,7 @@
 		"parallel" : {
 			"is-dmpar" : true,
 			"boot-lam" : true,
-			"processors" : 3
+			"processors" : 2
 		}, 
 		"wait-for-WRF" : true,
 		"max-outputs" : 15
@@ -29,6 +29,12 @@
 			"enabled" : true,
 			"days" : 0,
 			"hours" : 0,
+			"minutes" : 0,
+			"seconds" : 0
+		},
+		"duration" : {
+			"days" : 0,
+			"hours" : 15,
 			"minutes" : 0,
 			"seconds" : 0
 		}

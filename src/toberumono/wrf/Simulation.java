@@ -41,7 +41,6 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	 */
 	public Simulation(Namelist namelist, Calendar current, JSONObject timing, Logger log) {
 		this.log = log;
-		log.setLevel(Level.WARNING);
 		Calendar start = (Calendar) current.clone();
 		NamelistInnerMap tc = namelist.get("time_control");
 		JSONObject rounding = (JSONObject) timing.get("rounding");
@@ -102,10 +101,21 @@ public class Simulation extends Pair<Calendar, Calendar> {
 		
 		//Calculate the end time from the duration data in the Namelist file
 		Calendar end = (Calendar) start.clone();
-		end.add(Calendar.SECOND, ((Number) tc.get("run_seconds").get(0).getY()).intValue());
-		end.add(Calendar.MINUTE, ((Number) tc.get("run_minutes").get(0).getY()).intValue());
-		end.add(Calendar.HOUR_OF_DAY, ((Number) tc.get("run_hours").get(0).getY()).intValue());
-		end.add(Calendar.DAY_OF_MONTH, ((Number) tc.get("run_days").get(0).getY()).intValue());
+		JSONObject duration = (JSONObject) timing.get("duration");
+		if (duration == null) {
+			log.log(Level.WARNING, "configuration did not contain timing->duration.  Using and writing default values.");
+			duration = new JSONObject();
+			duration.put("days", ((Number) tc.get("run_days").get(0).getY()).intValue());
+			duration.put("hours", ((Number) tc.get("run_hours").get(0).getY()).intValue());
+			duration.put("minutes", ((Number) tc.get("run_minutes").get(0).getY()).intValue());
+			duration.put("seconds", ((Number) tc.get("run_seconds").get(0).getY()).intValue());
+			duration.clearModified();
+			timing.put("duration", duration);
+		}
+		end.add(Calendar.DAY_OF_MONTH, ((Number) duration.get("days").value()).intValue());
+		end.add(Calendar.HOUR_OF_DAY, ((Number) duration.get("hours").value()).intValue());
+		end.add(Calendar.MINUTE, ((Number) duration.get("minutes").value()).intValue());
+		end.add(Calendar.SECOND, ((Number) duration.get("seconds").value()).intValue());
 		super.setX(start);
 		super.setY(end);
 	}
