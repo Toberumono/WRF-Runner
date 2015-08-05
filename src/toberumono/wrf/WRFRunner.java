@@ -221,7 +221,7 @@ public class WRFRunner {
 		int[] offsets = new int[4], steps = new int[4], limits = new int[4];
 		String url = (String) grib.get("url").value();
 		Files.createDirectories(paths.grib);
-		Calendar start = sim.getX();
+		Calendar start = sim.getX(), end = sim.getY();
 		
 		JSONObject timestep = (JSONObject) grib.get("timestep");
 		steps[0] = ((Number) timestep.get("days").value()).intValue();
@@ -234,39 +234,18 @@ public class WRFRunner {
 		limits[1] = ((Number) duration.get("hours").value()).intValue();
 		limits[2] = ((Number) duration.get("minutes").value()).intValue();
 		limits[3] = ((Number) duration.get("seconds").value()).intValue();
-		for (; testOffsets(offsets, limits); incrementOffsets(offsets, steps))
+		Calendar test = (Calendar) start.clone();
+		for (; !test.after(end); incrementOffsets(offsets, steps, test))
 			downloadGribFile(parseIncrementedURL(url, start, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), paths);
-			
-		/*NamelistInnerMap tc = input.get("time_control");
-		//We construct the duration in hours here and add the start hour so that we only need to do the addition for the offset once instead of max_dom times.
-		int hoursDuration = ((Number) tc.get("run_days").get(0).getY()).intValue() + ((Number) tc.get("run_hours").get(0).getY()).intValue() + ((Number) tc.get("start_hour").get(0).getY()).intValue();
-		if (((Number) tc.get("run_minutes").get(0).getY()).intValue() != 0 || ((Number) tc.get("run_seconds").get(0).getY()).intValue() != 0 || hoursDuration % 3 != 0)
-			throw new RuntimeException("Run length must be such that when it is converted to hours, it is divisible by 3.");
-			
-		//Create the grib directory if it doesn't already exist and initialize a ProcessBuilder to use that directory 
-		Files.createDirectories(paths.grib);
-		Calendar start = sim.getX();
-		//Construct the prefix of the url
-		String url = "http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.";
-		url += String.format(Locale.US, "%d%02d%02d", start.get(Calendar.YEAR), start.get(Calendar.MONTH) + 1, start.get(Calendar.DAY_OF_MONTH));
-		String suffix = ".tm00.grib2";
-		//Download each datafile
-		for (int i = ((Number) tc.get("start_hour").get(0).getY()).intValue(); i <= hoursDuration; i += 3) {
-			String name = "nam.t00z.awip3d" + String.format(Locale.US, "%02d", i) + suffix;
-			downloadGribFile(new URL(url + "/" + name), paths);
-		}*/
 	}
 	
-	private final static void incrementOffsets(int[] offsets, int[] steps) {
+	private static final void incrementOffsets(int[] offsets, int[] steps, Calendar test) {
 		for (int i = 0; i < offsets.length; i++)
 			offsets[i] += steps[i];
-	}
-	
-	private final static boolean testOffsets(int[] offsets, int[] limits) {
-		for (int i = 0; i < offsets.length; i++)
-			if (offsets[i] > limits[i])
-				return false;
-		return true;
+		test.add(Calendar.DAY_OF_MONTH, steps[0]);
+		test.add(Calendar.HOUR_OF_DAY, steps[1]);
+		test.add(Calendar.MINUTE, steps[2]);
+		test.add(Calendar.SECOND, steps[3]);
 	}
 	
 	/**
