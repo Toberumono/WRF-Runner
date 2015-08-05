@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -15,6 +16,7 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import toberumono.json.JSONObject;
 import toberumono.json.JSONSystem;
@@ -222,7 +224,26 @@ public class WRFRunner {
 	 *             if one of the processes is interrupted
 	 */
 	public void runWGet(Simulation sim, WRFPaths paths, Namelist input) throws IOException, InterruptedException {
-		NamelistInnerMap tc = input.get("time_control");
+		int[] offsets = new int[4], steps = new int[4], limits = new int[4];
+		String url = (String) grib.get("url").value();
+		Files.createDirectories(paths.grib);
+		Calendar start = sim.getX();
+		
+		JSONObject timestep = (JSONObject) grib.get("timestep");
+		steps[0] = ((Number) timestep.get("days").value()).intValue();
+		steps[1] = ((Number) timestep.get("hours").value()).intValue();
+		steps[2] = ((Number) timestep.get("minutes").value()).intValue();
+		steps[3] = ((Number) timestep.get("seconds").value()).intValue();
+		
+		JSONObject duration = (JSONObject) timing.get("duration");
+		limits[0] = ((Number) duration.get("days").value()).intValue();
+		limits[1] = ((Number) duration.get("hours").value()).intValue();
+		limits[2] = ((Number) duration.get("minutes").value()).intValue();
+		limits[3] = ((Number) duration.get("seconds").value()).intValue();
+		for (; testOffsets(offsets, limits); incrementOffsets(offsets, steps))
+			downloadGribFile(parseIncrementedURL(url, start, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), paths);
+		
+		/*NamelistInnerMap tc = input.get("time_control");
 		//We construct the duration in hours here and add the start hour so that we only need to do the addition for the offset once instead of max_dom times.
 		int hoursDuration = ((Number) tc.get("run_days").get(0).getY()).intValue() + ((Number) tc.get("run_hours").get(0).getY()).intValue() + ((Number) tc.get("start_hour").get(0).getY()).intValue();
 		if (((Number) tc.get("run_minutes").get(0).getY()).intValue() != 0 || ((Number) tc.get("run_seconds").get(0).getY()).intValue() != 0 || hoursDuration % 3 != 0)
@@ -239,7 +260,59 @@ public class WRFRunner {
 		for (int i = ((Number) tc.get("start_hour").get(0).getY()).intValue(); i <= hoursDuration; i += 3) {
 			String name = "nam.t00z.awip3d" + String.format(Locale.US, "%02d", i) + suffix;
 			downloadGribFile(new URL(url + "/" + name), paths);
-		}
+		}*/
+	}
+	
+	private final static void incrementOffsets(int[] offsets, int[] steps) {
+		for (int i = 0; i < offsets.length; i++)
+			offsets[i] += steps[i];
+	}
+	
+	private final static boolean testOffsets(int[] offsets, int[] limits) {
+		for (int i = 0; i < offsets.length; i++)
+			if (offsets[i] > limits[i])
+				return false;
+		return true;
+	}
+	
+	/**
+	 * Takes a URL with both the normal Java date/time markers (see
+	 * <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html#dt">Date/Time syntax</a>) and offset
+	 * markers. The offset markers are <i>almost identical</i> in syntax to the standard Java date/time markers with, but
+	 * they use 'i' instead of 't'.<br>
+	 * Differences:
+	 * <ul>
+	 * <li>%ii --&gt; minutes without padding</li>
+	 * <li>%is --&gt; seconds without padding</li>
+	 * </ul>
+	 * 
+	 * @param url
+	 *            the base form of the URL <i>prior</i> to <i>any</i> calls to {@link String#format(String, Object...)}
+	 * @param start
+	 *            the {@link Calendar} containing the start time
+	 * @param years
+	 *            the year offset from <tt>start</tt>
+	 * @param months
+	 *            the month offset from <tt>start</tt>
+	 * @param days
+	 *            the day offset from <tt>start</tt>
+	 * @param hours
+	 *            the hour offset from <tt>start</tt>
+	 * @param minutes
+	 *            the minute offset from <tt>start</tt>
+	 * @param seconds
+	 *            the second offset from <tt>start</tt>
+	 * @return a {@link URL} pointing to the generated location
+	 * @throws MalformedURLException
+	 *             if a URL formatting error occured
+	 */
+	public URL parseIncrementedURL(String url, Calendar start, int years, int months, int days, int hours, int minutes, int seconds) throws MalformedURLException {
+		url = Pattern.compile("%([\\Q-#+ 0,(\\E]*?[tT])").matcher(url).replaceAll("%\\$1$1");
+		url = url.replaceAll("%iY", "%2$04d").replaceAll("%[iI]y", "%2$d").replaceAll("%[iI]m", "%3$02d").replaceAll("%[iI]e", "%3$d").replaceAll("%[iI]D", "%4$02d").replaceAll("%[iI]d", "%4$d");
+		url = url.replaceAll("%[iI]H", "%5$02d").replaceAll("%[iI]k", "%5$d").replaceAll("%[iI]M", "%6$02d").replaceAll("%[iI]i", "%6$d").replaceAll("%[iI]S", "%7$02d").replaceAll("%[iI]s", "%7$d");
+		return new URL(String.format(url, start, years + start.get(Calendar.YEAR),
+				months + start.get(Calendar.MONTH) + 1, days + start.get(Calendar.DAY_OF_MONTH), hours + start.get(Calendar.HOUR_OF_DAY), minutes + start.get(Calendar.MINUTE),
+				seconds + start.get(Calendar.SECOND)));
 	}
 	
 	/**
