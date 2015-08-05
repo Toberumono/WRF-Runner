@@ -132,10 +132,10 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	private final JSONObject generateDuration(NamelistInnerMap tc) {
 		log.log(Level.WARNING, "configuration did not contain timing->duration.  Using and writing default values.");
 		JSONObject duration = new JSONObject();
-		duration.put("days", ((Number) tc.get("run_days").get(0).getY()).intValue());
-		duration.put("hours", ((Number) tc.get("run_hours").get(0).getY()).intValue());
-		duration.put("minutes", ((Number) tc.get("run_minutes").get(0).getY()).intValue());
-		duration.put("seconds", ((Number) tc.get("run_seconds").get(0).getY()).intValue());
+		duration.put("days", (Number) tc.get("run_days").get(0).getY());
+		duration.put("hours", (Number) tc.get("run_hours").get(0).getY());
+		duration.put("minutes", (Number) tc.get("run_minutes").get(0).getY());
+		duration.put("seconds", (Number) tc.get("run_seconds").get(0).getY());
 		duration.clearModified();
 		return duration;
 	}
