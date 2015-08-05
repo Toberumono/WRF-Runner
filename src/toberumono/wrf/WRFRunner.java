@@ -240,7 +240,7 @@ public class WRFRunner {
 		limits[3] = ((Number) duration.get("seconds").value()).intValue();
 		for (; testOffsets(offsets, limits); incrementOffsets(offsets, steps))
 			downloadGribFile(parseIncrementedURL(url, start, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), paths);
-		
+			
 		/*NamelistInnerMap tc = input.get("time_control");
 		//We construct the duration in hours here and add the start hour so that we only need to do the addition for the offset once instead of max_dom times.
 		int hoursDuration = ((Number) tc.get("run_days").get(0).getY()).intValue() + ((Number) tc.get("run_hours").get(0).getY()).intValue() + ((Number) tc.get("start_hour").get(0).getY()).intValue();
@@ -306,8 +306,11 @@ public class WRFRunner {
 	 */
 	public URL parseIncrementedURL(String url, Calendar start, int years, int months, int days, int hours, int minutes, int seconds) throws MalformedURLException {
 		url = Pattern.compile("%([\\Q-#+ 0,(\\E]*?[tT])").matcher(url).replaceAll("%1\\$$1");
-		url = url.replaceAll("%iY", "%2$04d").replaceAll("%[iI]y", "%2$d").replaceAll("%[iI]m", "%3$02d").replaceAll("%[iI]e", "%3$d").replaceAll("%[iI]D", "%4$02d").replaceAll("%[iI]d", "%4$d");
-		url = url.replaceAll("%[iI]H", "%5$02d").replaceAll("%[iI]k", "%5$d").replaceAll("%[iI]M", "%6$02d").replaceAll("%[iI]i", "%6$d").replaceAll("%[iI]S", "%7$02d").replaceAll("%[iI]s", "%7$d");
+		url = url.replaceAll("%iY", "%2\\$04d").replaceAll("%[iI]y", "%2\\$d").replaceAll("%[iI]m", "%3\\$02d").replaceAll("%[iI]e", "%3\\$d").replaceAll("%[iI]D", "%4\\$02d").replaceAll("%[iI]d",
+				"%4\\$d");
+		url = url.replaceAll("%[iI]H", "%5\\$02d").replaceAll("%[iI]k", "%5\\$d").replaceAll("%[iI]M", "%6\\$02d").replaceAll("%[iI]i", "%6\\$d").replaceAll("%[iI]S", "%7\\$02d").replaceAll("%[iI]s",
+				"%7\\$d");
+		log.log(Level.INFO, url);
 		return new URL(String.format(url, start, years + start.get(Calendar.YEAR),
 				months + start.get(Calendar.MONTH) + 1, days + start.get(Calendar.DAY_OF_MONTH), hours + start.get(Calendar.HOUR_OF_DAY), minutes + start.get(Calendar.MINUTE),
 				seconds + start.get(Calendar.SECOND)));
