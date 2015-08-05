@@ -29,6 +29,7 @@
 		}
 	},
 	"timing" : {
+		"use-computed-times" : true,
 		"rounding" : {
 			"enabled" : true,
 			"diff" : "current",

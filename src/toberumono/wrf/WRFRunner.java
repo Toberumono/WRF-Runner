@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -15,7 +13,6 @@ import java.nio.file.Paths;
 import java.util.Calendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 import toberumono.json.JSONObject;
 import toberumono.json.JSONSystem;
@@ -51,12 +48,10 @@ public class WRFRunner {
 	 *            file.
 	 * @throws IOException
 	 *             if an I/O error occurs
-	 * @throws URISyntaxException
-	 *             if a {@link Path} is invalid
 	 * @throws InterruptedException
 	 *             if a process gets interrupted
 	 */
-	public static void main(String[] args) throws IOException, URISyntaxException, InterruptedException {
+	public static void main(String[] args) throws IOException, InterruptedException {
 		WRFRunner runner = new WRFRunner(Paths.get(args.length > 0 ? args[0] : "configuration.json"));
 		runner.runWRF();
 	}
@@ -71,6 +66,7 @@ public class WRFRunner {
 	 */
 	public WRFRunner(Path configurationFile) throws IOException {
 		log = Logger.getLogger("WRFRunner");
+		log.setLevel(Level.INFO);
 		refreshConfiguration(configurationFile);
 	}
 	
@@ -300,45 +296,44 @@ public class WRFRunner {
 	 *            the minute offset from <tt>start</tt>
 	 * @param seconds
 	 *            the second offset from <tt>start</tt>
-	 * @return a {@link URL} pointing to the generated location
-	 * @throws MalformedURLException
-	 *             if a URL formatting error occured
+	 * @return a {@link String} representation of a {@link URL} pointing to the generated location
 	 */
-	public URL parseIncrementedURL(String url, Calendar start, int years, int months, int days, int hours, int minutes, int seconds) throws MalformedURLException {
-		url = Pattern.compile("%([\\Q-#+ 0,(\\E]*?[tT])").matcher(url).replaceAll("%1\\$$1");
-		url = url.replaceAll("%iY", "%2\\$04d").replaceAll("%[iI]y", "%2\\$d").replaceAll("%[iI]m", "%3\\$02d").replaceAll("%[iI]e", "%3\\$d").replaceAll("%[iI]D", "%4\\$02d").replaceAll("%[iI]d",
-				"%4\\$d");
-		url = url.replaceAll("%[iI]H", "%5\\$02d").replaceAll("%[iI]k", "%5\\$d").replaceAll("%[iI]M", "%6\\$02d").replaceAll("%[iI]i", "%6\\$d").replaceAll("%[iI]S", "%7\\$02d").replaceAll("%[iI]s",
-				"%7\\$d");
-		log.log(Level.INFO, url);
-		return new URL(String.format(url, start, years + start.get(Calendar.YEAR),
-				months + start.get(Calendar.MONTH) + 1, days + start.get(Calendar.DAY_OF_MONTH), hours + start.get(Calendar.HOUR_OF_DAY), minutes + start.get(Calendar.MINUTE),
-				seconds + start.get(Calendar.SECOND)));
+	public String parseIncrementedURL(String url, Calendar start, int years, int months, int days, int hours, int minutes, int seconds) {
+		url = url.trim().replaceAll("%([\\Q-#+ 0,(\\E]*?[tT])", "%1\\$$1"); //Force the formatter to use the first argument for all of the default date/time markers
+		url = url.replaceAll("%[iI]Y", "%2\\$04d").replaceAll("%[iI]y", "%2\\$d"); //Year
+		url = url.replaceAll("%[iI]m", "%3\\$02d").replaceAll("%[iI]e", "%3\\$d"); //Month
+		url = url.replaceAll("%[iI]D", "%4\\$02d").replaceAll("%[iI]d", "%4\\$d"); //Day
+		url = url.replaceAll("%[iI]H", "%5\\$02d").replaceAll("%[iI]k", "%5\\$d"); //Hour
+		url = url.replaceAll("%[iI]M", "%6\\$02d").replaceAll("%[iI]i", "%6\\$d"); //Minute
+		url = url.replaceAll("%[iI]S", "%7\\$02d").replaceAll("%[iI]s", "%7\\$d"); //Second
+		return String.format(url, start, years + start.get(Calendar.YEAR), months + start.get(Calendar.MONTH) + 1, days + start.get(Calendar.DAY_OF_MONTH),
+				hours + start.get(Calendar.HOUR_OF_DAY), minutes + start.get(Calendar.MINUTE), seconds + start.get(Calendar.SECOND));
 	}
 	
 	/**
-	 * Transfers a file from the given {@link URL} and places it in the grib directory ({@link WRFPaths#grib}).
+	 * Transfers a file from the given {@link URL} and places it in the grib directory ({@link WRFPaths#grib}).<br>
+	 * The filename used in the grib directory is the component of the url after the final '/' (
+	 * {@code name = url.substring(url.lastIndexOf('/') + 1)}).
 	 * 
 	 * @param url
-	 *            the {@link URL} to transfer
+	 *            a {@link String} representation of the {@link URL} to transfer
 	 * @param paths
 	 *            the paths to the working directories in use by this {@link WRFRunner}
 	 * @throws IOException
 	 *             if the transfer fails
 	 */
-	public void downloadGribFile(URL url, WRFPaths paths) throws IOException {
-		String name = url.toString();
-		name = name.substring(name.lastIndexOf('/') + 1);
+	public void downloadGribFile(String url, WRFPaths paths) throws IOException {
+		String name = url.substring(url.lastIndexOf('/') + 1);
 		Path dest = paths.grib.resolve(name);
-		log.info("Started Transfer: " + url + " -> " + dest.toString());
-		try (ReadableByteChannel rbc = Channels.newChannel(url.openStream()); FileOutputStream fos = new FileOutputStream(dest.toString());) {
+		log.info("Transferring: " + url + " -> " + dest.toString());
+		try (ReadableByteChannel rbc = Channels.newChannel(new URL(url).openStream()); FileOutputStream fos = new FileOutputStream(dest.toString());) {
 			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-			log.info("Completed Transfer: " + url + " -> " + dest.toString());
+			log.fine("Completed Transfer: " + url + " -> " + dest.toString());
 		}
-		catch (Throwable t) {
+		catch (IOException e) {
 			log.severe("Failed Transfer: " + url + " -> " + dest.toString());
-			log.log(Level.FINE, t.getMessage(), t);
-			throw t;
+			log.log(Level.FINE, e.getMessage(), e);
+			throw e;
 		}
 	}
 	

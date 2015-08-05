@@ -42,20 +42,26 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	public Simulation(Namelist namelist, Calendar current, JSONObject timing, Logger log) {
 		this.log = log;
 		Calendar start = (Calendar) current.clone();
+		Calendar end = (Calendar) start.clone();
 		NamelistInnerMap tc = namelist.get("time_control");
 		JSONObject rounding = (JSONObject) timing.get("rounding");
-		String magnitude = ((String) rounding.get("magnitude").value()).toLowerCase();
-		String diff = ((String) rounding.get("diff").value()).toLowerCase();
-		if (!((Boolean) rounding.get("enabled").value()).booleanValue()) {
+		JSONObject duration = (JSONObject) timing.get("duration");
+		if (timing.get("use-computed-times") == null) //If use-computed-times hasn't been set, this is an older installation, so we can copy the value from the old flag.
+			timing.put("use-computed-times", rounding.get("enabled"));
+		if (!((Boolean) timing.get("use-computed-times").value()).booleanValue()) {
 			start.set(start.YEAR, ((Number) tc.get("start_year").get(0).getY()).intValue());
 			start.set(start.MONTH, ((Number) tc.get("start_month").get(0).getY()).intValue() - 1);
 			start.set(start.DAY_OF_MONTH, ((Number) tc.get("start_day").get(0).getY()).intValue());
 			start.set(start.HOUR_OF_DAY, ((Number) tc.get("start_hour").get(0).getY()).intValue());
 			start.set(start.MINUTE, ((Number) tc.get("start_minute").get(0).getY()).intValue());
 			start.set(start.SECOND, ((Number) tc.get("start_second").get(0).getY()).intValue());
+			generateDuration(tc);
+			duration.clearModified();
 		}
-		else
-			rounding: {
+		else {
+			String magnitude = ((String) rounding.get("magnitude").value()).toLowerCase();
+			String diff = ((String) rounding.get("diff").value()).toLowerCase();
+			rounding: if (((Boolean) rounding.get("enabled").value()).booleanValue()) {
 				//The logic here is that if we are rounding to something, then we want to set everything before it to 0.
 				if (magnitude.equals("second")) {
 					round(Calendar.SECOND, start, diff);
@@ -90,34 +96,48 @@ public class Simulation extends Pair<Calendar, Calendar> {
 				start.set(Calendar.YEAR, 0);
 			}
 			
-		//Update the start time with the offset
-		JSONObject offset = (JSONObject) timing.get("offset");
-		if (((Boolean) offset.get("enabled").value()).booleanValue()) {
-			start.add(Calendar.DAY_OF_MONTH, ((Number) offset.get("days").value()).intValue());
-			start.add(Calendar.HOUR_OF_DAY, ((Number) offset.get("hours").value()).intValue());
-			start.add(Calendar.MINUTE, ((Number) offset.get("minutes").value()).intValue());
-			start.add(Calendar.SECOND, ((Number) offset.get("seconds").value()).intValue());
+			//Update the start time with the offset
+			JSONObject offset = (JSONObject) timing.get("offset");
+			if (((Boolean) offset.get("enabled").value()).booleanValue()) {
+				start.add(Calendar.DAY_OF_MONTH, ((Number) offset.get("days").value()).intValue());
+				start.add(Calendar.HOUR_OF_DAY, ((Number) offset.get("hours").value()).intValue());
+				start.add(Calendar.MINUTE, ((Number) offset.get("minutes").value()).intValue());
+				start.add(Calendar.SECOND, ((Number) offset.get("seconds").value()).intValue());
+			}
+			
+			if (duration == null) { //If there is no duration data, grab it from the WRF namelist file's "time_control" section
+				duration = generateDuration(tc);
+				timing.put("duration", duration);
+			}
 		}
-		
-		//Calculate the end time from the duration data in the Namelist file
-		Calendar end = (Calendar) start.clone();
-		JSONObject duration = (JSONObject) timing.get("duration");
-		if (duration == null) {
-			log.log(Level.WARNING, "configuration did not contain timing->duration.  Using and writing default values.");
-			duration = new JSONObject();
-			duration.put("days", ((Number) tc.get("run_days").get(0).getY()).intValue());
-			duration.put("hours", ((Number) tc.get("run_hours").get(0).getY()).intValue());
-			duration.put("minutes", ((Number) tc.get("run_minutes").get(0).getY()).intValue());
-			duration.put("seconds", ((Number) tc.get("run_seconds").get(0).getY()).intValue());
-			duration.clearModified();
-			timing.put("duration", duration);
-		}
+		end = (Calendar) start.clone();
+		//Calculate the end time from the duration data in the configuration file
+		//Coincidentally, this is the same process needed for generating the timing data from the namelist file alone
 		end.add(Calendar.DAY_OF_MONTH, ((Number) duration.get("days").value()).intValue());
 		end.add(Calendar.HOUR_OF_DAY, ((Number) duration.get("hours").value()).intValue());
 		end.add(Calendar.MINUTE, ((Number) duration.get("minutes").value()).intValue());
 		end.add(Calendar.SECOND, ((Number) duration.get("seconds").value()).intValue());
 		super.setX(start);
 		super.setY(end);
+	}
+	
+	/**
+	 * Generates the timing--&gt;duration subsection of the configuration file from the "time_control" section of the WRF
+	 * namelist file.
+	 * 
+	 * @param tc
+	 *            the "time_control" section of the WRF namelist file
+	 * @return a {@link JSONObject} representing the timing--&gt;duration subsection of the configuration file
+	 */
+	private final JSONObject generateDuration(NamelistInnerMap tc) {
+		log.log(Level.WARNING, "configuration did not contain timing->duration.  Using and writing default values.");
+		JSONObject duration = new JSONObject();
+		duration.put("days", ((Number) tc.get("run_days").get(0).getY()).intValue());
+		duration.put("hours", ((Number) tc.get("run_hours").get(0).getY()).intValue());
+		duration.put("minutes", ((Number) tc.get("run_minutes").get(0).getY()).intValue());
+		duration.put("seconds", ((Number) tc.get("run_seconds").get(0).getY()).intValue());
+		duration.clearModified();
+		return duration;
 	}
 	
 	//To avoid at least some of the copy-paste

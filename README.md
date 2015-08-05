@@ -81,6 +81,7 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 	- working: A path to an arbitrary, preferably empty folder into which temporary files can be placed.
 	- grib_data: A path to an arbitrary, preferably empty folder into which downloaded grib data can be placed.
 + timing: Settings for calculating the appropriate start and end times of the simulation.
+	- use-computed-times: If true, then the times are computed at runtime using the values in this section.  Otherwise, they are statically copied from the namelist files.
 	+ rounding: This is used to set the first non-zero field in the time settings and give it a simple offset.
 		- enabled: Toggles this feature
 		- diff: A quick offset setting, can be previous, current, or next.  Generally, leaving this on current is advisable.
