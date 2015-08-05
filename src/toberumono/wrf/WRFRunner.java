@@ -13,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Calendar;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -22,7 +21,6 @@ import toberumono.json.JSONObject;
 import toberumono.json.JSONSystem;
 import toberumono.namelist.parser.Namelist;
 import toberumono.namelist.parser.NamelistInnerList;
-import toberumono.namelist.parser.NamelistInnerMap;
 import toberumono.namelist.parser.NamelistParser;
 import toberumono.namelist.parser.NamelistType;
 import toberumono.structures.SortingMethods;
@@ -307,7 +305,7 @@ public class WRFRunner {
 	 *             if a URL formatting error occured
 	 */
 	public URL parseIncrementedURL(String url, Calendar start, int years, int months, int days, int hours, int minutes, int seconds) throws MalformedURLException {
-		url = Pattern.compile("%([\\Q-#+ 0,(\\E]*?[tT])").matcher(url).replaceAll("%\\$1$1");
+		url = Pattern.compile("%([\\Q-#+ 0,(\\E]*?[tT])").matcher(url).replaceAll("%1\\$$1");
 		url = url.replaceAll("%iY", "%2$04d").replaceAll("%[iI]y", "%2$d").replaceAll("%[iI]m", "%3$02d").replaceAll("%[iI]e", "%3$d").replaceAll("%[iI]D", "%4$02d").replaceAll("%[iI]d", "%4$d");
 		url = url.replaceAll("%[iI]H", "%5$02d").replaceAll("%[iI]k", "%5$d").replaceAll("%[iI]M", "%6$02d").replaceAll("%[iI]i", "%6$d").replaceAll("%[iI]S", "%7$02d").replaceAll("%[iI]s", "%7$d");
 		return new URL(String.format(url, start, years + start.get(Calendar.YEAR),
