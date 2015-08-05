@@ -20,7 +20,7 @@
 		"working" : "/Users/toberumono/Working"
 	},
 	"grib" : {
-		"url" : "http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.%tY%tm%tmd/nam.t00z.awip3d%iH.tm00.grib2",
+		"url" : "http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.%tY%tm%td/nam.t00z.awip3d%iH.tm00.grib2",
 		"timestep" : {
 			"days" : 0,
 			"hours" : 3,
