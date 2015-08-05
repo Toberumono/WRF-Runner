@@ -12,7 +12,7 @@
 			"processors" : 2
 		}, 
 		"wait-for-WRF" : true,
-		"max-outputs" : 15
+		"max-kept-outputs" : 15
 	},
 	"paths" : {
 		"wrf" : "/Users/toberumono/WRFV3",

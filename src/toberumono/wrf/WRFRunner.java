@@ -163,7 +163,7 @@ public class WRFRunner {
 		else
 			wrfCleanup(paths);
 			
-		int maxOutputs = ((Number) general.get("max-outputs").value()).intValue();
+		int maxOutputs = ((Number) general.get("max-kept-outputs").value()).intValue();
 		if (maxOutputs < 1)
 			return;
 		SortedList<Path> sl = new SortedList<>(SortingMethods.PATH_MODIFIED_TIME_ASCENDING);
