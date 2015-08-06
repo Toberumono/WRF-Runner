@@ -101,7 +101,6 @@
 	</target>
 
 	<target name="create_jar" depends="construct.classpath,clean,javadoc,build">
-		<chmod file="./wrf-linker.sh" perm="777" verbose="true" />
 		<jar destfile="${jar}" filesetmanifest="mergewithoutmain">
 			<manifest>
 				<attribute name="Main-Class" value="toberumono.wrf.WRFRunner" />
