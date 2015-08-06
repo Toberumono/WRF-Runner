@@ -80,6 +80,13 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 	- wps: The path to the WPS *root* directory.
 	- working: A path to an arbitrary, preferably empty folder into which temporary files can be placed.
 	- grib_data: A path to an arbitrary, preferably empty folder into which downloaded grib data can be placed.
++ grib: Settings for how the grib data is downloaded
+	- url: The url template to be used for downloading grib data
+	+ timestep: These are used to increment the non-constant flags in the url template.  Generally, hours should be the only non-zero value; however, the others are included just in case.
+		- days: Number of days to step forward per timestep.
+		- hours: Number of hours to step forward per timestep.
+		- minutes: Number of minutes to step forward per timestep.
+		- seconds: Number of seconds to step forward per timestep.
 + timing: Settings for calculating the appropriate start and end times of the simulation.
 	- use-computed-times: If true, then the times are computed at runtime using the values in this section.  Otherwise, they are statically copied from the namelist files.
 	+ rounding: This is used to set the first non-zero field in the time settings and give it a simple offset.
@@ -92,6 +99,11 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 		- hours: Number of hours to shift the start time by.  This field's magnitude should generally never exceed 48.
 		- minutes: While it is possible to set an offset with minutes, this is highly inadvisable and will cause the simulation to fail with the default dataset.
 		- seconds: While it is possible to set an offset with seconds, this is highly inadvisable and will cause the simulation to fail with the default dataset.
+	+ duration: These control the duration of the simulation.  If this subsection is not in the configuration file, it will be populated using the values in the WRF namelist file.
+		- days: Number of days over which the simulation will be run
+		- hours: Number of hours over which the simulation will be run
+		- minutes: Number of minutes over which the simulation will be run
+		- seconds: Number of seconds over which the simulation will be run
 
 
 ### <a name="gtrp"></a>Getting the Required Programs
