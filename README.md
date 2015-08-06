@@ -23,6 +23,7 @@ If you don't have these, see [Getting the Required Programs](#gtrp) for how to g
 If you don't have these, see [Getting the Required Libraries](#gtrl) for how to get them.
 
 #### Compiling the Program
+
 1. Make sure that you have the [Required Programs](#rp).
 	+ If you don't, follow the directions in [Getting the Required Programs](#gtrp).
 2. Run `brew tap toberumono/tap` (This only needs to be run once.)
@@ -30,35 +31,50 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 3. Run `brew install wrf-runner`
 	+ Linuxbrew may have trouble with a few dependencies, running `brew install` for each dependency, while annoying, will fix that problem.
 4. cd into the directory into which you want to install the WRF-Runner program
-5. Run `wrf-linker.sh ./`
+5. Run `wrf-linker.sh`
 6. Proceed to [Running a WRF process](#rawrfp)
 
 ### <a name="rawrfp"></a>Running a WRF process
-#### Configuring
-<i>Note</i>: This describes only the minimal amount of configuration required for a successful run.  There are several options not visited here.</br>
-<i>See [Description of Configuration Variables](#docv) for information on each option.</i>
+#### A few quick notes
 
-1. This program downloads data that needs the NAM Vtable in WPS by default.  To ensure that the correct Vtable is used, run: `ln -sf ./ungrib/Variable_Tables/Vtable.NAM ./Vtable` in the WPS installation directory.
-2. Edit the WRF and WPS Namelist files such that they could be used for a single run (basically, set everything other than the start and end dates and times in both the Namelist.input and Namelist.wps files)
-3. Open the configuration file (configuration.json) in the directory into which you pulled the WRF Runner project data.
-	1. if you want to use a different file, just copy the contents of configuration.json into it before continuing and remember to change the configuration file path in the run step.
-4. Configure the parallelization options in general->parallel:
+* This program does not override any fields in the namelist files other than the run_, start_, end_, wps paths (it just makes them absolute), and interval_seconds (however, it is overriden with a user-defined value) - everything else is preserved.  Therefore, this can still be used with more advanced configurations.
+* This section describes only the minimal amount of configuration required for a successful run.  There are several options not visited here.
+* See [Description of Configuration Variables](#docv) for information on each option in the configuration.json file.
+
+#### <a name="c"></a>Configuring
+
+1. This program downloads data that needs the NAM Vtable in WPS by default.  To ensure that the correct Vtable is used, run: `ln -sf ./ungrib/Variable_Tables/Vtable.NAM ./Vtable` in the WPS installation directory if you are using NAM data.
+2. Edit the namelist files for WRF and WPS.  In the general case (aka "use your own discretion"), this requires:
+	1. Setting max_dom in the domains and share sections in the WRF and WPS namelists respectively.
+	2. Configuring the domains and geogrid sections in the WRF and WPS namelists respectively.
+		+ This includes setting the geog_data_path value in namelist.wps
+		+ Make sure that the number of values on lines that have per-domain values are equal to the value in max_dom
+	3. Setting input_from_file to ".true." in time_control (make sure to set it for each domain)
+	4. For NAM data, setting num_metgrid_levels to 40 and num_metgrid_soil_levels to 4 in namelist.input
+	5. For runs *not* using wget, settting interval_seconds in the time_control and share sections (This is computed from the grib->timestep subsection when wget is being used)
+3. Open the configuration file (configuration.json) in the directory into which you linked the WRFRunner.jar and configuration.json files.
+	+ If you want to use a different file, just copy the contents of configuration.json into it before continuing and remember to change the configuration file path in the run step.
+4. Configure the parallelization options in the general->parallel subsection:
 	1. If you did not compile WRF in DMPAR mode, set "is-dmpar" to false and continue to step 3.
-	2. Set "processors" to the number of processors you would like to allow WRF to use.
-5. Configure paths:
-	1. Set the "wrf" path to the *run* directory of your WRF installation.
+	2. Otherwise, set "processors" to the number of processors you would like to allow WRF to use.
+		+ It is a good idea to set this value to at most two less than the number of processors (or cores) in your system.
+5. Configure the paths section (All of these *must* be absolute paths):
+	1. Set the "wrf" path to the root directory of your WRF installation.
 	2. Set the "wps" path to the root directory of your WPS installation.
 	3. Set the "working" path to an empty or non-existent directory.
-	4. Set the "grib_data" path to an empty directory, preferably a sub-directory of the working directory (either way, this requires the full path)
-6. Configure timing:
-	1. Go through and set the variables as appropriate.  If you are unsure about "rounding", leave it enabled.  (Actually, in the default implementation of the wget function, this *must* be enabled)
-	2. Configure the offset if you so desire, or disable it.  It is not required by any components of the script.
+6. Configure the timing section (These are used to determine the values used in the run_, start_, and end_ fields):
+	1. Go through and set the variables as appropriate.  If you are unsure about "rounding", leave it enabled.
+	2. Set the offset values if you want the simulation to start at a time different from that produced by rounding (e.g. with rounding set to current day, setting hours 6 and the other fields to 0 would cause the simulation to start 6:00am on the current day).  Otherwise, disable it (set "enabled" to false).
+	3. Set the duration values to match how long you wish your script to run.
+		- The fields accept extended values.  e.g. setting hours to 36 is equivalent to setting days to 1 and hours to 12.
+7. Configure the grib section (this is only required if the wget feature is enabled):
+	+ See [Writing a GRIB URL](#wagu) for the steps needed.
 8. That's it.  Proceed to [Running](#r)
 
 #### <a name="r"></a>Running
-1. cd to the directory into which you pulled the WRF Runner repository.
+1. cd to the directory into which you linked the WRFRunner.jar and configuration.json files.
 2. run `java -jar WRFRunner.jar configuration.json`
-	+ If you set up your own configuration file, replace configuration.json with the path to your configuration file.
+	+ If you are using a different configuration file, replace configuration.json with the path to your configuration file.
 
 ## Help
 ### <a name="docv"></a>Description of Configuration Variables
@@ -80,9 +96,9 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 	- wps: The path to the WPS *root* directory.
 	- working: A path to an arbitrary, preferably empty folder into which temporary files can be placed.
 	- grib_data: A path to an arbitrary, preferably empty folder into which downloaded grib data can be placed.
-+ grib: Settings for how the grib data is downloaded
-	- url: The url template to be used for downloading grib data
-	+ timestep: These are used to increment the non-constant flags in the url template.  Generally, hours should be the only non-zero value; however, the others are included just in case.
++ grib: Settings for how the grib data is downloaded (This is only used if the wget feature is enabled)
+	- url: The URL template to be used for downloading grib data.  See [Writing a GRIB URL](#wagu) for information on how to write it
+	+ timestep: These are used to increment the non-constant flags in the url template.  Generally, hours should be the only non-zero value; however, the others are included just in case.  See [Writing a GRIB URL](#wagu) for more information on how to determine what these values should be.
 		- days: Number of days to step forward per timestep.
 		- hours: Number of hours to step forward per timestep.
 		- minutes: Number of minutes to step forward per timestep.
@@ -105,10 +121,51 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 		- minutes: Number of minutes over which the simulation will be run
 		- seconds: Number of seconds over which the simulation will be run
 
+### <a name="wagu"></a>Writing a GRIB URL
+#### Instructions
+
+1. Copy the URL for a *specific* data file of the type that you will be using in your simulation.
+2. Paste it into the configuration.json file (or anywhere really, but you will have to paste it in there eventually, so why wait?)
+2. Copy the URL for *another specific* data file and compare it to the first one.
+3. Within the URL there will be values that change day to day, but won't change during a run of your simulation.
+4. Replace these numbers with Java's [Date/Time formatter syntax](http://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html#dt).  A few common suffixes are listed here.
+	- Y: current year (with at least 4 digits)
+	- y: last two digits of the year
+	- m: current month (with padding)
+	- d: current day (with padding)
+	- H: hour of the day (24-hour clock, with padding)
+5. There will also be values that change during your simulation. (e.g. the timestamp for the specific hour of a file)
+6. Replace these with the same syntax that Java uses, but with the following modifications:
+	- Instead of %t, use %i. e.g. %tH would become %iH
+	- For minutes without padding, use i
+	- For seconds without padding, use s
+7. Edit the grib->timestep subsection with the appropriate values so that the %iX values will update in sync with the values in your source.
+7. Save the configuration - that's it.
+
+#### Example
+
+1. The URLs:
+	1. http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.20150805/nam.t00z.awip3d00.tm00.grib2
+	2. http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.20150805/nam.t00z.awip3d03.tm00.grib2
+	2. http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.20150806/nam.t00z.awip3d03.tm00.grib2
+2. Differences:
+	1. For this source, the date on the folder is constant for all of the data files used in a run.
+	2. However, the timestamp towards the end, "awip3d00" changes to "awip3d03" for the second file.
+	3. Because this is the hour, we know that we will need to set the hour field in the grib->timestep subsection to 3, and all of the other fields to 0
+3. Change the parts of the URL that don't change within the run:
+	1. "nam.20150805" becomes "nam.%tY%tm%td"
+4. The URL after the first set of changes:
+	1. http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.%tY%tm%td/nam.t00z.awip3d00.tm00.grib2
+5. Change the parts of the URL that change within the run:
+	1. "awip3d00" becomes "awip3d%iH"
+6. The final URL:
+	1. http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.%tY%tm%td/nam.t00z.awip3d%iH.tm00.grib2
+7. Set the values in grib->timestep as described in step 2.
+8. That's it.
 
 ### <a name="gtrp"></a>Getting the Required Programs
 
-- Linux (note: you may need to replace the names of the downloaded files or the directories they unpacked to to match the versions that you downloaded):
+- Linux (note: you may need to replace the names of the downloaded files or the directories they into which they unpacked to match the versions that you downloaded):
 	1. Download the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 	2. Unpack the archive into /usr/lib/jvm.  Run:</br>
 	```bash
