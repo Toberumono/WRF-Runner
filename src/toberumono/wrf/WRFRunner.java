@@ -1,9 +1,7 @@
 package toberumono.wrf;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.ProcessBuilder.Redirect;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -14,6 +12,7 @@ import java.util.Calendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import toberumono.json.JSONBoolean;
 import toberumono.json.JSONObject;
 import toberumono.json.JSONSystem;
 import toberumono.namelist.parser.Namelist;
@@ -25,6 +24,8 @@ import toberumono.structures.collections.lists.SortedList;
 import toberumono.structures.tuples.Pair;
 import toberumono.utils.files.RecursiveEraser;
 import toberumono.utils.files.TransferFileWalker;
+
+import static toberumono.utils.general.ProcessBuilders.*;
 
 /**
  * A "script" for automatically running WRF and WPS installations.<br>
@@ -126,6 +127,8 @@ public class WRFRunner {
 	 *             if one of the processes gets interrupted
 	 */
 	public void runWRF() throws IOException, InterruptedException {
+		if (!general.containsKey("keep-logs"))
+			general.put("keep-logs", new JSONBoolean(true));
 		Path wrfPath = Paths.get(((String) paths.get("wrf").value())).toAbsolutePath();
 		Path wpsPath = Paths.get(((String) paths.get("wps").value())).toAbsolutePath();
 		Path workingPath = Paths.get(((String) paths.get("working").value())).normalize().toAbsolutePath();
@@ -224,7 +227,7 @@ public class WRFRunner {
 		int[] offsets = new int[4], steps = new int[4], limits = new int[4];
 		String url = (String) grib.get("url").value();
 		Files.createDirectories(paths.grib);
-		Calendar start = sim.getX(), end = sim.getY();
+		Calendar start = sim.getStart(), end = sim.getEnd();
 		
 		JSONObject timestep = (JSONObject) grib.get("timestep");
 		steps[0] = ((Number) timestep.get("days").value()).intValue();
@@ -346,39 +349,6 @@ public class WRFRunner {
 	}
 	
 	/**
-	 * Cleans up the {@link WRFPaths#wps} and {@link WRFPaths#grib} via a {@link RecursiveEraser}. Therefore, this should
-	 * <i>only</i> not be called on the source installation.
-	 * 
-	 * @param paths
-	 *            the paths to the working directories in use by this {@link WRFRunner}
-	 * @throws IOException
-	 *             if an I/O error occurs while cleaning up
-	 */
-	public void wpsCleanup(WRFPaths paths) throws IOException {
-		if (!((Boolean) features.get("cleanup").value()))
-			return;
-		RecursiveEraser re = new RecursiveEraser();
-		Files.walkFileTree(paths.wps, re);
-		Files.walkFileTree(paths.grib, re);
-	}
-	
-	/**
-	 * Cleans up the {@link WRFPaths#wrf} after moving the outputs to {@link WRFPaths#output} via a
-	 * {@link TransferFileWalker} via a {@link RecursiveEraser}. Therefore, this should <i>only</i> not be called on the
-	 * source installation.
-	 * 
-	 * @param paths
-	 *            the paths to the working directories in use by this {@link WRFRunner}
-	 * @throws IOException
-	 *             if an I/O error occurs while cleaning up
-	 */
-	public void wrfCleanup(WRFPaths paths) throws IOException {
-		Files.walkFileTree(paths.wrf.resolve("run"), new TransferFileWalker(paths.output, Files::move, p -> p.getFileName().toString().toLowerCase().startsWith("wrfout"), p -> true, null, null));
-		if (((Boolean) features.get("cleanup").value()))
-			Files.walkFileTree(paths.wrf, new RecursiveEraser());
-	}
-	
-	/**
 	 * This executes the commands needed to run a real-data WRF installation.
 	 * 
 	 * @param input
@@ -422,37 +392,41 @@ public class WRFRunner {
 	}
 	
 	/**
-	 * Starts a {@link Process} using the given {@link ProcessBuilder} and command and waits for its completion.
+	 * Cleans up the {@link WRFPaths#wps} and {@link WRFPaths#grib} via a {@link RecursiveEraser}. Therefore, this should
+	 * <i>only</i> not be called on the source installation.
 	 * 
-	 * @param pb
-	 *            the {@link ProcessBuilder} with which to execute the command
-	 * @param command
-	 *            the command to execute
-	 * @return the exit value of the {@link Process} that started
+	 * @param paths
+	 *            the paths to the working directories in use by this {@link WRFRunner}
 	 * @throws IOException
-	 *             if an IO error occurs
-	 * @throws InterruptedException
-	 *             if the {@link Process} was interrupted
+	 *             if an I/O error occurs while cleaning up
 	 */
-	public static int runPB(ProcessBuilder pb, String... command) throws IOException, InterruptedException {
-		pb.command(command);
-		Process p = pb.start();
-		return p.waitFor();
+	public void wpsCleanup(WRFPaths paths) throws IOException {
+		if (!((Boolean) features.get("cleanup").value()))
+			return;
+		if (((Boolean) general.get("keep-logs").value()))
+			Files.walkFileTree(paths.wps, new TransferFileWalker(paths.output, Files::move, p -> p.getFileName().toString().toLowerCase().endsWith(".log"), p -> true, null, null, true));
+		RecursiveEraser re = new RecursiveEraser();
+		Files.walkFileTree(paths.wps, re);
+		Files.walkFileTree(paths.grib, re);
 	}
 	
 	/**
-	 * Performs the common steps for setting up the {@link ProcessBuilder ProcessBuilders} used in this system. (Basically
-	 * just avoids some copy and paste)
+	 * Cleans up the {@link WRFPaths#wrf} after moving the outputs to {@link WRFPaths#output} via a
+	 * {@link TransferFileWalker} via a {@link RecursiveEraser}. Therefore, this should <i>only</i> not be called on the
+	 * source installation.
 	 * 
-	 * @param directory
-	 *            the working directory for the {@link ProcessBuilder}
-	 * @return a {@link ProcessBuilder} with {@link Redirect#INHERIT} redirections and the given working directory
+	 * @param paths
+	 *            the paths to the working directories in use by this {@link WRFRunner}
+	 * @throws IOException
+	 *             if an I/O error occurs while cleaning up
 	 */
-	public static ProcessBuilder makePB(File directory) {
-		ProcessBuilder pb = new ProcessBuilder();
-		pb.redirectError(Redirect.INHERIT);
-		pb.redirectOutput(Redirect.INHERIT);
-		pb.directory(directory);
-		return pb;
+	public void wrfCleanup(WRFPaths paths) throws IOException {
+		Files.walkFileTree(paths.wrf.resolve("run"),
+				new TransferFileWalker(paths.output, Files::move, p -> p.getFileName().toString().toLowerCase().startsWith("wrfout"), p -> true, null, null, false));
+		if (!((Boolean) features.get("cleanup").value()))
+			return;
+		Files.walkFileTree(paths.wrf, new RecursiveEraser());
+		if (((Boolean) general.get("keep-logs").value()))
+			Files.walkFileTree(paths.wps, new TransferFileWalker(paths.output, Files::move, p -> p.getFileName().toString().toLowerCase().endsWith(".log"), p -> true, null, null, true));
 	}
 }

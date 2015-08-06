@@ -338,7 +338,7 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	public void linkWorkingDirectory(Path source, Path target) throws IOException {
 		//We don't need anything from the src directories, so we exclude them.
 		Files.walkFileTree(source, new TransferFileWalker(target, BasicTransferActions.SYMLINK,
-				p -> !filenameTest(p.getFileName().toString()), p -> !p.getFileName().toString().equals("src"), null, log));
+				p -> !filenameTest(p.getFileName().toString()), p -> !p.getFileName().toString().equals("src"), null, log, false));
 	}
 	
 	/**

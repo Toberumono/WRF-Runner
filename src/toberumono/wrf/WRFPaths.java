@@ -35,7 +35,7 @@ public class WRFPaths {
 	 * While the <tt>root</tt> {@link Path} must be provided, the default values for all of the other {@link Path Paths} can
 	 * be computed from it, so they can be {@code null}.<br>
 	 * Regardless of whether they were {@code null} this constructor also normalizes all of the provided paths.<br>
-	 * <b>NOTE:</b> This does <i>not</i> create any directories. Make sure that they are created prior to putting stuf in
+	 * <b>NOTE:</b> This does <i>not</i> create any directories. Make sure that they are created prior to putting stuff in
 	 * them.
 	 * 
 	 * @param root
