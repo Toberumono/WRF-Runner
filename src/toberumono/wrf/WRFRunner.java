@@ -143,8 +143,11 @@ public class WRFRunner {
 			JSONSystem.writeJSON(configuration, configurationPath);
 		WRFPaths paths = sim.makeWorkingFolder(workingPath, wrfPath, wpsPath);
 		
-		NamelistParser.writeNamelist(sim.updateWRFNamelistTimeRange(input, doms), paths.wrf.resolve("run").resolve("namelist.input"));
-		NamelistParser.writeNamelist(writeWPSPaths(sim.updateWPSNamelistTimeRange(wps, doms), wpsPath, paths.wrf), paths.wps.resolve("namelist.wps"));
+		JSONObject timestep = null;
+		if (((Boolean) features.get("wget").value()))
+			timestep = (JSONObject) grib.get("timestep");
+		NamelistParser.writeNamelist(sim.updateWRFNamelistTimeRange(input, timestep, doms), paths.wrf.resolve("run").resolve("namelist.input"));
+		NamelistParser.writeNamelist(writeWPSPaths(sim.updateWPSNamelistTimeRange(wps, timestep, doms), wpsPath, paths.wrf), paths.wps.resolve("namelist.wps"));
 		
 		if (((Boolean) features.get("wget").value()))
 			runWGet(sim, paths, input);

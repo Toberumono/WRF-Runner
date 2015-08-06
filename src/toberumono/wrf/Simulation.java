@@ -202,12 +202,14 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	 * 
 	 * @param wps
 	 *            a WPS {@link Namelist} file
+	 * @param timestep
+	 *            the grib--&gt;timestep subsection of the configuration file.  If wget is not being used, this must be {@code null}.
 	 * @param doms
 	 *            the number of domains to be used
 	 * @return the updated {@link Namelist} file (this is for easier chaining of commands - this method modifies the passed)
 	 *         file
 	 */
-	public Namelist updateWPSNamelistTimeRange(Namelist wps, int doms) {
+	public Namelist updateWPSNamelistTimeRange(Namelist wps, JSONObject timestep, int doms) {
 		Pair<NamelistType, Object> start = new Pair<>(NamelistType.String, getWPSStartDate());
 		Pair<NamelistType, Object> end = new Pair<>(NamelistType.String, getWPSEndDate());
 		NamelistInnerList s = new NamelistInnerList(), e = new NamelistInnerList();
@@ -217,6 +219,11 @@ public class Simulation extends Pair<Calendar, Calendar> {
 		}
 		wps.get("share").put("start_date", s);
 		wps.get("share").put("end_date", e);
+		if (timestep != null) {
+			NamelistInnerList is = new NamelistInnerList();
+			is.add(new Pair<>(NamelistType.Number, calcIntervalSeconds(timestep)));
+			wps.get("share").put("interval_seconds", is);
+		}
 		return wps;
 	}
 	
@@ -227,12 +234,14 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	 * 
 	 * @param input
 	 *            a WRF {@link Namelist} file
+	 * @param timestep
+	 *            the grib--&gt;timestep subsection of the configuration file.  If wget is not being used, this must be {@code null}.
 	 * @param doms
 	 *            the number of domains to be used
 	 * @return the updated {@link Namelist} file (this is for easier chaining of commands - this method modifies the passed
 	 *         file)
 	 */
-	public Namelist updateWRFNamelistTimeRange(Namelist input, int doms) {
+	public Namelist updateWRFNamelistTimeRange(Namelist input, JSONObject timestep, int doms) {
 		NamelistInnerList syear = new NamelistInnerList(), smonth = new NamelistInnerList(), sday = new NamelistInnerList();
 		NamelistInnerList shour = new NamelistInnerList(), sminute = new NamelistInnerList(), ssecond = new NamelistInnerList();
 		NamelistInnerList eyear = new NamelistInnerList(), emonth = new NamelistInnerList(), eday = new NamelistInnerList();
@@ -265,7 +274,20 @@ public class Simulation extends Pair<Calendar, Calendar> {
 		tc.put("end_hour", ehour);
 		tc.put("end_minute", eminute);
 		tc.put("end_second", esecond);
+		if (timestep != null) {
+			NamelistInnerList is = new NamelistInnerList();
+			is.add(new Pair<>(NamelistType.Number, calcIntervalSeconds(timestep)));
+			tc.put("interval_seconds", is);
+		}
 		return input;
+	}
+	
+	private int calcIntervalSeconds(JSONObject timestep) {
+		int out = ((Number) timestep.get("seconds").value()).intValue();
+		out += ((Number) timestep.get("minutes").value()).intValue() * 60;
+		out += ((Number) timestep.get("hours").value()).intValue() * 60 * 60;
+		out += ((Number) timestep.get("days").value()).intValue() * 24 * 60 * 60;
+		return out;
 	}
 	
 	/**
