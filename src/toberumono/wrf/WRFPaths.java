@@ -19,6 +19,10 @@ public class WRFPaths {
 	 */
 	public final Path wrf;
 	/**
+	 * The run working directory
+	 */
+	public final Path run;
+	/**
 	 * The WPS working directory
 	 */
 	public final Path wps;
@@ -76,6 +80,7 @@ public class WRFPaths {
 			throw new NullPointerException("The root path cannot be null.");
 		this.root = root.toAbsolutePath().normalize();
 		this.wrf = root.resolve(wrf).toAbsolutePath().normalize();
+		run = this.wrf.resolve("run");
 		this.wps = root.resolve(wps).toAbsolutePath().normalize();
 		this.grib = root.resolve(grib).toAbsolutePath().normalize();
 		this.output = root.resolve(output).toAbsolutePath().normalize();

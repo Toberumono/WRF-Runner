@@ -149,7 +149,7 @@ public class WRFRunner {
 		JSONObject timestep = null;
 		if (((Boolean) features.get("wget").value()))
 			timestep = (JSONObject) grib.get("timestep");
-		sim.updateWRFNamelistTimeRange(input, timestep, doms).write(paths.wrf.resolve("run").resolve("namelist.input"));
+		sim.updateWRFNamelistTimeRange(input, timestep, doms).write(paths.run.resolve("namelist.input"));
 		writeWPSPaths(sim.updateWPSNamelistTimeRange(wps, timestep, doms), wpsPath, paths.wrf).write(paths.wps.resolve("namelist.wps"));
 		
 		if (((Boolean) features.get("wget").value()))
@@ -367,7 +367,7 @@ public class WRFRunner {
 	 *             if one of the processes is interrupted
 	 */
 	public void runWRF(Namelist input, WRFPaths paths, Simulation sim) throws IOException, InterruptedException {
-		ProcessBuilder wrfPB = makePB(paths.wrf.resolve("run").toFile());
+		ProcessBuilder wrfPB = makePB(paths.run.toFile());
 		runPB(wrfPB, "./real.exe", "2>&1", "|", "tee", "./real.log");
 		String[] wrfCommand = new String[0];
 		//Calculate which command to use
@@ -425,7 +425,7 @@ public class WRFRunner {
 	 *             if an I/O error occurs while cleaning up
 	 */
 	public void wrfCleanup(WRFPaths paths) throws IOException {
-		Files.walkFileTree(paths.wrf.resolve("run"),
+		Files.walkFileTree(paths.run,
 				new TransferFileWalker(paths.output, Files::move, p -> p.getFileName().toString().toLowerCase().startsWith("wrfout"), p -> true, null, null, false));
 		if (!((Boolean) features.get("cleanup").value()))
 			return;
