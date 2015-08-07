@@ -309,8 +309,8 @@ public class Simulation {
 	/**
 	 * Creates the output folder for the current run and returns a path to it.<br>
 	 * This appropriately handles parallel (both thread-wise and process-wise) calls.<br>
-	 * If <tt>use_suffix</tt> is false and the timestamped folder already exists and there is an active simulation using it,
-	 * this method will fail.
+	 * If <tt>always_suffix</tt> is false and the timestamped folder already exists and there is an active simulation using
+	 * it, this method will fail.
 	 * 
 	 * @param working
 	 *            a {@link Path} to the root working directory, in which a timestamped folder will be created to hold the
@@ -319,25 +319,24 @@ public class Simulation {
 	 *            a {@link Path} to the original WRF installation root directory
 	 * @param wps
 	 *            a {@link Path} to the original WPS installation root directory
-	 * @param use_suffix
+	 * @param always_suffix
 	 *            the value of the "use-suffix" field in the general--&gt;parallel subsection of the configuration file
 	 * @return a {@link Path} to the root of the timestamped working directory for this run.
 	 * @throws IOException
 	 *             if an I/O error occurs
 	 */
-	public WRFPaths makeWorkingFolder(final Path working, final Path wrf, final Path wps, boolean use_suffix) throws IOException {
+	public WRFPaths makeWorkingFolder(final Path working, final Path wrf, final Path wps, boolean always_suffix) throws IOException {
 		Path active = Files.createDirectories(working).resolve("active");
 		try (FileChannel chan = FileChannel.open(active, StandardOpenOption.CREATE, StandardOpenOption.WRITE); FileLock lock = chan.lock();) {
 			String rootName = getWPSStartDate().replaceAll(":", "_"); //Having colons in the path messes up WRF, so... Underscores.
-			StringBuilder name = new StringBuilder(rootName.length() + 2);
-			name.append(rootName);
-			if (use_suffix)
-				try (Stream<Path> children = Files.list(working)) {
-					int count = children.filter(p -> p.getFileName().toString().startsWith(rootName)).toArray().length;
+			StringBuilder name = new StringBuilder(rootName);
+			try (Stream<Path> children = Files.list(working)) {
+				int count = children.filter(p -> p.getFileName().toString().startsWith(rootName)).toArray().length;
+				if (always_suffix || count > 0)
 					name.append("+" + (count + 1));
-				}
+			}
 			Path root = Files.createDirectories(working.resolve(name.toString()).normalize());
-			WRFPaths paths = new WRFPaths(root, root.resolve("WRFV3"), root.resolve("WPS"), root.resolve("grib"), root, true);
+			WRFPaths paths = new WRFPaths(root, root, true);
 			linkWorkingDirectory(wrf, paths.wrf);
 			linkWorkingDirectory(wps, paths.wps);
 			return paths;
