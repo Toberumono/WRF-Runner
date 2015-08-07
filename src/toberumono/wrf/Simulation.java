@@ -12,7 +12,8 @@ import toberumono.json.JSONObject;
 import toberumono.namelist.parser.Namelist;
 import toberumono.namelist.parser.NamelistInnerList;
 import toberumono.namelist.parser.NamelistInnerMap;
-import toberumono.namelist.parser.NamelistType;
+import toberumono.namelist.parser.NamelistNumber;
+import toberumono.namelist.parser.NamelistString;
 import toberumono.structures.tuples.Pair;
 import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
@@ -210,9 +211,9 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	 *         file
 	 */
 	public Namelist updateWPSNamelistTimeRange(Namelist wps, JSONObject timestep, int doms) {
-		Pair<NamelistType, Object> start = new Pair<>(NamelistType.String, getWPSStartDate());
-		Pair<NamelistType, Object> end = new Pair<>(NamelistType.String, getWPSEndDate());
-		NamelistInnerList s = new NamelistInnerList(), e = new NamelistInnerList();
+		NamelistString start = new NamelistString(getWPSStartDate());
+		NamelistString end = new NamelistString(getWPSEndDate());
+		NamelistInnerList<NamelistString> s = new NamelistInnerList<>(), e = new NamelistInnerList<>();
 		for (int i = 0; i < doms; i++) {
 			s.add(start);
 			e.add(end);
@@ -220,8 +221,8 @@ public class Simulation extends Pair<Calendar, Calendar> {
 		wps.get("share").put("start_date", s);
 		wps.get("share").put("end_date", e);
 		if (timestep != null) {
-			NamelistInnerList is = new NamelistInnerList();
-			is.add(new Pair<>(NamelistType.Number, calcIntervalSeconds(timestep)));
+			NamelistInnerList<NamelistNumber> is = new NamelistInnerList<>();
+			is.add(new NamelistNumber(calcIntervalSeconds(timestep)));
 			wps.get("share").put("interval_seconds", is);
 		}
 		return wps;
@@ -242,24 +243,24 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	 *         file)
 	 */
 	public Namelist updateWRFNamelistTimeRange(Namelist input, JSONObject timestep, int doms) {
-		NamelistInnerList syear = new NamelistInnerList(), smonth = new NamelistInnerList(), sday = new NamelistInnerList();
-		NamelistInnerList shour = new NamelistInnerList(), sminute = new NamelistInnerList(), ssecond = new NamelistInnerList();
-		NamelistInnerList eyear = new NamelistInnerList(), emonth = new NamelistInnerList(), eday = new NamelistInnerList();
-		NamelistInnerList ehour = new NamelistInnerList(), eminute = new NamelistInnerList(), esecond = new NamelistInnerList();
+		NamelistInnerList<NamelistNumber> syear = new NamelistInnerList<>(), smonth = new NamelistInnerList<>(), sday = new NamelistInnerList<>();
+		NamelistInnerList<NamelistNumber> shour = new NamelistInnerList<>(), sminute = new NamelistInnerList<>(), ssecond = new NamelistInnerList<>();
+		NamelistInnerList<NamelistNumber> eyear = new NamelistInnerList<>(), emonth = new NamelistInnerList<>(), eday = new NamelistInnerList<>();
+		NamelistInnerList<NamelistNumber> ehour = new NamelistInnerList<>(), eminute = new NamelistInnerList<>(), esecond = new NamelistInnerList<>();
 		Calendar start = getStart(), end = getEnd();
 		for (int i = 0; i < doms; i++) {
-			syear.add(new Pair<>(NamelistType.Number, start.get(Calendar.YEAR)));
-			smonth.add(new Pair<>(NamelistType.Number, start.get(Calendar.MONTH) + 1)); //We have to add 1 to the month because Java's Calendar system starts the months at 0
-			sday.add(new Pair<>(NamelistType.Number, start.get(Calendar.DAY_OF_MONTH)));
-			shour.add(new Pair<>(NamelistType.Number, start.get(Calendar.HOUR_OF_DAY)));
-			sminute.add(new Pair<>(NamelistType.Number, start.get(Calendar.MINUTE)));
-			ssecond.add(new Pair<>(NamelistType.Number, start.get(Calendar.SECOND)));
-			eyear.add(new Pair<>(NamelistType.Number, end.get(Calendar.YEAR)));
-			emonth.add(new Pair<>(NamelistType.Number, end.get(Calendar.MONTH) + 1)); //We have to add 1 to the month because Java's Calendar system starts the months at 0
-			eday.add(new Pair<>(NamelistType.Number, end.get(Calendar.DAY_OF_MONTH)));
-			ehour.add(new Pair<>(NamelistType.Number, end.get(Calendar.HOUR_OF_DAY)));
-			eminute.add(new Pair<>(NamelistType.Number, end.get(Calendar.MINUTE)));
-			esecond.add(new Pair<>(NamelistType.Number, end.get(Calendar.SECOND)));
+			syear.add(new NamelistNumber(start.get(Calendar.YEAR)));
+			smonth.add(new NamelistNumber(start.get(Calendar.MONTH) + 1)); //We have to add 1 to the month because Java's Calendar system starts the months at 0
+			sday.add(new NamelistNumber(start.get(Calendar.DAY_OF_MONTH)));
+			shour.add(new NamelistNumber(start.get(Calendar.HOUR_OF_DAY)));
+			sminute.add(new NamelistNumber(start.get(Calendar.MINUTE)));
+			ssecond.add(new NamelistNumber(start.get(Calendar.SECOND)));
+			eyear.add(new NamelistNumber(end.get(Calendar.YEAR)));
+			emonth.add(new NamelistNumber(end.get(Calendar.MONTH) + 1)); //We have to add 1 to the month because Java's Calendar system starts the months at 0
+			eday.add(new NamelistNumber(end.get(Calendar.DAY_OF_MONTH)));
+			ehour.add(new NamelistNumber(end.get(Calendar.HOUR_OF_DAY)));
+			eminute.add(new NamelistNumber(end.get(Calendar.MINUTE)));
+			esecond.add(new NamelistNumber(end.get(Calendar.SECOND)));
 		}
 		NamelistInnerMap tc = input.get("time_control");
 		tc.put("start_year", syear);
@@ -275,8 +276,8 @@ public class Simulation extends Pair<Calendar, Calendar> {
 		tc.put("end_minute", eminute);
 		tc.put("end_second", esecond);
 		if (timestep != null) {
-			NamelistInnerList is = new NamelistInnerList();
-			is.add(new Pair<>(NamelistType.Number, calcIntervalSeconds(timestep)));
+			NamelistInnerList<NamelistNumber> is = new NamelistInnerList<>();
+			is.add(new NamelistNumber(calcIntervalSeconds(timestep)));
 			tc.put("interval_seconds", is);
 		}
 		return input;

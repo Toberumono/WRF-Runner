@@ -17,11 +17,9 @@ import toberumono.json.JSONObject;
 import toberumono.json.JSONSystem;
 import toberumono.namelist.parser.Namelist;
 import toberumono.namelist.parser.NamelistInnerList;
-import toberumono.namelist.parser.NamelistParser;
-import toberumono.namelist.parser.NamelistType;
+import toberumono.namelist.parser.NamelistString;
 import toberumono.structures.SortingMethods;
 import toberumono.structures.collections.lists.SortedList;
-import toberumono.structures.tuples.Pair;
 import toberumono.utils.files.RecursiveEraser;
 import toberumono.utils.files.TransferFileWalker;
 
@@ -134,9 +132,9 @@ public class WRFRunner {
 		Path workingPath = Paths.get(((String) paths.get("working").value())).normalize().toAbsolutePath();
 		
 		Path wrfNamelistPath = wrfPath.resolve("run").resolve("namelist.input");
-		Namelist input = NamelistParser.parseNamelist(wrfNamelistPath);
+		Namelist input = new Namelist(wrfNamelistPath);
 		Path wpsNamelistPath = wpsPath.resolve("namelist.wps");
-		Namelist wps = NamelistParser.parseNamelist(wpsNamelistPath);
+		Namelist wps = new Namelist(wpsNamelistPath);
 		int doms = ((Number) input.get("domains").get("max_dom").get(0).getY()).intValue();
 		
 		Logger simLogger = log.getLogger("WRFRunner.Simulation");
@@ -149,8 +147,8 @@ public class WRFRunner {
 		JSONObject timestep = null;
 		if (((Boolean) features.get("wget").value()))
 			timestep = (JSONObject) grib.get("timestep");
-		NamelistParser.writeNamelist(sim.updateWRFNamelistTimeRange(input, timestep, doms), paths.wrf.resolve("run").resolve("namelist.input"));
-		NamelistParser.writeNamelist(writeWPSPaths(sim.updateWPSNamelistTimeRange(wps, timestep, doms), wpsPath, paths.wrf), paths.wps.resolve("namelist.wps"));
+		sim.updateWRFNamelistTimeRange(input, timestep, doms).write(paths.wrf.resolve("run").resolve("namelist.input"));
+		writeWPSPaths(sim.updateWPSNamelistTimeRange(wps, timestep, doms), wpsPath, paths.wrf).write(paths.wps.resolve("namelist.wps"));
 		
 		if (((Boolean) features.get("wget").value()))
 			runWGet(sim, paths, input);
@@ -186,25 +184,26 @@ public class WRFRunner {
 	 *            the <i>linked</i> WRF path (Working/WRFV3)
 	 * @return the WPS {@link Namelist}
 	 */
+	@SuppressWarnings("unchecked")
 	public static Namelist writeWPSPaths(Namelist wps, Path wpsPath, Path wrfPath) {
 		//Convert the geog_data_path to an absolute path so that WPS doesn't break trying to find a path relative to its original location
-		NamelistInnerList geogList = wps.get("geogrid").get("geog_data_path");
+		NamelistInnerList<NamelistString> geogList = (NamelistInnerList<NamelistString>) wps.get("geogrid").get("geog_data_path");
 		Path newPath = wpsPath.resolve(geogList.get(0).getY().toString());
-		geogList.set(0, new Pair<>(NamelistType.String, newPath.toAbsolutePath().normalize().toString()));
+		geogList.set(0, new NamelistString(newPath.toAbsolutePath().normalize().toString()));
 		//Ensure that the geogrid output is staying in the WPS working directory
-		NamelistInnerList geoOutList = wps.get("share").get("opt_output_from_geogrid_path");
+		NamelistInnerList<NamelistString> geoOutList = (NamelistInnerList<NamelistString>) wps.get("share").get("opt_output_from_geogrid_path");
 		if (geoOutList != null)
-			geoOutList.set(0, new Pair<>(NamelistType.String, "./"));
+			geoOutList.set(0, new NamelistString("./"));
 		//Ensure that the metgrid output is going into the WRF working directory
-		NamelistInnerList metList = wps.get("metgrid").get("opt_output_from_metgrid_path");
+		NamelistInnerList<NamelistString> metList = (NamelistInnerList<NamelistString>) wps.get("metgrid").get("opt_output_from_metgrid_path");
 		if (metList == null) {
-			metList = new NamelistInnerList();
+			metList = new NamelistInnerList<>();
 			wps.get("metgrid").put("opt_output_from_metgrid_path", metList);
 		}
 		String path = wrfPath.resolve("run").toString();
 		if (!path.endsWith(System.getProperty("file.separator")))
 			path += System.getProperty("file.separator");
-		metList.set(0, new Pair<>(NamelistType.String, path));
+		metList.set(0, new NamelistString(path));
 		return wps;
 	}
 	
