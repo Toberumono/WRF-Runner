@@ -188,7 +188,7 @@ public class WRFRunner {
 	public static Namelist writeWPSPaths(Namelist wps, Path wpsPath, Path wrfPath) {
 		//Convert the geog_data_path to an absolute path so that WPS doesn't break trying to find a path relative to its original location
 		NamelistInnerList<NamelistString> geogList = (NamelistInnerList<NamelistString>) wps.get("geogrid").get("geog_data_path");
-		System.out.println(geogList);
+		System.out.println(wps);
 		System.out.println(wpsPath);
 		Path newPath = wpsPath.resolve(geogList.get(0).getY().toString());
 		geogList.set(0, new NamelistString(newPath.toAbsolutePath().normalize().toString()));
