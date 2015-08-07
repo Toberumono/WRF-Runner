@@ -2,25 +2,27 @@
 A simple script for running WRF.  This is written in *Java 8* and is designed for use on personal systems - due to the nature of large-scale systems, there is no guarantee that this will be compatible with its job-management system.
 
 ## Usage
+### Experience
+This guide does assume a basic level of comfort with a UNIX-based prompt.  If you are new to working with terminal, tutorial one at [http://www.ee.surrey.ac.uk/Teaching/Unix/](http://www.ee.surrey.ac.uk/Teaching/Unix/) will cover everything you need for this tutorial. (Its prompt likely looks a bit different, but those commands are effectively identical across UNIX shells)
+
 ### Setup
 #### <a name="rp"></a>Required programs (these are all command line utilities)
 
-* wget
-* ant
 * ruby
 * curl
-* javac update 45 or higher (via the [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html))
+* Homebrew/Linuxbrew
+* Java 8 JDK update 45+
 
 If you don't have these, see [Getting the Required Programs](#gtrp) for how to get them.
 
 #### <a name="rl"></a>Required Libraries
 
-* [Lexer](https://github.com/Toberumono/Lexer)
 * [JSON Library](https://github.com/Toberumono/JSON-Library)
 * [Namelist Parser](https://github.com/Toberumono/Namelist-Parser)
 * [Structures](https://github.com/Toberumono/Structures)
+* [Utils](https://github.com/Toberumono/Utils)
 
-If you don't have these, see [Getting the Required Libraries](#gtrl) for how to get them.
+These are all downloaded, compiled, and linked as part of the installation process if you are using Homebrew/Linuxbrew.
 
 #### Compiling the Program
 
@@ -30,9 +32,10 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 	+ If you're on Linux and it cannot find the brew command, run `export PATH=$HOME/.linuxbrew/bin:$PATH`.
 3. Run `brew install wrf-runner`
 	+ Linuxbrew may have trouble with a few dependencies, running `brew install` for each dependency, while annoying, will fix that problem.
-4. cd into the directory into which you want to install the WRF-Runner program
-5. Run `wrf-linker.sh`
-6. Proceed to [Running a WRF process](#rawrfp)
+4. While this does download and install the program, there is still the matter of linking it to a more accessible directory.  If you just intend on using it as a library, you can ignore the remaining steps, otherwise, continue.
+5. cd into the directory into which you want to install the WRF-Runner program
+6. Run `wrf-linker.sh`
+7. Proceed to [Running a WRF process](#rawrfp)
 
 ### <a name="rawrfp"></a>Running a WRF process
 #### A few quick notes
@@ -178,10 +181,8 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 	```bash
 	sudo apt-get install build-essential curl git m4 ruby texinfo libbz2-dev libcurl4-openssl-dev libexpat-dev libncurses-dev zlib1g-dev
 	```
-	5. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew).  **There is no need to edit the .bashrc or .zshrc files unless you expect to run Linuxbrew frequently**.
-	6. Link the executables. Run: `export PATH=$HOME/.linuxbrew/bin:$PATH` (This is why there's no need to edit .bashrc and .zshrc).
+	4. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew).  **There is no need to edit the .bashrc or .zshrc files unless you expect to run Linuxbrew frequently**.
+	5. Link the executables. Run: `export PATH=$HOME/.linuxbrew/bin:$PATH` (This is why there's no need to edit .bashrc and .zshrc).
 - Mac: Ruby and Curl are already installed on Mac, so we don't need to worry about those.
 	1. install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 	2. install [Homebrew](http://brew.sh/).
-	3. run `brew install wget git ant`.
-		+ Check if you have git installed prior to running this script.  If you do, just run `brew install wget ant` instead.
