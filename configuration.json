@@ -9,11 +9,11 @@
 		"parallel" : {
 			"is-dmpar" : true,
 			"boot-lam" : true,
-			"processors" : 2,
-			"always-suffix" : false
-		}, 
+			"processors" : 2
+		},
 		"wait-for-WRF" : true,
 		"keep-logs" : true,
+		"always-suffix" : false,
 		"max-kept-outputs" : 15
 	},
 	"paths" : {

@@ -127,8 +127,8 @@ public class WRFRunner {
 	public void runWRF() throws IOException, InterruptedException {
 		if (!general.containsKey("keep-logs"))
 			general.put("keep-logs", new JSONBoolean(true));
-		if (!parallel.containsKey("always-suffix"))
-			parallel.put("always-suffix", new JSONBoolean(false));
+		if (!general.containsKey("always-suffix"))
+			general.put("always-suffix", new JSONBoolean(false));
 		Path wrfPath = Paths.get(((String) paths.get("wrf").value())).toAbsolutePath();
 		Path wpsPath = Paths.get(((String) paths.get("wps").value())).toAbsolutePath();
 		Path workingPath = Paths.get(((String) paths.get("working").value())).normalize().toAbsolutePath();
@@ -144,7 +144,7 @@ public class WRFRunner {
 		Simulation sim = new Simulation(input, Calendar.getInstance(), timing, simLogger);
 		if (configuration.isModified())
 			JSONSystem.writeJSON(configuration, configurationPath);
-		WRFPaths paths = sim.makeWorkingFolder(workingPath, wrfPath, wpsPath, (Boolean) parallel.get("always-suffix").value());
+		WRFPaths paths = sim.makeWorkingFolder(workingPath, wrfPath, wpsPath, (Boolean) general.get("always-suffix").value());
 		
 		JSONObject timestep = null;
 		if (((Boolean) features.get("wget").value()))
