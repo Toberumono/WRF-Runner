@@ -55,8 +55,9 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 3. Open the configuration file (configuration.json) in the directory into which you linked the WRFRunner.jar and configuration.json files.
 	+ If you want to use a different file, just copy the contents of configuration.json into it before continuing and remember to change the configuration file path in the run step.
 4. Configure the parallelization options in the general->parallel subsection:
-	1. If you did not compile WRF in DMPAR mode, set "is-dmpar" to false and continue to step 3.
-	2. Otherwise, set "processors" to the number of processors you would like to allow WRF to use.
+	1. If you expect to have multiple simulations with the same start time and wish to keep them, set "use-suffix" to true.
+	2. If you did not compile WRF in DMPAR mode, set "is-dmpar" to false and continue to step 3.
+	3. Otherwise, set "processors" to the number of processors you would like to allow WRF to use.
 		+ It is a good idea to set this value to at most two less than the number of processors (or cores) in your system.
 5. Configure the paths section (All of these *must* be absolute paths):
 	1. Set the "wrf" path to the root directory of your WRF installation.
@@ -89,6 +90,7 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 		- is-dmpar: This tells the script whether WRF and WPS were set up with DMPAR mode.  This is effectively the toggle for all parallel components.
 		- boot-lam: True indicates that the mpich call should include the boot flag.  This should only be used on personal machines that will not have another mpich process running on them.
 		- processors: The number of processors to allow WRF to use.  If you intend to continue using the computer on which you are running the simulation while the simulation is in progress, leave your system at least 2 processors.
+		- always-suffix: This tells the script whether to add "+1" to simulation folder names (this is generally only useful if you expect to have multiple simulations with the same start times)
 	+ wait-for-WRF: True indicates that the script should wait for WRF to complete.  This *must* be true for it to perform the final stage of cleanup.  Otherwise, this is a matter of preference.
 	+ max-kept-outputs: The maximum number of completed simulations to keep around (well, the data from them, anyway).  A value of less than 1 disables automatic deletion.
 + paths: Absolute paths to the executable directories for WRF and WPS as well as the working and grib data directories.  These must *not* end in '/'.  
