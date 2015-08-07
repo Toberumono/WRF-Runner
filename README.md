@@ -167,15 +167,11 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 
 - Linux (note: you may need to replace the names of the downloaded files or the directories they into which they unpacked to match the versions that you downloaded):
 	1. Download the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
-	2. Unpack the archive into /usr/lib/jvm.  Run:</br>
+	2. Copy the following script into terminal, and change the values of version and update so that they match the version and update of the JDK you downloaded.  Then run it.
 	```bash
-	sudo mkdir /usr/lib/jvm; sudo tar zxvf jdk-8u51-linux-x64.tar.gz -C /usr/lib/jvm
+	export version="8"; export update="51"; sudo mkdir /usr/lib/jvm; sudo tar zxvf "jdk-${version}u$update-linux-x64.tar.gz" -C /usr/lib/jvm; sudo ln -sf "/usr/lib/jvm/jdk1.$version.0_$update/bin/*" /usr/bin/
 	```
-	3. Link the executables. Run:</br>
-	```bash
-	sudo ln -sf /usr/lib/jvm/jdk1.8.0_51/bin/java /usr/bin/java; sudo ln -sf /usr/lib/jvm/jdk1.8.0_51/bin/javac /usr/bin/javac
-	```
-	4. Install wget, git, ruby, and curl. Run: (For systems that use `yum`, replace `apt-get install` with `yum install`)</br>
+	3. Install wget, git, ruby, and curl. Run: (For systems that use `yum`, replace `apt-get install` with `yum install`)</br>
 	```bash
 	sudo apt-get install build-essential curl git m4 ruby texinfo libbz2-dev libcurl4-openssl-dev libexpat-dev libncurses-dev zlib1g-dev
 	```
