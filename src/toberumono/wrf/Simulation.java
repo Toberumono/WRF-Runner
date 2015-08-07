@@ -1,12 +1,16 @@
 package toberumono.wrf;
 
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import toberumono.json.JSONObject;
 import toberumono.namelist.parser.Namelist;
@@ -24,7 +28,8 @@ import toberumono.utils.files.TransferFileWalker;
  * 
  * @author Toberumono
  */
-public class Simulation extends Pair<Calendar, Calendar> {
+public class Simulation {
+	protected final Calendar start, end;
 	protected final Logger log;
 	
 	/**
@@ -42,8 +47,7 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	 */
 	public Simulation(Namelist namelist, Calendar current, JSONObject timing, Logger log) {
 		this.log = log;
-		Calendar start = (Calendar) current.clone();
-		Calendar end = (Calendar) start.clone();
+		start = (Calendar) current.clone();
 		NamelistInnerMap tc = namelist.get("time_control");
 		JSONObject rounding = (JSONObject) timing.get("rounding");
 		JSONObject duration = (JSONObject) timing.get("duration");
@@ -118,8 +122,6 @@ public class Simulation extends Pair<Calendar, Calendar> {
 		end.add(Calendar.HOUR_OF_DAY, ((Number) duration.get("hours").value()).intValue());
 		end.add(Calendar.MINUTE, ((Number) duration.get("minutes").value()).intValue());
 		end.add(Calendar.SECOND, ((Number) duration.get("seconds").value()).intValue());
-		super.setX(start);
-		super.setY(end);
 	}
 	
 	/**
@@ -160,24 +162,23 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	 *            the {@link Logger} to use in the {@link Simulation TimeRange's} operations
 	 */
 	public Simulation(Calendar start, Calendar end, Logger log) {
-		super(start, end);
+		this.start = start;
+		this.end = end;
 		this.log = log;
 	}
 	
 	/**
-	 * @return the start {@link Calendar}
-	 * @see #getX()
+	 * @return the {@link Calendar} representing the {@link Simulation Simulation's} start time
 	 */
 	public Calendar getStart() {
-		return getX();
+		return start;
 	}
 	
 	/**
-	 * @return the end {@link Calendar}
-	 * @see #getY()
+	 * @return the {@link Calendar} representing the {@link Simulation Simulation's} end time
 	 */
 	public Calendar getEnd() {
-		return getY();
+		return end;
 	}
 	
 	/**
@@ -204,7 +205,8 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	 * @param wps
 	 *            a WPS {@link Namelist} file
 	 * @param timestep
-	 *            the grib--&gt;timestep subsection of the configuration file.  If wget is not being used, this must be {@code null}.
+	 *            the grib--&gt;timestep subsection of the configuration file. If wget is not being used, this must be
+	 *            {@code null}.
 	 * @param doms
 	 *            the number of domains to be used
 	 * @return the updated {@link Namelist} file (this is for easier chaining of commands - this method modifies the passed)
@@ -236,7 +238,8 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	 * @param input
 	 *            a WRF {@link Namelist} file
 	 * @param timestep
-	 *            the grib--&gt;timestep subsection of the configuration file.  If wget is not being used, this must be {@code null}.
+	 *            the grib--&gt;timestep subsection of the configuration file. If wget is not being used, this must be
+	 *            {@code null}.
 	 * @param doms
 	 *            the number of domains to be used
 	 * @return the updated {@link Namelist} file (this is for easier chaining of commands - this method modifies the passed
@@ -304,7 +307,10 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	}
 	
 	/**
-	 * Creates the output folder for the current run and returns a path to it.
+	 * Creates the output folder for the current run and returns a path to it.<br>
+	 * This appropriately handles parallel (both thread-wise and process-wise) calls.<br>
+	 * If <tt>use_suffix</tt> is false and the timestamped folder already exists and there is an active simulation using it,
+	 * this method will fail.
 	 * 
 	 * @param working
 	 *            a {@link Path} to the root working directory, in which a timestamped folder will be created to hold the
@@ -313,16 +319,29 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	 *            a {@link Path} to the original WRF installation root directory
 	 * @param wps
 	 *            a {@link Path} to the original WPS installation root directory
+	 * @param use_suffix
+	 *            the value of the "use-suffix" field in the general--&gt;parallel subsection of the configuration file
 	 * @return a {@link Path} to the root of the timestamped working directory for this run.
 	 * @throws IOException
 	 *             if an I/O error occurs
 	 */
-	public WRFPaths makeWorkingFolder(final Path working, final Path wrf, final Path wps) throws IOException {
-		final Path root = Files.createDirectories(working.resolve(getWPSStartDate().replaceAll(":", "_")).normalize()); //Having colons in the path messes up WRF, so... Underscores.
-		WRFPaths paths = new WRFPaths(root, root.resolve("WRFV3"), root.resolve("WPS"), root.resolve("grib"), root, true);
-		linkWorkingDirectory(wrf, paths.wrf);
-		linkWorkingDirectory(wps, paths.wps);
-		return paths;
+	public WRFPaths makeWorkingFolder(final Path working, final Path wrf, final Path wps, boolean use_suffix) throws IOException {
+		Path active = Files.createDirectories(working).resolve("active");
+		try (FileChannel chan = FileChannel.open(active, StandardOpenOption.CREATE, StandardOpenOption.WRITE); FileLock lock = chan.lock();) {
+			String rootName = getWPSStartDate().replaceAll(":", "_"); //Having colons in the path messes up WRF, so... Underscores.
+			StringBuilder name = new StringBuilder(rootName.length() + 2);
+			name.append(rootName);
+			if (use_suffix)
+				try (Stream<Path> children = Files.list(working)) {
+					int count = children.filter(p -> p.getFileName().toString().startsWith(rootName)).toArray().length;
+					name.append("+" + (count + 1));
+				}
+			Path root = Files.createDirectories(working.resolve(name.toString()).normalize());
+			WRFPaths paths = new WRFPaths(root, root.resolve("WRFV3"), root.resolve("WPS"), root.resolve("grib"), root, true);
+			linkWorkingDirectory(wrf, paths.wrf);
+			linkWorkingDirectory(wps, paths.wps);
+			return paths;
+		}
 	}
 	
 	/**
@@ -350,7 +369,7 @@ public class Simulation extends Pair<Calendar, Calendar> {
 	 *            the filename to test
 	 * @return {@code true} if the name matches one of the patterns
 	 */
-	public boolean filenameTest(String filename) {
+	public static boolean filenameTest(String filename) {
 		filename = filename.toLowerCase();
 		String extension = filename.substring(filename.lastIndexOf('.') + 1);
 		if (extension.equals("csh"))

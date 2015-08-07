@@ -9,7 +9,8 @@
 		"parallel" : {
 			"is-dmpar" : true,
 			"boot-lam" : true,
-			"processors" : 2
+			"processors" : 2,
+			"always-suffix" : false
 		}, 
 		"wait-for-WRF" : true,
 		"keep-logs" : true,

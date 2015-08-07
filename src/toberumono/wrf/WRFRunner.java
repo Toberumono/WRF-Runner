@@ -127,6 +127,8 @@ public class WRFRunner {
 	public void runWRF() throws IOException, InterruptedException {
 		if (!general.containsKey("keep-logs"))
 			general.put("keep-logs", new JSONBoolean(true));
+		if (!parallel.containsKey("use-suffix"))
+			parallel.put("use-suffix", new JSONBoolean(false));
 		Path wrfPath = Paths.get(((String) paths.get("wrf").value())).toAbsolutePath();
 		Path wpsPath = Paths.get(((String) paths.get("wps").value())).toAbsolutePath();
 		Path workingPath = Paths.get(((String) paths.get("working").value())).normalize().toAbsolutePath();
@@ -142,7 +144,7 @@ public class WRFRunner {
 		Simulation sim = new Simulation(input, Calendar.getInstance(), timing, simLogger);
 		if (configuration.isModified())
 			JSONSystem.writeJSON(configuration, configurationPath);
-		WRFPaths paths = sim.makeWorkingFolder(workingPath, wrfPath, wpsPath);
+		WRFPaths paths = sim.makeWorkingFolder(workingPath, wrfPath, wpsPath, (Boolean) parallel.get("always-suffix").value());
 		
 		JSONObject timestep = null;
 		if (((Boolean) features.get("wget").value()))
@@ -167,7 +169,10 @@ public class WRFRunner {
 		if (maxOutputs < 1)
 			return;
 		SortedList<Path> sl = new SortedList<>(SortingMethods.PATH_MODIFIED_TIME_ASCENDING);
-		Files.newDirectoryStream(workingPath).forEach(sl::add);
+		Files.newDirectoryStream(workingPath).forEach(p -> { //We only want to get directories for this.
+			if (Files.isDirectory(p))
+				sl.add(p);
+		});
 		while (sl.size() > maxOutputs)
 			Files.walkFileTree(sl.remove(0), new RecursiveEraser());
 	}
