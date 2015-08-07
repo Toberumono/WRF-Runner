@@ -54,12 +54,12 @@ public class Simulation {
 		if (timing.get("use-computed-times") == null) //If use-computed-times hasn't been set, this is an older installation, so we can copy the value from the old flag.
 			timing.put("use-computed-times", rounding.get("enabled"));
 		if (!((Boolean) timing.get("use-computed-times").value()).booleanValue()) {
-			start.set(start.YEAR, ((Number) tc.get("start_year").get(0).getY()).intValue());
-			start.set(start.MONTH, ((Number) tc.get("start_month").get(0).getY()).intValue() - 1);
-			start.set(start.DAY_OF_MONTH, ((Number) tc.get("start_day").get(0).getY()).intValue());
-			start.set(start.HOUR_OF_DAY, ((Number) tc.get("start_hour").get(0).getY()).intValue());
-			start.set(start.MINUTE, ((Number) tc.get("start_minute").get(0).getY()).intValue());
-			start.set(start.SECOND, ((Number) tc.get("start_second").get(0).getY()).intValue());
+			start.set(start.YEAR, ((Number) tc.get("start_year").get(0).value()).intValue());
+			start.set(start.MONTH, ((Number) tc.get("start_month").get(0).value()).intValue() - 1);
+			start.set(start.DAY_OF_MONTH, ((Number) tc.get("start_day").get(0).value()).intValue());
+			start.set(start.HOUR_OF_DAY, ((Number) tc.get("start_hour").get(0).value()).intValue());
+			start.set(start.MINUTE, ((Number) tc.get("start_minute").get(0).value()).intValue());
+			start.set(start.SECOND, ((Number) tc.get("start_second").get(0).value()).intValue());
 			generateDuration(tc);
 			duration.clearModified();
 		}
@@ -135,10 +135,10 @@ public class Simulation {
 	private final JSONObject generateDuration(NamelistInnerMap tc) {
 		log.log(Level.WARNING, "configuration did not contain timing->duration.  Using and writing default values.");
 		JSONObject duration = new JSONObject();
-		duration.put("days", (Number) tc.get("run_days").get(0).getY());
-		duration.put("hours", (Number) tc.get("run_hours").get(0).getY());
-		duration.put("minutes", (Number) tc.get("run_minutes").get(0).getY());
-		duration.put("seconds", (Number) tc.get("run_seconds").get(0).getY());
+		duration.put("days", (Number) tc.get("run_days").get(0).value());
+		duration.put("hours", (Number) tc.get("run_hours").get(0).value());
+		duration.put("minutes", (Number) tc.get("run_minutes").get(0).value());
+		duration.put("seconds", (Number) tc.get("run_seconds").get(0).value());
 		duration.clearModified();
 		return duration;
 	}

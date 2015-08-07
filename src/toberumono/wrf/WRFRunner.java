@@ -137,7 +137,7 @@ public class WRFRunner {
 		Namelist input = new Namelist(wrfNamelistPath);
 		Path wpsNamelistPath = wpsPath.resolve("namelist.wps");
 		Namelist wps = new Namelist(wpsNamelistPath);
-		int doms = ((Number) input.get("domains").get("max_dom").get(0).getY()).intValue();
+		int doms = ((Number) input.get("domains").get("max_dom").get(0).value()).intValue();
 		
 		Logger simLogger = log.getLogger("WRFRunner.Simulation");
 		simLogger.setLevel(Level.WARNING);
@@ -193,7 +193,7 @@ public class WRFRunner {
 	public static Namelist writeWPSPaths(Namelist wps, Path wpsPath, Path wrfPath) {
 		//Convert the geog_data_path to an absolute path so that WPS doesn't break trying to find a path relative to its original location
 		NamelistInnerList<NamelistString> geogList = (NamelistInnerList<NamelistString>) wps.get("geogrid").get("geog_data_path");
-		Path newPath = wpsPath.resolve(geogList.get(0).getY().toString());
+		Path newPath = wpsPath.resolve(geogList.get(0).value().toString());
 		geogList.set(0, new NamelistString(newPath.toAbsolutePath().normalize().toString()));
 		//Ensure that the geogrid output is staying in the WPS working directory
 		NamelistInnerList<NamelistString> geoOutList = (NamelistInnerList<NamelistString>) wps.get("share").get("opt_output_from_geogrid_path");
