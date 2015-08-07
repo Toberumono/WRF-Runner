@@ -90,8 +90,9 @@ If you don't have these, see [Getting the Required Libraries](#gtrl) for how to 
 		- is-dmpar: This tells the script whether WRF and WPS were set up with DMPAR mode.  This is effectively the toggle for all parallel components.
 		- boot-lam: True indicates that the mpich call should include the boot flag.  This should only be used on personal machines that will not have another mpich process running on them.
 		- processors: The number of processors to allow WRF to use.  If you intend to continue using the computer on which you are running the simulation while the simulation is in progress, leave your system at least 2 processors.
-		- always-suffix: This tells the script whether to add "+1" to simulation folder names (this is generally only useful if you expect to have multiple simulations with the same start times)
 	+ wait-for-WRF: True indicates that the script should wait for WRF to complete.  This *must* be true for it to perform the final stage of cleanup.  Otherwise, this is a matter of preference.
+	+ keep-logs: True indicates that the script should move log files out of the working directories.  This is generally only useful if you are encountering errors.
+	+ always-suffix: True indicates that the script should add "+1" to simulation folder names.  This is generally only useful if you expect to have multiple simulations with the same start times.
 	+ max-kept-outputs: The maximum number of completed simulations to keep around (well, the data from them, anyway).  A value of less than 1 disables automatic deletion.
 + paths: Absolute paths to the executable directories for WRF and WPS as well as the working and grib data directories.  These must *not* end in '/'.  
 	- wrf: The path to the WRF *root* directory.

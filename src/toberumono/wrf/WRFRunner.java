@@ -126,7 +126,7 @@ public class WRFRunner {
 	 */
 	public void runWRF() throws IOException, InterruptedException {
 		if (!general.containsKey("keep-logs"))
-			general.put("keep-logs", new JSONBoolean(true));
+			general.put("keep-logs", new JSONBoolean(false));
 		if (!general.containsKey("always-suffix"))
 			general.put("always-suffix", new JSONBoolean(false));
 		Path wrfPath = Paths.get(((String) paths.get("wrf").value())).toAbsolutePath();

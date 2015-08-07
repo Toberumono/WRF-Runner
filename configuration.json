@@ -12,7 +12,7 @@
 			"processors" : 2
 		},
 		"wait-for-WRF" : true,
-		"keep-logs" : true,
+		"keep-logs" : false,
 		"always-suffix" : false,
 		"max-kept-outputs" : 15
 	},
