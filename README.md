@@ -181,8 +181,10 @@ These are all downloaded, compiled, and linked as part of the installation proce
 	```bash
 	sudo apt-get install build-essential curl git m4 ruby texinfo libbz2-dev libcurl4-openssl-dev libexpat-dev libncurses-dev zlib1g-dev
 	```
-	4. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew).  If you are not comfortable modifying your .bashrc or .zshrc files, follow step 5.  Otherwise, modify them.
-	5. Link the executables. Run: `export PATH=$HOME/.linuxbrew/bin:$PATH` (This is why there's no need to edit .bashrc and .zshrc).
+	4. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#install-linuxbrew-tldr).
+		+ If you are not comfortable modifying your .bashrc or .zshrc files, follow step 5.  Otherwise, modify them.
+	5. Run `bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/append_linuxbrew.sh)`.
+		+ This adds the additional lines to your .bashrc or .zshrc files. For more information on how it works, see my [Miscellaneous](https://github.com/Toberumono/Miscellaneous) repo.
 - Mac: Ruby and Curl are already installed on Mac, so we don't need to worry about those.
 	1. install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 	2. install [Homebrew](http://brew.sh/).
