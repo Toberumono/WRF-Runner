@@ -179,20 +179,25 @@ These are all downloaded, compiled, and linked as part of the installation proce
 		export version=8; export update=51; sudo mkdir /usr/lib/jvm; sudo tar zxvf "jdk-${version}u$update-linux-x64.tar.gz" -C /usr/lib/jvm; sudo ln -sf "/usr/lib/jvm/jdk1.$version.0_$update/bin/*" /usr/bin/
 		```
 	3. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#install-linuxbrew-tldr). Run one of the following: (For systems that use `yum`, replace `apt-get install` with `yum install`)
-		1. If you have sudo privileges, run the following.
-			1. Install all of the required libraries:
+		1. If you have sudo privileges, do the following:
+			1. Run the following script to get the required libraries:
+
 				```bash
 				sudo apt-get install build-essential curl git m4 ruby texinfo libbz2-dev libcurl4-openssl-dev libexpat-dev libncurses-dev zlib1g-dev
 				```
-		2. If you do not have sudo privileges, then you can run the following script.  It will attempt to install [Linuxbrew](https://github.com/Homebrew/linuxbrew) without sudo privileges and will list the missing software that you should ask your system administrator to install.
-	4. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#install-linuxbrew-tldr).
-		+ If you are not comfortable modifying your .bashrc or .zshrc files, follow step 5.  Otherwise, modify them.
-	5. Run:
+			2. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#install-linuxbrew-tldr).
+				+ If you are not comfortable modifying your .bashrc or .zshrc files, follow step 3.  Otherwise, modify them.
+			3. Run:
 	
-		```bash
-		bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/linuxbrew/append_paths.sh)
-		```
-		+ This adds the additional lines to your .bashrc and/or .zshrc files. For more information on how it works, see its section in the readme of my [Miscellaneous](https://github.com/Toberumono/Miscellaneous#htual) repo.
+				```bash
+				bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/linuxbrew/append_paths.sh)
+				```
+				+ This adds the additional lines to your .bashrc and/or .zshrc files. For more information on how it works, see its section in the readme of my [Miscellaneous](https://github.com/Toberumono/Miscellaneous#htual) repo.
+		2. If you do not have sudo privileges, then you can run the following script.  It will attempt to install [Linuxbrew](https://github.com/Homebrew/linuxbrew) without sudo privileges or will list the missing software that you should ask your system administrator to install if it cannot do so.
+
+			```bash
+			bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/linuxbrew/sudoless_install.sh)
+			```
 - Mac: Ruby and Curl are already installed on Mac, so we don't need to worry about those.
 	1. install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 	2. install [Homebrew](http://brew.sh/).
