@@ -185,9 +185,9 @@ These are all automatically downloaded, compiled, and linked as part of the inst
 		bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/java/sudoless_install.sh)
 		```
 		+ For information on what the script does, see its section in the readme of my [Miscellaneous](https://github.com/Toberumono/Miscellaneous#htujsi) repo.
-	3. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#install-linuxbrew-tldr). Run one of the following: (For systems that use `yum`, replace `apt-get install` with `yum install`)
+	3. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#install-linuxbrew-tldr). Run one of the following:
 		1. If you have sudo privileges, do the following:
-			1. Run the following script to get the required libraries:
+			1. Run the following script to get the required libraries (For systems that use `yum`, replace `apt-get install` with `yum install`):
 
 				```bash
 				sudo apt-get install build-essential curl git m4 ruby texinfo libbz2-dev libcurl4-openssl-dev libexpat-dev libncurses-dev zlib1g-dev
@@ -207,5 +207,6 @@ These are all automatically downloaded, compiled, and linked as part of the inst
 			```
 #### Mac
 
-	1. install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
-	2. install [Homebrew](http://brew.sh/).
+	1. Ruby and Curl are already installed on Mac, so we don't need to worry about those.
+	2. install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
+	3. install [Homebrew](http://brew.sh/).
