@@ -173,11 +173,12 @@ These are all downloaded, compiled, and linked as part of the installation proce
 
 - Linux (note: you may need to change the values of version and update for step 2 to match the files that you downloaded):
 	1. Download the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
-	2. Copy the following script into terminal, and change the values of version and update so that they match the version and update of the JDK you downloaded.  Then run it.
+	2. `cd` into the directory into which you downloaded the JDK (`cd $HOME/Downloads` will likely do it) and run:
 	
 		```bash
-		export version=8; export update=51; sudo mkdir /usr/lib/jvm; sudo tar zxvf "jdk-${version}u$update-linux-x64.tar.gz" -C /usr/lib/jvm; sudo ln -sf "/usr/lib/jvm/jdk1.$version.0_$update/bin/*" /usr/bin/
+		bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/java/sudoless_install.sh)
 		```
+		+ For information on what the script does, see its section in the readme of my [Miscellaneous](https://github.com/Toberumono/Miscellaneous#htujsi) repo.
 	3. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#install-linuxbrew-tldr). Run one of the following: (For systems that use `yum`, replace `apt-get install` with `yum install`)
 		1. If you have sudo privileges, do the following:
 			1. Run the following script to get the required libraries:
