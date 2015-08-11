@@ -1,5 +1,5 @@
 # <a name="readme"></a><a name="Readme"></a>WRF-Runner
-A simple script for running WRF.  This is written in *Java 8* and is designed for use on personal systems - due to the nature of large-scale systems, there is no guarantee that this will be compatible with its job-management system.
+A simple script for running WRF.  This is written in *Java 8* and is designed for use on personal systems, desktops, workstations, etc.  This has not been deployed or tested on large-scale systems/clusters with job-management systems.
 
 ## Usage
 ### Experience
@@ -16,24 +16,31 @@ This guide does assume a basic level of comfort with a UNIX-based prompt.  If yo
 If you don't have these, see [Getting the Required Programs](#gtrp) for how to get them.
 
 #### <a name="rl"></a>Required Libraries
+These are all my libraries.
 
 * [JSON Library](https://github.com/Toberumono/JSON-Library)
 * [Namelist Parser](https://github.com/Toberumono/Namelist-Parser)
 * [Structures](https://github.com/Toberumono/Structures)
 * [Utils](https://github.com/Toberumono/Utils)
 
-These are all downloaded, compiled, and linked as part of the installation process if you are using Homebrew/Linuxbrew.
+These are all automatically downloaded, compiled, and linked as part of the installation process if you are using Homebrew/Linuxbrew.
 
-#### Compiling the Program
+#### Compiling WRFRunner.jar
 
 1. Make sure that you have the [Required Programs](#rp).
 	+ If you don't, follow the directions in [Getting the Required Programs](#gtrp).
 2. Run `brew tap toberumono/tap` (This only needs to be run once.)
-	+ If you're on Linux and it cannot find the brew command, run `export PATH=$HOME/.linuxbrew/bin:$PATH`.
+	+ If you're on Linux and it cannot find the brew command, run:
+
+		```bash
+		bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/linuxbrew/append_paths.sh)
+		```
+		and then re-open Terminal.
+		+ See [How to Use `append_paths.sh`](https://github.com/Toberumono/Miscellaneous/tree/master/linuxbrew#htulap) in the Linuxbrew section of my [Miscellaneous](https://github.com/Toberumono/Miscellaneous) repo for information on what that command does.
 3. Run `brew install wrf-runner`
 	+ Linuxbrew may have trouble with a few dependencies, running `brew install` for each dependency, while annoying, will fix that problem.
-4. While this does download and install the program, there is still the matter of linking it to a more accessible directory.  If you just intend on using it as a library, you can ignore the remaining steps, otherwise, continue.
-5. cd into the directory into which you want to install the WRF-Runner program
+4. While this does download and install the program, there is still the matter of creating symbolic links to WRFRunner.jar and configuration.json in the directory from which you want to run WRFRunner.jar.  If you just intend on using WRFRunner.jar as a library, you can ignore the remaining steps, otherwise, continue.
+5. cd into the directory into from which you want to run WRFRunner.jar
 6. Run `wrf-linker.sh`
 7. Proceed to [Running a WRF process](#rawrfp)
 
@@ -47,20 +54,19 @@ These are all downloaded, compiled, and linked as part of the installation proce
 #### <a name="c"></a>Configuring
 
 1. This program downloads data that needs the NAM Vtable in WPS by default.  To ensure that the correct Vtable is used, run: `ln -sf ./ungrib/Variable_Tables/Vtable.NAM ./Vtable` in the WPS installation directory if you are using NAM data.
-2. Edit the namelist files for WRF and WPS.  In the general case (aka "use your own discretion"), this requires:
-	1. Setting max_dom in the domains and share sections in the WRF and WPS namelists respectively.
-	2. Configuring the domains and geogrid sections in the WRF and WPS namelists respectively.
+2. Edit the namelist files for WRF and WPS.  In the general case, this requires:
+	1. Set max_dom in the domain section in the WRF and share section in the WPS namelists.
+	2. Configure the domains and geogrid sections in the WRF and WPS namelists respectively.
 		+ This includes setting the geog_data_path value in namelist.wps
 		+ Make sure that the number of values on lines that have per-domain values are equal to the value in max_dom
 	3. Setting input_from_file to ".true." in time_control (make sure to set it for each domain)
 	4. For NAM data, setting num_metgrid_levels to 40 and num_metgrid_soil_levels to 4 in namelist.input
 	5. For runs *not* using wget, settting interval_seconds in the time_control and share sections (This is computed from the grib->timestep subsection when wget is being used)
 3. Open the configuration file (configuration.json) in the directory into which you linked the WRFRunner.jar and configuration.json files.
-	+ If you want to use a different file, just copy the contents of configuration.json into it before continuing and remember to change the configuration file path in the run step.
 4. Configure the parallelization options in the general->parallel subsection:
 	1. If you expect to have multiple simulations with the same start time and wish to keep them, set "use-suffix" to true.
-	2. If you did not compile WRF in DMPAR mode, set "is-dmpar" to false and continue to step 3.
-	3. Otherwise, set "processors" to the number of processors you would like to allow WRF to use.
+	2. Set "is-dmpar" to false in case you did not compile wrf in DMPAR mode.
+	3. If WRF was compiled in DMPAR mode, set "processors" to the number of processors you would like to allow WRF to use.
 		+ It is a good idea to set this value to at most two less than the number of processors (or cores) in your system.
 5. Configure the paths section (All of these *must* be absolute paths):
 	1. Set the "wrf" path to the root directory of your WRF installation.
@@ -78,7 +84,6 @@ These are all downloaded, compiled, and linked as part of the installation proce
 #### <a name="r"></a>Running
 1. cd to the directory into which you linked the WRFRunner.jar and configuration.json files.
 2. run `java -jar WRFRunner.jar configuration.json`
-	+ If you are using a different configuration file, replace configuration.json with the path to your configuration file.
 
 ## Help
 ### <a name="docv"></a>Description of Configuration Variables
@@ -171,7 +176,8 @@ These are all downloaded, compiled, and linked as part of the installation proce
 
 ### <a name="gtrp"></a>Getting the Required Programs
 
-- Linux (note: you may need to change the values of version and update for step 2 to match the files that you downloaded):
+#### Linux
+
 	1. Download the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 	2. `cd` into the directory into which you downloaded the JDK (`cd $HOME/Downloads` will likely do it) and run:
 	
@@ -199,6 +205,7 @@ These are all downloaded, compiled, and linked as part of the installation proce
 			```bash
 			bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/linuxbrew/sudoless_install.sh)
 			```
-- Mac: Ruby and Curl are already installed on Mac, so we don't need to worry about those.
+#### Mac
+
 	1. install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 	2. install [Homebrew](http://brew.sh/).
