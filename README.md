@@ -205,6 +205,7 @@ These are all automatically downloaded, compiled, and linked as part of the inst
 		```bash
 		bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/linuxbrew/sudoless_install.sh)
 		```
+
 #### Mac
 
 1. Ruby and Curl are already installed on Mac, so we don't need to worry about those.
