@@ -1,5 +1,40 @@
 # <a name="readme"></a><a name="Readme"></a>WRF-Runner
-A simple script for running WRF.  This is written in *Java 8* and is designed for use on personal systems, desktops, workstations, etc.  This has not been deployed or tested on large-scale systems/clusters with job-management systems.
+## <a name="wii"></a>What is it?
+This is a Java 8 program that simplifies automatically running predictive WRF simulations.
+
+## A Summary of Features
+
+1. Runs on personal systems, desktops, workstations, etc. (It has *not* been tested or deployed on large-scale systems or clusters with job-management systems)
+2. Simplifies the process by deriving as much information as possible, and shifts the repeated configuration values into a central location so that they only need to be set once.
+3. Automatically executes all parts of a basic WRF simulation on real data.
+4. Supports multiple parallel jobs
+5. Cleans up old simulation output on a rolling basis (Because 8+ GB of data per day adds up).
+6. Allows for a large amount of customization, but only requires a small amount.
+7. Can be used as a library for programmers that want an even deeper level of customization.
+
+## <a name="wdtpd"></a>What does this program do?
+
+1. Automatically acquires GRIB data
+	+ By default, this is set to the NAM 212 AWIPS Grid - Regional - CONUS Double Resolution (40-km Resolution) dataset
+		Available at: [http://www.nco.ncep.noaa.gov/pmb/products/nam/](http://www.nco.ncep.noaa.gov/pmb/products/nam/)
+	+ This dataset is generally good for predictive models that forecast up to 84 hours in advance.
+2. Executes WPS
+	1. Writes the derived fields into the namelist (e.g. timing, file locations)
+	2. Links the GRIB (by default NAM) data
+	3. Runs ungrib.exe and geogrid.exe (in parallel)
+	4. Runs metgrid.exe and places the output files in the WRF run directory
+3. Executes WRF
+	1. Writes the derived fields into the namelist (e.g. timing, file locations)
+	2. Runs real.exe
+	3. Runs wrf.exe (With mpi and related parallelization options as appropriate)
+4. Cleans up temporary files
+5. Deletes old forecasts if there are more forecasts than the user-defined limit
+
+## <a name="wdtpnd"></a>What does this program not do?
+
+1. Set up WRF and WPS - Check out my [WRF Setup Script](https://github.com/Toberumono/WRF-Setup-Script) for automating that.
+2. Postprocess data
+3. Run more complex simulations (e.g. those requiring ndown.exe or tc.exe)
 
 ## Usage
 ### Experience
@@ -10,8 +45,9 @@ This guide does assume a basic level of comfort with a UNIX-based prompt.  If yo
 
 * ruby
 * curl
+* git
 * Homebrew/Linuxbrew
-* Java 8 JDK update 45+
+* [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html) (update 45 or higher)
 
 If you don't have these, see [Getting the Required Programs](#gtrp) for how to get them.
 
@@ -36,7 +72,7 @@ These are all automatically downloaded, compiled, and linked as part of the inst
 		bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/linuxbrew/append_paths.sh)
 		```
 		and then re-open Terminal.
-		+ See [How to Use `append_paths.sh`](https://github.com/Toberumono/Miscellaneous/tree/master/linuxbrew#htulap) in the Linuxbrew section of my [Miscellaneous](https://github.com/Toberumono/Miscellaneous) repo for information on what that command does.
+		+ See [How to Use `append_paths.sh`](https://github.com/Toberumono/Miscellaneous/tree/master/linuxbrew#htulap) in the [Linuxbrew section](https://github.com/Toberumono/Miscellaneous/linuxbrew) of my [Miscellaneous](https://github.com/Toberumono/Miscellaneous) repo for information on what that command does.
 3. Run `brew install wrf-runner`
 	+ Linuxbrew may have trouble with a few dependencies, running `brew install` for each dependency, while annoying, will fix that problem.
 4. While this does download and install the program, there is still the matter of creating symbolic links to WRFRunner.jar and configuration.json in the directory from which you want to run WRFRunner.jar.  If you just intend on using WRFRunner.jar as a library, you can ignore the remaining steps, otherwise, continue.
@@ -49,7 +85,7 @@ These are all automatically downloaded, compiled, and linked as part of the inst
 
 * This program does not override any fields in the namelist files other than the run_, start_, end_, wps paths (it just makes them absolute), and interval_seconds (however, it is overriden with a user-defined value) - everything else is preserved.  Therefore, this can still be used with more advanced configurations.
 * This section describes only the minimal amount of configuration required for a successful run.  There are several options not visited here.
-* See [Description of Configuration Variables](#docv) for information on each option in the configuration.json file.
+	See [Description of Configuration Variables](#docv) for information on each option in the configuration.json file.
 
 #### <a name="c"></a>Configuring
 
