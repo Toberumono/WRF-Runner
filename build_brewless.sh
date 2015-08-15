@@ -2,14 +2,14 @@
 #Author: Toberumono
 
 use_release=true
-if [ "$#" > 0 ] && [ "$1" == "use_latest" ]; then
+if [ "$#" -gt "0" ] && [ "$1" == "use_latest" ]; then
 	use_release=false
 	shift
 fi
 
 clone_project() {
 	if ( $use_release ); then
-		git clone -b "$(git ls-remote --tags https://github.com/Toberumono/$1.git | grep -o -E '([0-9]+\.)*[0-9]+$' | sort -g | tail -1)" --depth=1 "https://github.com/Toberumono/$1.git" "../$1" >/dev/null 2>/dev/null
+		git clone -b "$(git ls-remote --tags https://github.com/Toberumono/$1.git | grep -o -E '([0-9]+\.)*[0-9]+$' | sort -g | tail -1)" --depth=1 "https://github.com/Toberumono/$1.git" "../$1" 1>/dev/null 2>/dev/null
 	else	
 		git clone "https://github.com/Toberumono/$1.git" "../$1"
 	fi
@@ -27,7 +27,7 @@ build_project() {
 }
 
 clone_build_project() {
-	if [ ! -e "../$1" ] || [ ! -d "../$1" ] || [ "$(ls -A $1)" == "" ]; then
+	if [ ! -e "../$1" ] || [ ! -d "../$1" ] || [ "$(ls -A ../$1)" == "" ]; then
 		clone_project "$1"
 		build_project "$1"
 	fi
