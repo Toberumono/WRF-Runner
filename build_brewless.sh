@@ -9,7 +9,7 @@ build_project() {
 	local stored="$(pwd)"
 	cd "../$1"
 	if [ -e "build_brewless.sh" ]; then
-		bash build_brewless.sh
+		"$(ps -o comm= -p $$ | sed -e 's/-\{0,1\}\(.*\)/\1/')" build_brewless.sh
 	else
 		ant
 	fi
