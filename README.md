@@ -66,13 +66,7 @@ These are all automatically downloaded, compiled, and linked as part of the inst
 1. Make sure that you have the [Required Programs](#rp).
   + If you don't, follow the directions in [Getting the Required Programs](#gtrp).
 2. Run `brew tap toberumono/tap` (This only needs to be run once.)
-  + If you're on Linux and it cannot find the brew command, run:
-
-    ```bash
-    bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/linuxbrew/append_paths.sh)
-    ```
-    and then re-open Terminal.
-    + See [How to Use `append_paths.sh`](https://github.com/Toberumono/Miscellaneous/tree/master/linuxbrew#htulap) in the [Linuxbrew section](https://github.com/Toberumono/Miscellaneous/linuxbrew) of my [Miscellaneous](https://github.com/Toberumono/Miscellaneous) repo for information on what that command does.
+  + If you're on Linux and it cannot find the brew command, follow steps b and c in the [Linuxbrew Installation Instructions](#lbrewinstall).
 3. Run `brew install wrf-runner`
   + Linuxbrew may have trouble with a few dependencies, running `brew install` for each dependency, while annoying, will fix that problem.
 4. While this does download and install the program, there is still the matter of creating symbolic links to WRFRunner.jar and configuration.json in the directory from which you want to run WRFRunner.jar.  If you just intend on using WRFRunner.jar as a library, you can ignore the remaining steps, otherwise, continue.
@@ -238,7 +232,7 @@ In order for this to run automatically, we need to set up a Cron task.
   bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/java/sudoless_install.sh)
   ```
   + For information on what the script does, see its section in the readme of my [Miscellaneous](https://github.com/Toberumono/Miscellaneous#htujsi) repo.
-3. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#installation). Run one of the following:
+3. <a name="lbrewinstall"></a>Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#installation). Run one of the following:
   1. If you have sudo privileges, do the following:
     1. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#installation).
       * **Do not** modify your .bashrc or .zshrc files.  Instead, follow steps b and c.
@@ -251,7 +245,7 @@ In order for this to run automatically, we need to set up a Cron task.
     3. Restart Terminal or run:
       
       ```bash
-      bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/blob/master/general/get_profile.sh && source "$profile")
+      . <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/general/get_profile.sh); source "$profile"
       ```
       + This command loads the `profile` variable, which holds the path to your shell's profile file, and then uses the builtin command, `source`, to load it.
       + Note that, regardless of which option you choose, you will only have to perform steps b and c once.
