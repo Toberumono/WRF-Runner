@@ -15,10 +15,8 @@ import java.util.stream.Stream;
 
 import toberumono.json.JSONObject;
 import toberumono.namelist.parser.Namelist;
-import toberumono.namelist.parser.NamelistInnerList;
-import toberumono.namelist.parser.NamelistInnerMap;
 import toberumono.namelist.parser.NamelistNumber;
-import toberumono.namelist.parser.NamelistString;
+import toberumono.namelist.parser.NamelistSection;
 import toberumono.structures.tuples.Pair;
 import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
@@ -30,9 +28,18 @@ import toberumono.utils.files.TransferFileWalker;
  * @author Toberumono
  */
 public class Simulation {
+	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
 	protected final Calendar start, end;
 	protected final Logger log;
-	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
+	/**
+	 * The number of domains in use for the simulation.
+	 */
+	public final int doms;
+	/**
+	 * The value to interval_seconds to in namelist files. If this is {@code null}, then the interval_seconds value should
+	 * not be overwritten.
+	 */
+	public final NamelistNumber interval_seconds;
 	
 	/**
 	 * Calculates the appropriate start and end times for the simulation from the configuration data and WRF {@link Namelist}
@@ -42,15 +49,20 @@ public class Simulation {
 	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
 	 * @param current
 	 *            a {@link Calendar} object with the current date/time data
+	 * @param timestep
+	 *            the grib--&gt;timestep subsection of the configuration file. If wget is not being used, this must be
+	 *            {@code null}.
 	 * @param timing
 	 *            a {@link JSONObject} holding the timing data in from the configuration file
 	 * @param log
 	 *            the {@link Logger} to use in the {@link Simulation TimeRange's} operations
 	 */
-	public Simulation(Map<String, Namelist> namelists, Calendar current, JSONObject timing, Logger log) {
+	public Simulation(Map<String, Namelist> namelists, Calendar current, JSONObject timestep, JSONObject timing, Logger log) {
+		doms = ((Number) namelists.get("wrf").get("domains").get("max_dom").get(0).value()).intValue();
+		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
 		this.log = log;
 		start = (Calendar) current.clone();
-		NamelistInnerMap tc = namelists.get("wrf").get("time_control");
+		NamelistSection tc = namelists.get("wrf").get("time_control");
 		JSONObject rounding = (JSONObject) timing.get("rounding");
 		JSONObject duration = (JSONObject) timing.get("duration");
 		if (timing.get("use-computed-times") == null) //If use-computed-times hasn't been set, this is an older installation, so we can copy the value from the old flag.
@@ -134,7 +146,7 @@ public class Simulation {
 	 *            the "time_control" section of the WRF namelist file
 	 * @return a {@link JSONObject} representing the timing--&gt;duration subsection of the configuration file
 	 */
-	private final JSONObject generateDuration(NamelistInnerMap tc) {
+	private final JSONObject generateDuration(NamelistSection tc) {
 		log.log(Level.WARNING, "configuration did not contain timing->duration.  Using and writing default values.");
 		JSONObject duration = new JSONObject();
 		for (String timeCode : timeCodes)
@@ -150,22 +162,6 @@ public class Simulation {
 			cal.add(field, 1);
 		else if (diff.equals("previous"))
 			cal.add(field, -1);
-	}
-	
-	/**
-	 * Constructs a {@link Simulation} from a start and end {@link Calendar}
-	 * 
-	 * @param start
-	 *            the start {@link Calendar}
-	 * @param end
-	 *            the end {@link Calendar}
-	 * @param log
-	 *            the {@link Logger} to use in the {@link Simulation TimeRange's} operations
-	 */
-	public Simulation(Calendar start, Calendar end, Logger log) {
-		this.start = start;
-		this.end = end;
-		this.log = log;
 	}
 	
 	/**
@@ -196,103 +192,6 @@ public class Simulation {
 	 */
 	public String getWPSEndDate() {
 		return makeWPSDateString(getEnd());
-	}
-	
-	/**
-	 * Writes this {@link Simulation} into a WPS {@link Namelist}.<br>
-	 * Note: this method <i>does</i> modify the passed {@link Namelist} without cloning it, but does not write anything to
-	 * disk.
-	 * 
-	 * @param namelists
-	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
-	 * @param timestep
-	 *            the grib--&gt;timestep subsection of the configuration file. If wget is not being used, this must be
-	 *            {@code null}.
-	 * @param doms
-	 *            the number of domains to be used
-	 * @return <tt>namelists</tt> (this is for easier chaining of commands - this method modifies the passed loaded
-	 *         {@link Namelist} directly)
-	 */
-	public Map<String, Namelist> updateWPSNamelistTimeRange(Map<String, Namelist> namelists, JSONObject timestep, int doms) {
-		Namelist wps = namelists.get("wps");
-		NamelistString start = new NamelistString(getWPSStartDate());
-		NamelistString end = new NamelistString(getWPSEndDate());
-		NamelistInnerList<NamelistString> s = new NamelistInnerList<>(), e = new NamelistInnerList<>();
-		for (int i = 0; i < doms; i++) {
-			s.add(start);
-			e.add(end);
-		}
-		wps.get("share").put("start_date", s);
-		wps.get("share").put("end_date", e);
-		if (timestep != null) {
-			NamelistInnerList<NamelistNumber> is = new NamelistInnerList<>();
-			is.add(new NamelistNumber(calcIntervalSeconds(timestep)));
-			wps.get("share").put("interval_seconds", is);
-		}
-		return namelists;
-	}
-	
-	/**
-	 * Writes this {@link Simulation} into a WRF {@link Namelist}.<br>
-	 * Note: this method <i>does</i> modify the passed {@link Namelist} without cloning it, but does not write anything to
-	 * disk.
-	 * 
-	 * @param namelists
-	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
-	 * @param timing
-	 *            a {@link JSONObject} representing the timing section of the configuration file
-	 * @param timestep
-	 *            the grib--&gt;timestep subsection of the configuration file. If wget is not being used, this must be
-	 *            {@code null}.
-	 * @param doms
-	 *            the number of domains to be used
-	 * @return the updated {@link Namelist} file (this is for easier chaining of commands - this method modifies the passed
-	 *         file)
-	 */
-	@SuppressWarnings("unchecked")
-	public Namelist updateWRFNamelistTimeRange(Map<String, Namelist> namelists, JSONObject timing, JSONObject timestep, int doms) {
-		Namelist input = namelists.get("wrf");
-		NamelistInnerList<NamelistNumber> syear = new NamelistInnerList<>(), smonth = new NamelistInnerList<>(), sday = new NamelistInnerList<>();
-		NamelistInnerList<NamelistNumber> shour = new NamelistInnerList<>(), sminute = new NamelistInnerList<>(), ssecond = new NamelistInnerList<>();
-		NamelistInnerList<NamelistNumber> eyear = new NamelistInnerList<>(), emonth = new NamelistInnerList<>(), eday = new NamelistInnerList<>();
-		NamelistInnerList<NamelistNumber> ehour = new NamelistInnerList<>(), eminute = new NamelistInnerList<>(), esecond = new NamelistInnerList<>();
-		Calendar start = getStart(), end = getEnd();
-		for (int i = 0; i < doms; i++) {
-			syear.add(new NamelistNumber(start.get(Calendar.YEAR)));
-			smonth.add(new NamelistNumber(start.get(Calendar.MONTH) + 1)); //We have to add 1 to the month because Java's Calendar system starts the months at 0
-			sday.add(new NamelistNumber(start.get(Calendar.DAY_OF_MONTH)));
-			shour.add(new NamelistNumber(start.get(Calendar.HOUR_OF_DAY)));
-			sminute.add(new NamelistNumber(start.get(Calendar.MINUTE)));
-			ssecond.add(new NamelistNumber(start.get(Calendar.SECOND)));
-			eyear.add(new NamelistNumber(end.get(Calendar.YEAR)));
-			emonth.add(new NamelistNumber(end.get(Calendar.MONTH) + 1)); //We have to add 1 to the month because Java's Calendar system starts the months at 0
-			eday.add(new NamelistNumber(end.get(Calendar.DAY_OF_MONTH)));
-			ehour.add(new NamelistNumber(end.get(Calendar.HOUR_OF_DAY)));
-			eminute.add(new NamelistNumber(end.get(Calendar.MINUTE)));
-			esecond.add(new NamelistNumber(end.get(Calendar.SECOND)));
-		}
-		NamelistInnerMap tc = input.get("time_control");
-		tc.put("start_year", syear);
-		tc.put("start_month", smonth);
-		tc.put("start_day", sday);
-		tc.put("start_hour", shour);
-		tc.put("start_minute", sminute);
-		tc.put("start_second", ssecond);
-		tc.put("end_year", eyear);
-		tc.put("end_month", emonth);
-		tc.put("end_day", eday);
-		tc.put("end_hour", ehour);
-		tc.put("end_minute", eminute);
-		tc.put("end_second", esecond);
-		if (timestep != null) {
-			NamelistInnerList<NamelistNumber> is = new NamelistInnerList<>();
-			is.add(new NamelistNumber(calcIntervalSeconds(timestep)));
-			tc.put("interval_seconds", is);
-		}
-		for (String timeCode : timeCodes)
-			if (tc.containsKey("run_" + timeCode))
-				((NamelistInnerList<NamelistNumber>) tc.get("run_" + timeCode)).set(0, new NamelistNumber((Number) ((JSONObject) timing.get("duration")).get(timeCode).value()));
-		return input;
 	}
 	
 	private int calcIntervalSeconds(JSONObject timestep) {

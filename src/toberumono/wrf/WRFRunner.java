@@ -20,8 +20,10 @@ import toberumono.json.JSONBoolean;
 import toberumono.json.JSONObject;
 import toberumono.json.JSONSystem;
 import toberumono.namelist.parser.Namelist;
-import toberumono.namelist.parser.NamelistInnerList;
+import toberumono.namelist.parser.NamelistNumber;
+import toberumono.namelist.parser.NamelistSection;
 import toberumono.namelist.parser.NamelistString;
+import toberumono.namelist.parser.NamelistValueList;
 import toberumono.structures.SortingMethods;
 import toberumono.structures.collections.lists.SortedList;
 import toberumono.structures.tuples.Pair;
@@ -41,6 +43,8 @@ import static toberumono.utils.general.ProcessBuilders.*;
  * @author Toberumono
  */
 public class WRFRunner {
+	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
+	
 	protected JSONObject configuration, general, features, parallel, timing, grib;
 	protected Path configurationPath, workingPath;
 	protected final Logger log;
@@ -105,9 +109,9 @@ public class WRFRunner {
 	protected void loadDefaultFeatures() {
 		addStep("wget", this::runWGet, (n, p) -> {} , null);
 		addStep("wps", this::runWPS, this::cleanUpWPS,
-				new Pair<>(Paths.get("namelist.wps"), (namelists, wpaths, timestep, sim, doms) -> writeWPSPaths(sim.updateWPSNamelistTimeRange(namelists, timestep, doms), wpaths, paths.get("wps"))));
+				new Pair<>(Paths.get("namelist.wps"), (namelists, wpaths, sim) -> writeWPSPaths(updateWPSNamelistTimeRange(namelists, sim), wpaths, paths.get("wps"))));
 		addStep("wrf", this::runWRF, this::cleanUpWRF,
-				new Pair<>(Paths.get("run", "namelist.input"), (namelists, wpaths, timestep, sim, doms) -> sim.updateWRFNamelistTimeRange(namelists, timing, timestep, doms)));
+				new Pair<>(Paths.get("run", "namelist.input"), (namelists, wpaths, sim) -> updateWRFNamelistTimeRange(namelists, sim)));
 	}
 	
 	/**
@@ -160,35 +164,27 @@ public class WRFRunner {
 			
 		Logger simLogger = log.getLogger("WRFRunner.Simulation");
 		simLogger.setLevel(Level.WARNING);
-		//Unfortunately, we need to load the wrf namelist data here - the Simulation's timing system depends on it.
-		namelists.put("wrf", steps.get("wrf").getZ() != null ? new Namelist(paths.get("wrf").resolve(steps.get("wrf").getZ().getX())) : null);
-		Simulation sim = new Simulation(namelists, Calendar.getInstance(), timing, simLogger);
+		for (String step : steps.keySet()) {
+			if (paths.containsKey(step))
+				namelists.put(step, steps.get(step).getZ() != null ? new Namelist(paths.get(step).resolve(steps.get(step).getZ().getX())) : null);
+		}
+		JSONObject timestep = ((Boolean) features.get("wget").value()) ? (JSONObject) grib.get("timestep") : null;
+		Simulation sim = new Simulation(namelists, Calendar.getInstance(), timestep, timing, simLogger);
 		if (configuration.isModified())
 			JSONSystem.writeJSON(configuration, configurationPath);
 		Path root = sim.makeWorkingFolder(workingPath, (Boolean) general.get("always-suffix").value());
 		WRFPaths wpaths = new WRFPaths(root, root, true, log.getLogger("WRFRunner.WRFPaths"));
 		
-		//Get create the working paths and load the namelists.
-		for (String step : steps.keySet()) {
+		for (String step : executionOrder) {
 			if (paths.containsKey(step)) {
-				namelists.put(step, steps.get(step).getZ() != null ? new Namelist(this.paths.get(step).resolve(steps.get(step).getZ().getX())) : null);
+				sim.linkWorkingDirectory(paths.get(step), wpaths.get(step));
 				wpaths.put(step, root.resolve(paths.get(step).getFileName()));
 			}
 			else
 				wpaths.put(step, root.resolve(step));
-		}
-		
-		int doms = ((Number) namelists.get("wrf").get("domains").get("max_dom").get(0).value()).intValue();
-		
-		JSONObject timestep = null;
-		if (((Boolean) features.get("wget").value()))
-			timestep = (JSONObject) grib.get("timestep");
-		for (String step : executionOrder) {
-			if (paths.containsKey(step))
-				sim.linkWorkingDirectory(paths.get(step), wpaths.get(step));
 			Pair<Path, NamelistUpdater> pair = steps.get(step).getZ();
 			if (pair != null)
-				pair.getY().update(namelists, wpaths, timestep, sim, doms).write(wpaths.get(step).resolve(steps.get(step).getZ().getX()));
+				pair.getY().update(namelists, wpaths, sim).write(wpaths.get(step).resolve(steps.get(step).getZ().getX()));
 		}
 		
 		for (String s : executionOrder) {
@@ -214,30 +210,103 @@ public class WRFRunner {
 	}
 	
 	/**
-	 * A function that writes a {@link Namelist} to a file.
+	 * Writes this {@link Simulation} into a WPS {@link Namelist}.<br>
+	 * Note: this method <i>does</i> modify the passed {@link Namelist} without cloning it, but does not write anything to
+	 * disk.
 	 * 
-	 * @author Toberumono
+	 * @param namelists
+	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
+	 * @param sim
+	 *            the current {@link Simulation}
+	 * @return <tt>namelists</tt> (this is for easier chaining of commands - this method modifies the passed loaded
+	 *         {@link Namelist} directly)
 	 */
-	@FunctionalInterface
-	public interface NamelistUpdater {
-		
-		/**
-		 * Updates a {@link Namelist} with values specific to the current {@link Simulation}
-		 * 
-		 * @param namelists
-		 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
-		 * @param paths
-		 *            the {@link WRFPaths} currently in use
-		 * @param timestep
-		 *            a {@link JSONObject} representing the timestep subsection of the grib section in the configuration
-		 *            file. If it is null, then the interval_seconds field should not be changed
-		 * @param sim
-		 *            the current {@link Simulation}
-		 * @param doms
-		 *            the number of domains in use in the current {@link Simulation}
-		 * @return the {@link Namelist} that was updated
-		 */
-		public Namelist update(Map<String, Namelist> namelists, WRFPaths paths, JSONObject timestep, Simulation sim, int doms);
+	public Map<String, Namelist> updateWPSNamelistTimeRange(Map<String, Namelist> namelists, Simulation sim) {
+		Namelist wps = namelists.get("wps");
+		NamelistString start = new NamelistString(sim.getWPSStartDate());
+		NamelistString end = new NamelistString(sim.getWPSEndDate());
+		NamelistValueList<NamelistString> s = new NamelistValueList<>(), e = new NamelistValueList<>();
+		for (int i = 0; i < sim.doms; i++) {
+			s.add(start);
+			e.add(end);
+		}
+		wps.get("share").put("start_date", s);
+		wps.get("share").put("end_date", e);
+		if (sim.interval_seconds != null) {
+			NamelistValueList<NamelistNumber> is = new NamelistValueList<>();
+			is.add(sim.interval_seconds);
+			wps.get("share").put("interval_seconds", is);
+		}
+		return namelists;
+	}
+	
+	/**
+	 * Writes this {@link Simulation} into a WRF {@link Namelist}.<br>
+	 * Note: this method <i>does</i> modify the passed {@link Namelist} without cloning it, but does not write anything to
+	 * disk.
+	 * 
+	 * @param namelists
+	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
+	 * @param sim
+	 *            the current {@link Simulation}
+	 * @return the updated {@link Namelist} file (this is for easier chaining of commands - this method modifies the passed
+	 *         file)
+	 */
+	@SuppressWarnings("unchecked")
+	public Namelist updateWRFNamelistTimeRange(Map<String, Namelist> namelists, Simulation sim) {
+		Namelist input = namelists.get("wrf");
+		NamelistValueList<NamelistNumber> syear = new NamelistValueList<>(), smonth = new NamelistValueList<>(), sday = new NamelistValueList<>();
+		NamelistValueList<NamelistNumber> shour = new NamelistValueList<>(), sminute = new NamelistValueList<>(), ssecond = new NamelistValueList<>();
+		NamelistValueList<NamelistNumber> eyear = new NamelistValueList<>(), emonth = new NamelistValueList<>(), eday = new NamelistValueList<>();
+		NamelistValueList<NamelistNumber> ehour = new NamelistValueList<>(), eminute = new NamelistValueList<>(), esecond = new NamelistValueList<>();
+		Calendar start = sim.getStart(), end = sim.getEnd();
+		for (int i = 0; i < sim.doms; i++) {
+			syear.add(new NamelistNumber(start.get(Calendar.YEAR)));
+			smonth.add(new NamelistNumber(start.get(Calendar.MONTH) + 1)); //We have to add 1 to the month because Java's Calendar system starts the months at 0
+			sday.add(new NamelistNumber(start.get(Calendar.DAY_OF_MONTH)));
+			shour.add(new NamelistNumber(start.get(Calendar.HOUR_OF_DAY)));
+			sminute.add(new NamelistNumber(start.get(Calendar.MINUTE)));
+			ssecond.add(new NamelistNumber(start.get(Calendar.SECOND)));
+			eyear.add(new NamelistNumber(end.get(Calendar.YEAR)));
+			emonth.add(new NamelistNumber(end.get(Calendar.MONTH) + 1)); //We have to add 1 to the month because Java's Calendar system starts the months at 0
+			eday.add(new NamelistNumber(end.get(Calendar.DAY_OF_MONTH)));
+			ehour.add(new NamelistNumber(end.get(Calendar.HOUR_OF_DAY)));
+			eminute.add(new NamelistNumber(end.get(Calendar.MINUTE)));
+			esecond.add(new NamelistNumber(end.get(Calendar.SECOND)));
+		}
+		NamelistSection tc = input.get("time_control");
+		tc.put("start_year", syear);
+		tc.put("start_month", smonth);
+		tc.put("start_day", sday);
+		tc.put("start_hour", shour);
+		tc.put("start_minute", sminute);
+		tc.put("start_second", ssecond);
+		tc.put("end_year", eyear);
+		tc.put("end_month", emonth);
+		tc.put("end_day", eday);
+		tc.put("end_hour", ehour);
+		tc.put("end_minute", eminute);
+		tc.put("end_second", esecond);
+		for (String timeCode : timeCodes)
+			if (tc.containsKey("run_" + timeCode))
+				((NamelistValueList<NamelistNumber>) tc.get("run_" + timeCode)).set(0, new NamelistNumber((Number) ((JSONObject) timing.get("duration")).get(timeCode).value()));
+		return input;
+	}
+	
+	/**
+	 * Updates the interval_seconds value if it should be updated.
+	 * 
+	 * @param sim
+	 *            the current {@link Simulation}
+	 * @param section
+	 *            the {@link NamelistSection} that contains the interval_seconds key
+	 */
+	public static void updateIntervalSeconds(Simulation sim, NamelistSection section) {
+		if (sim.interval_seconds != null) {
+			NamelistValueList<NamelistNumber> is = new NamelistValueList<>();
+			is.add(sim.interval_seconds);
+			section.put("interval_seconds", is);
+		}
 	}
 	
 	/**
@@ -288,20 +357,20 @@ public class WRFRunner {
 	public static Namelist writeWPSPaths(Map<String, Namelist> namelists, WRFPaths paths, Path wpsPath) {
 		Namelist wps = namelists.get("wps");
 		//Convert the geog_data_path to an absolute path so that WPS doesn't break trying to find a path relative to its original location
-		NamelistInnerList<NamelistString> geogList = (NamelistInnerList<NamelistString>) wps.get("geogrid").get("geog_data_path");
+		NamelistValueList<NamelistString> geogList = (NamelistValueList<NamelistString>) wps.get("geogrid").get("geog_data_path");
 		Path newPath = wpsPath.resolve(geogList.get(0).value().toString());
 		geogList.set(0, new NamelistString(newPath.toAbsolutePath().normalize().toString()));
 		//Ensure that the geogrid output is staying in the WPS working directory
-		NamelistInnerList<NamelistString> geoOutList = (NamelistInnerList<NamelistString>) wps.get("share").get("opt_output_from_geogrid_path");
+		NamelistValueList<NamelistString> geoOutList = (NamelistValueList<NamelistString>) wps.get("share").get("opt_output_from_geogrid_path");
 		if (geoOutList != null)
 			if (geoOutList.size() > 0)
 				geoOutList.set(0, new NamelistString("./"));
 			else
 				geoOutList.add(new NamelistString("./"));
 		//Ensure that the metgrid output is going into the WRF working directory
-		NamelistInnerList<NamelistString> metList = (NamelistInnerList<NamelistString>) wps.get("metgrid").get("opt_output_from_metgrid_path");
+		NamelistValueList<NamelistString> metList = (NamelistValueList<NamelistString>) wps.get("metgrid").get("opt_output_from_metgrid_path");
 		if (metList == null) {
-			metList = new NamelistInnerList<>();
+			metList = new NamelistValueList<>();
 			wps.get("metgrid").put("opt_output_from_metgrid_path", metList);
 		}
 		String path = paths.get("wrf").resolve("run").toString();
@@ -443,7 +512,10 @@ public class WRFRunner {
 	 */
 	public void runWPS(Map<String, Namelist> namelists, WRFPaths paths, Simulation sim) throws IOException, InterruptedException {
 		ProcessBuilder wpsPB = makePB(paths.get("wps").toFile());
-		runPB(wpsPB, "./link_grib.csh", paths.get("wget").toString() + System.getProperty("file.separator"));
+		String path = paths.get("wget").toString();
+		if (!path.endsWith(System.getProperty("file.separator"))) //link_grib.csh requires that the path end with a '/'
+			path += System.getProperty("file.separator");
+		runPB(wpsPB, "./link_grib.csh", path);
 		//Run ungrib and geogrid in parallel
 		wpsPB.command("./ungrib.exe", "2>&1", "|", "tee", "./ungrib.log");
 		Process ungrib = wpsPB.start();
