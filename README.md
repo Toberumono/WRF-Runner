@@ -238,26 +238,29 @@ In order for this to run automatically, we need to set up a Cron task.
   bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/java/sudoless_install.sh)
   ```
   + For information on what the script does, see its section in the readme of my [Miscellaneous](https://github.com/Toberumono/Miscellaneous#htujsi) repo.
-3. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#install-linuxbrew-tldr). Run one of the following:
+3. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#installation). Run one of the following:
   1. If you have sudo privileges, do the following:
-    1. Run the following script to get the required libraries (For systems that use `yum`, replace `apt-get install` with `yum install`):
-
-      ```bash
-      sudo apt-get install build-essential curl git m4 ruby texinfo libbz2-dev libcurl4-openssl-dev libexpat-dev libncurses-dev zlib1g-dev
-      ```
-    2. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#install-linuxbrew-tldr).
-      + If you are not comfortable modifying your .bashrc or .zshrc files, follow step c.  Otherwise, modify them.
-    3. Run:
+    1. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#installation).
+      * **Do not** modify your .bashrc or .zshrc files.  Instead, follow steps b and c.
+    2. Run:
   
       ```bash
       bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/linuxbrew/append_paths.sh)
       ```
       + This adds the additional lines to your .bashrc and/or .zshrc files. For more information on how it works, see its section in the readme of my [Miscellaneous](https://github.com/Toberumono/Miscellaneous#htulap) repo.
+    3. Restart Terminal or run:
+      
+      ```bash
+      bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/blob/master/general/get_profile.sh && source "$profile")
+      ```
+      + This command loads the `profile` variable, which holds the path to your shell's profile file, and then uses the builtin command, `source`, to load it.
+      + Note that, regardless of which option you choose, you will only have to perform steps b and c once.
   2. If you do not have sudo privileges, then you can run the following script.  It will attempt to install [Linuxbrew](https://github.com/Homebrew/linuxbrew) without sudo privileges or will list the missing software that you should ask your system administrator to install if it cannot do so.
 
     ```bash
     bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/linuxbrew/sudoless_install.sh)
     ```
+    * This is **not** recommended; however, it is technically a valid option.
 
 #### Mac
 
