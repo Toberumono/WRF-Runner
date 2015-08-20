@@ -158,10 +158,10 @@ public class WRFRunner {
 		if (!general.containsKey("always-suffix"))
 			general.put("always-suffix", new JSONBoolean(false));
 			
-		int doms = ((Number) namelists.get("wrf").get("domains").get("max_dom").get(0).value()).intValue();
-		
 		Logger simLogger = log.getLogger("WRFRunner.Simulation");
 		simLogger.setLevel(Level.WARNING);
+		//Unfortunately, we need to load the wrf namelist data here - the Simulation's timing system depends on it.
+		namelists.put("wrf", steps.get("wrf").getZ() != null ? new Namelist(paths.get("wrf").resolve(steps.get("wrf").getZ().getX())) : null);
 		Simulation sim = new Simulation(namelists, Calendar.getInstance(), timing, simLogger);
 		if (configuration.isModified())
 			JSONSystem.writeJSON(configuration, configurationPath);
@@ -173,16 +173,19 @@ public class WRFRunner {
 			if (paths.containsKey(step)) {
 				namelists.put(step, steps.get(step).getZ() != null ? new Namelist(this.paths.get(step).resolve(steps.get(step).getZ().getX())) : null);
 				wpaths.put(step, root.resolve(paths.get(step).getFileName()));
-				sim.linkWorkingDirectory(paths.get(step), wpaths.get(step));
 			}
 			else
 				wpaths.put(step, root.resolve(step));
 		}
 		
+		int doms = ((Number) namelists.get("wrf").get("domains").get("max_dom").get(0).value()).intValue();
+		
 		JSONObject timestep = null;
 		if (((Boolean) features.get("wget").value()))
 			timestep = (JSONObject) grib.get("timestep");
 		for (String step : executionOrder) {
+			if (paths.containsKey(step))
+				sim.linkWorkingDirectory(paths.get(step), wpaths.get(step));
 			Pair<Path, NamelistUpdater> pair = steps.get(step).getZ();
 			if (pair != null)
 				pair.getY().update(namelists, wpaths, timestep, sim, doms).write(wpaths.get(step).resolve(steps.get(step).getZ().getX()));
@@ -291,7 +294,10 @@ public class WRFRunner {
 		//Ensure that the geogrid output is staying in the WPS working directory
 		NamelistInnerList<NamelistString> geoOutList = (NamelistInnerList<NamelistString>) wps.get("share").get("opt_output_from_geogrid_path");
 		if (geoOutList != null)
-			geoOutList.set(0, new NamelistString("./"));
+			if (geoOutList.size() > 0)
+				geoOutList.set(0, new NamelistString("./"));
+			else
+				geoOutList.add(new NamelistString("./"));
 		//Ensure that the metgrid output is going into the WRF working directory
 		NamelistInnerList<NamelistString> metList = (NamelistInnerList<NamelistString>) wps.get("metgrid").get("opt_output_from_metgrid_path");
 		if (metList == null) {
@@ -301,7 +307,10 @@ public class WRFRunner {
 		String path = paths.get("wrf").resolve("run").toString();
 		if (!path.endsWith(System.getProperty("file.separator")))
 			path += System.getProperty("file.separator");
-		metList.set(0, new NamelistString(path));
+		if (metList.size() == 0)
+			metList.add(new NamelistString(path));
+		else
+			metList.set(0, new NamelistString(path));
 		return wps;
 	}
 	
