@@ -3,41 +3,33 @@ package toberumono.wrf;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import toberumono.utils.general.MutedLogger;
 
 /**
  * A container for the {@link Path Paths} that {@link WRFRunner} and {@link Simulation} need to pass around.
  * 
  * @author Toberumono
  */
-public class WRFPaths {
+public class WRFPaths extends HashMap<String, Path> {
+	protected final boolean create;
+	protected final Logger log;
+	
 	/**
 	 * The timestamped working directory
 	 */
 	public final Path root;
 	/**
-	 * The WRF working directory
-	 */
-	public final Path wrf;
-	/**
-	 * The run working directory
-	 */
-	public final Path run;
-	/**
-	 * The WPS working directory
-	 */
-	public final Path wps;
-	/**
-	 * The directory into which the grib data is downloaded
-	 */
-	public final Path grib;
-	/**
-	 * The directory into which the wrfout files are moved
+	 * The directory into which the output files are moved
 	 */
 	public final Path output;
 	
 	/**
-	 * Creates a {@link WRFPaths} by resolving "WRFV3", "WPS", and "grib" against root for the WRF, WPS, and grib working
-	 * directories respectively.
+	 * Creates a {@link WRFPaths} with the given root and output directories.
 	 * 
 	 * @param root
 	 *            a {@link Path} to the root working directory.
@@ -45,13 +37,22 @@ public class WRFPaths {
 	 *            the output directory
 	 * @param create
 	 *            if {@code true}, this will call {@link Files#createDirectories} for each {@link Path}
+	 * @param log
+	 *            the {@link Logger} to use in the {@link WRFPaths} operations
 	 * @throws IOException
 	 *             if a directory could not be created
 	 * @throws NullPointerException
 	 *             if <tt>root</tt> is {@code null}
 	 */
-	public WRFPaths(Path root, Path output, boolean create) throws IOException {
-		this(root, root.resolve("WRFV3"), root.resolve("WPS"), root.resolve("grib"), output, create);
+	public WRFPaths(Path root, Path output, boolean create, Logger log) throws IOException {
+		if (root == null)
+			throw new NullPointerException("The root path cannot be null.");
+		if (log == null)
+			log = MutedLogger.getMutedLogger();
+		this.log = log;
+		this.create = create;
+		this.root = root.toAbsolutePath().normalize();
+		this.output = root.resolve(output).toAbsolutePath().normalize();
 	}
 	
 	/**
@@ -70,26 +71,47 @@ public class WRFPaths {
 	 *            a {@link Path} to the output directory
 	 * @param create
 	 *            if {@code true}, this will call {@link Files#createDirectories} for each {@link Path}
+	 * @param log
+	 *            the {@link Logger} to use in the {@link WRFPaths} operations
 	 * @throws IOException
 	 *             if a directory could not be created
 	 * @throws NullPointerException
 	 *             if any {@link Path} is {@code null}
 	 */
-	public WRFPaths(Path root, Path wrf, Path wps, Path grib, Path output, boolean create) throws IOException {
+	public WRFPaths(Path root, Path wrf, Path wps, Path grib, Path output, boolean create, Logger log) throws IOException {
 		if (root == null)
 			throw new NullPointerException("The root path cannot be null.");
+		if (log == null)
+			log = MutedLogger.getMutedLogger();
+		this.log = log;
+		this.create = create;
 		this.root = root.toAbsolutePath().normalize();
-		this.wrf = root.resolve(wrf).toAbsolutePath().normalize();
-		run = this.wrf.resolve("run");
-		this.wps = root.resolve(wps).toAbsolutePath().normalize();
-		this.grib = root.resolve(grib).toAbsolutePath().normalize();
 		this.output = root.resolve(output).toAbsolutePath().normalize();
 		if (create) {
 			Files.createDirectories(this.root);
-			Files.createDirectories(this.wrf);
-			Files.createDirectories(this.wps);
-			Files.createDirectories(this.grib);
 			Files.createDirectories(this.output);
 		}
+		put("wrf", root.resolve(wrf).toAbsolutePath().normalize());
+		put("wrf.run", get("wrf").resolve("run"));
+		put("wps", root.resolve(wps).toAbsolutePath().normalize());
+		put("grib", root.resolve(grib).toAbsolutePath().normalize());
+	}
+	
+	@Override
+	public Path put(String key, Path value) {
+		if (create)
+			try {
+				Files.createDirectories(value);
+			}
+			catch (IOException e) {
+				log.log(Level.SEVERE, "Unable to create " + value.toString(), e);
+			}
+		return super.put(key, value);
+	}
+	
+	@Override
+	public void putAll(Map<? extends String, ? extends Path> m) {
+		for (Map.Entry<? extends String, ? extends Path> e : m.entrySet())
+			put(e.getKey(), e.getValue());
 	}
 }

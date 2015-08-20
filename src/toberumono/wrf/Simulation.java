@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -36,8 +37,8 @@ public class Simulation {
 	 * Calculates the appropriate start and end times for the simulation from the configuration data and WRF {@link Namelist}
 	 * file.
 	 * 
-	 * @param namelist
-	 *            the WRF {@link Namelist} file
+	 * @param namelists
+	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
 	 * @param current
 	 *            a {@link Calendar} object with the current date/time data
 	 * @param timing
@@ -45,10 +46,10 @@ public class Simulation {
 	 * @param log
 	 *            the {@link Logger} to use in the {@link Simulation TimeRange's} operations
 	 */
-	public Simulation(Namelist namelist, Calendar current, JSONObject timing, Logger log) {
+	public Simulation(Map<String, Namelist> namelists, Calendar current, JSONObject timing, Logger log) {
 		this.log = log;
 		start = (Calendar) current.clone();
-		NamelistInnerMap tc = namelist.get("time_control");
+		NamelistInnerMap tc = namelists.get("wrf").get("time_control");
 		JSONObject rounding = (JSONObject) timing.get("rounding");
 		JSONObject duration = (JSONObject) timing.get("duration");
 		if (timing.get("use-computed-times") == null) //If use-computed-times hasn't been set, this is an older installation, so we can copy the value from the old flag.
@@ -83,7 +84,7 @@ public class Simulation {
 					break rounding;
 				}
 				start.set(Calendar.HOUR_OF_DAY, 0);
-				//Yes, I know these last three are kind of ridiculous, but, you never know.
+				//Yes, I know these last three are kind of ridiculous, but you never know.
 				if (magnitude.equals("day")) {
 					round(Calendar.DAY_OF_MONTH, start, diff);
 					break rounding;
@@ -202,17 +203,18 @@ public class Simulation {
 	 * Note: this method <i>does</i> modify the passed {@link Namelist} without cloning it, but does not write anything to
 	 * disk.
 	 * 
-	 * @param wps
-	 *            a WPS {@link Namelist} file
+	 * @param namelists
+	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
 	 * @param timestep
 	 *            the grib--&gt;timestep subsection of the configuration file. If wget is not being used, this must be
 	 *            {@code null}.
 	 * @param doms
 	 *            the number of domains to be used
-	 * @return the updated {@link Namelist} file (this is for easier chaining of commands - this method modifies the passed)
-	 *         file
+	 * @return <tt>namelists</tt> (this is for easier chaining of commands - this method modifies the passed loaded
+	 *         {@link Namelist} directly)
 	 */
-	public Namelist updateWPSNamelistTimeRange(Namelist wps, JSONObject timestep, int doms) {
+	public Map<String, Namelist> updateWPSNamelistTimeRange(Map<String, Namelist> namelists, JSONObject timestep, int doms) {
+		Namelist wps = namelists.get("wps");
 		NamelistString start = new NamelistString(getWPSStartDate());
 		NamelistString end = new NamelistString(getWPSEndDate());
 		NamelistInnerList<NamelistString> s = new NamelistInnerList<>(), e = new NamelistInnerList<>();
@@ -227,7 +229,7 @@ public class Simulation {
 			is.add(new NamelistNumber(calcIntervalSeconds(timestep)));
 			wps.get("share").put("interval_seconds", is);
 		}
-		return wps;
+		return namelists;
 	}
 	
 	/**
@@ -235,8 +237,8 @@ public class Simulation {
 	 * Note: this method <i>does</i> modify the passed {@link Namelist} without cloning it, but does not write anything to
 	 * disk.
 	 * 
-	 * @param input
-	 *            a WRF {@link Namelist} file
+	 * @param namelists
+	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
 	 * @param timestep
 	 *            the grib--&gt;timestep subsection of the configuration file. If wget is not being used, this must be
 	 *            {@code null}.
@@ -245,7 +247,8 @@ public class Simulation {
 	 * @return the updated {@link Namelist} file (this is for easier chaining of commands - this method modifies the passed
 	 *         file)
 	 */
-	public Namelist updateWRFNamelistTimeRange(Namelist input, JSONObject timestep, int doms) {
+	public Namelist updateWRFNamelistTimeRange(Map<String, Namelist> namelists, JSONObject timestep, int doms) {
+		Namelist input = namelists.get("wrf");
 		NamelistInnerList<NamelistNumber> syear = new NamelistInnerList<>(), smonth = new NamelistInnerList<>(), sday = new NamelistInnerList<>();
 		NamelistInnerList<NamelistNumber> shour = new NamelistInnerList<>(), sminute = new NamelistInnerList<>(), ssecond = new NamelistInnerList<>();
 		NamelistInnerList<NamelistNumber> eyear = new NamelistInnerList<>(), emonth = new NamelistInnerList<>(), eday = new NamelistInnerList<>();
@@ -315,17 +318,13 @@ public class Simulation {
 	 * @param working
 	 *            a {@link Path} to the root working directory, in which a timestamped folder will be created to hold the
 	 *            linked WRF and WPS installations, grib files, and output files
-	 * @param wrf
-	 *            a {@link Path} to the original WRF installation root directory
-	 * @param wps
-	 *            a {@link Path} to the original WPS installation root directory
 	 * @param always_suffix
 	 *            the value of the "use-suffix" field in the general--&gt;parallel subsection of the configuration file
 	 * @return a {@link Path} to the root of the timestamped working directory for this run.
 	 * @throws IOException
 	 *             if an I/O error occurs
 	 */
-	public WRFPaths makeWorkingFolder(final Path working, final Path wrf, final Path wps, boolean always_suffix) throws IOException {
+	public Path makeWorkingFolder(final Path working, boolean always_suffix) throws IOException {
 		Path active = Files.createDirectories(working).resolve("active");
 		try (FileChannel chan = FileChannel.open(active, StandardOpenOption.CREATE, StandardOpenOption.WRITE); FileLock lock = chan.lock();) {
 			String rootName = getWPSStartDate().replaceAll(":", "_"); //Having colons in the path messes up WRF, so... Underscores.
@@ -336,10 +335,7 @@ public class Simulation {
 					name.append("+" + (count + 1));
 			}
 			Path root = Files.createDirectories(working.resolve(name.toString()).normalize());
-			WRFPaths paths = new WRFPaths(root, root, true);
-			linkWorkingDirectory(wrf, paths.wrf);
-			linkWorkingDirectory(wps, paths.wps);
-			return paths;
+			return root;
 		}
 	}
 	
