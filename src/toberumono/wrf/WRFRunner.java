@@ -505,7 +505,7 @@ public class WRFRunner {
 	public void cleanUpWPS(Map<String, Namelist> namelists, WRFPaths paths) throws IOException {
 		RecursiveEraser re = new RecursiveEraser();
 		Files.walkFileTree(paths.get("wps"), re);
-		Files.walkFileTree(paths.get("grib"), re);
+		Files.walkFileTree(paths.get("wget"), re);
 	}
 	
 	/**
