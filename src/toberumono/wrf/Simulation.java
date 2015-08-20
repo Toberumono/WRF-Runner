@@ -47,7 +47,6 @@ public class Simulation {
 	 * @param log
 	 *            the {@link Logger} to use in the {@link Simulation TimeRange's} operations
 	 */
-	@SuppressWarnings("unchecked")
 	public Simulation(Map<String, Namelist> namelists, Calendar current, JSONObject timing, Logger log) {
 		this.log = log;
 		start = (Calendar) current.clone();
@@ -117,9 +116,6 @@ public class Simulation {
 				duration = generateDuration(tc);
 				timing.put("duration", duration);
 			}
-			for (String timeCode : timeCodes)
-				if (tc.containsKey("run_" + timeCode))
-					((NamelistInnerList<NamelistNumber>) tc.get("run_" + timeCode)).set(0, new NamelistNumber((Number) duration.get(timeCode).value()));
 		}
 		end = (Calendar) start.clone();
 		//Calculate the end time from the duration data in the configuration file
@@ -243,6 +239,8 @@ public class Simulation {
 	 * 
 	 * @param namelists
 	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
+	 * @param timing
+	 *            a {@link JSONObject} representing the timing section of the configuration file
 	 * @param timestep
 	 *            the grib--&gt;timestep subsection of the configuration file. If wget is not being used, this must be
 	 *            {@code null}.
@@ -251,7 +249,8 @@ public class Simulation {
 	 * @return the updated {@link Namelist} file (this is for easier chaining of commands - this method modifies the passed
 	 *         file)
 	 */
-	public Namelist updateWRFNamelistTimeRange(Map<String, Namelist> namelists, JSONObject timestep, int doms) {
+	@SuppressWarnings("unchecked")
+	public Namelist updateWRFNamelistTimeRange(Map<String, Namelist> namelists, JSONObject timing, JSONObject timestep, int doms) {
 		Namelist input = namelists.get("wrf");
 		NamelistInnerList<NamelistNumber> syear = new NamelistInnerList<>(), smonth = new NamelistInnerList<>(), sday = new NamelistInnerList<>();
 		NamelistInnerList<NamelistNumber> shour = new NamelistInnerList<>(), sminute = new NamelistInnerList<>(), ssecond = new NamelistInnerList<>();
@@ -290,6 +289,9 @@ public class Simulation {
 			is.add(new NamelistNumber(calcIntervalSeconds(timestep)));
 			tc.put("interval_seconds", is);
 		}
+		for (String timeCode : timeCodes)
+			if (tc.containsKey("run_" + timeCode))
+				((NamelistInnerList<NamelistNumber>) tc.get("run_" + timeCode)).set(0, new NamelistNumber((Number) ((JSONObject) timing.get("duration")).get(timeCode).value()));
 		return input;
 	}
 	

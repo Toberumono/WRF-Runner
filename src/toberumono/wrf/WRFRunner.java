@@ -107,7 +107,7 @@ public class WRFRunner {
 		addStep("wps", this::runWPS, this::cleanUpWPS,
 				new Pair<>(Paths.get("namelist.wps"), (namelists, wpaths, timestep, sim, doms) -> writeWPSPaths(sim.updateWPSNamelistTimeRange(namelists, timestep, doms), wpaths, paths.get("wps"))));
 		addStep("wrf", this::runWRF, this::cleanUpWRF,
-				new Pair<>(Paths.get("run", "namelist.input"), (namelists, wpaths, timestep, sim, doms) -> sim.updateWRFNamelistTimeRange(namelists, timestep, doms)));
+				new Pair<>(Paths.get("run", "namelist.input"), (namelists, wpaths, timestep, sim, doms) -> sim.updateWRFNamelistTimeRange(namelists, timing, timestep, doms)));
 	}
 	
 	/**
