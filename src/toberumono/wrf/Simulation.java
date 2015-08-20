@@ -32,6 +32,7 @@ import toberumono.utils.files.TransferFileWalker;
 public class Simulation {
 	protected final Calendar start, end;
 	protected final Logger log;
+	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
 	
 	/**
 	 * Calculates the appropriate start and end times for the simulation from the configuration data and WRF {@link Namelist}
@@ -46,6 +47,7 @@ public class Simulation {
 	 * @param log
 	 *            the {@link Logger} to use in the {@link Simulation TimeRange's} operations
 	 */
+	@SuppressWarnings("unchecked")
 	public Simulation(Map<String, Namelist> namelists, Calendar current, JSONObject timing, Logger log) {
 		this.log = log;
 		start = (Calendar) current.clone();
@@ -115,6 +117,9 @@ public class Simulation {
 				duration = generateDuration(tc);
 				timing.put("duration", duration);
 			}
+			for (String timeCode : timeCodes)
+				if (tc.containsKey("run_" + timeCode))
+					((NamelistInnerList<NamelistNumber>) tc.get("run_" + timeCode)).set(0, new NamelistNumber((Number) duration.get(timeCode).value()));
 		}
 		end = (Calendar) start.clone();
 		//Calculate the end time from the duration data in the configuration file
@@ -136,10 +141,9 @@ public class Simulation {
 	private final JSONObject generateDuration(NamelistInnerMap tc) {
 		log.log(Level.WARNING, "configuration did not contain timing->duration.  Using and writing default values.");
 		JSONObject duration = new JSONObject();
-		duration.put("days", (Number) tc.get("run_days").get(0).value());
-		duration.put("hours", (Number) tc.get("run_hours").get(0).value());
-		duration.put("minutes", (Number) tc.get("run_minutes").get(0).value());
-		duration.put("seconds", (Number) tc.get("run_seconds").get(0).value());
+		for (String timeCode : timeCodes)
+			if (tc.containsKey("run_" + timeCode))
+				duration.put(timeCode, (Number) tc.get("run_" + timeCode).get(0).value());
 		duration.clearModified();
 		return duration;
 	}
