@@ -124,18 +124,19 @@ These are all automatically downloaded, compiled, and linked as part of the inst
 #### <a name="cron"></a>Setting up a Cron task
 In order for this to run automatically, we need to set up a Cron task.
 
-1. Get the path to your your linked directory with location with `pwd`
-2. Copy the output somewhere so that you can see it outside of Terminal (or memorize it)
-3. Open your crontab file for editing.  Use `EDITOR=vim crontab -e` to edit it.
+1. cd to the directory into which you linked the WRFRunner.jar and configuration.json files.
+2. Get the path to your your linked directory with `pwd`.
+3. Copy the output somewhere so that you can see it outside of Terminal (or memorize it).
+4. Open your crontab file for editing.  Use `EDITOR=vim crontab -e` to edit it.
   * You can use whichever terminal editor your prefer - vim is just here because it is what I use.
     + While some GUI editors (such as gedit) might work, the catch is that you cannot have the editor open before executing the command and you must completely close the editor when you are done editing the file.  So, don't use GUI editors unless you absolutely have to.
     + If you don't have a preferred editor and don't have vim installed, you can install it with:
       - For Linux: `sudo apt-get install vim`
       - For Mac: `brew install vim`
     + If you are new to using vim, see [http://vim.wikia.com/wiki/Tutorial](http://vim.wikia.com/wiki/Tutorial) for help.
-4. Add a cron task that runs: `cd linked_directory java -jar WRFRunner.jar` where `linked_directory` is the path obtained in step 1.
+5. Add a cron task that runs: `cd linked_directory && java -jar WRFRunner.jar` where `linked_directory` is the path obtained in step 2.
   * See [http://www.nncron.ru/help/EN/working/cron-format.htm](http://www.nncron.ru/help/EN/working/cron-format.htm) for syntax help.
-5. Save and quit the editor.
+6. Save the file and quit the editor.
 
 ## Help
 ### <a name="docv"></a>Description of Configuration Variables
