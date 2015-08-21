@@ -41,7 +41,7 @@ This is a Java 8 program that simplifies automatically running predictive WRF si
 This guide does assume a basic level of comfort with a UNIX-based prompt.  If you are new to working with terminal, tutorial one at [http://www.ee.surrey.ac.uk/Teaching/Unix/](http://www.ee.surrey.ac.uk/Teaching/Unix/) will cover everything you need for this tutorial. (Its prompt likely looks a bit different, but those commands are effectively identical across UNIX shells)
 
 ### Setup
-#### <a name="rp"></a>Required programs (these are all command line utilities)
+#### <a name="rp"></a>Required Programs (these are all command line utilities)
 
 * curl
 * git
@@ -137,7 +137,38 @@ In order for this to run automatically, we need to set up a Cron task.
 
 ## Help
 ### <a name="bs"></a>Brewless Setup
-While this is *strongly* discouraged on Macs, 
+These instructions will walk you through setting up the program without Homebrew/Linuxbrew.  While this is *strongly* discouraged on Macs, Linuxbrew has been known to have some issues on Linux-based machines.  These instructions are an equally stable alternative to Homebrew/Linuxbrew; however, they do take a few more steps.<br>
+Note that, unlike every other section of the tutorial, these commands use curl.  This is because installing wget on a Mac without Homebrew can be a pain.<br>
+
+1. Install `curl` if needed:
+  1. Run `which curl`.  If a path is printed, you have curl, so continue to step 2.  Otherwise, run one of the following to install it:
+    + On Debian-based Linux (e.g. Ubuntu), run `sudo apt-get install curl`
+    + On RedHat-based Linux (e.g. Fedora), run `sudo yum install curl`
+2. Download and Install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
+  * To install the JDK on Linux, cd into the directory into which you downloaded the JDK and run:
+  
+    ```bash
+    bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/linuxbrew/append_paths.sh)
+    ```
+3. Download and Install the appropriate version of ANT.
+  * It's all automated now.  Just run:
+
+    ```bash
+    bash <(wget -qO - "https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/ant/append_paths.sh")
+    ```
+4. Get the latest stable version of the WRF-Runner program:
+  1. create and/or cd into an empty directory from which you want to run the .jar file.
+  2. Run:
+
+    ```bash
+    git clone "https://github.com/Toberumono/WRF-Runner.git"; git checkout "$(git describe --tags)"
+    ```
+5. Build everything:
+
+    ```bash
+    cd WRF-Runner; ./build_brewless.sh -Dpackage.libs=true; cp configuration.json ../; cd ../
+    ```
+6. You're all set.  Proceed to [Running a WRF Process](#rawrfp).
 
 ### <a name="docv"></a>Description of Configuration Variables
 
