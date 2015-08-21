@@ -174,10 +174,12 @@ public class WRFRunner {
 			JSONSystem.writeJSON(configuration, configurationPath);
 		Path root = sim.makeWorkingFolder(workingPath, (Boolean) general.get("always-suffix").value());
 		WRFPaths wpaths = new WRFPaths(root, root, true, log.getLogger("WRFRunner.WRFPaths"));
-		
+		for (String step : steps.keySet())
+			if (paths.containsKey(step))
+				wpaths.put(step, wpaths.root.resolve(paths.get(step).getFileName()));
+				
 		for (String step : executionOrder) {
 			if (paths.containsKey(step)) {
-				wpaths.put(step, wpaths.root.resolve(paths.get(step).getFileName()));
 				sim.linkWorkingDirectory(paths.get(step), wpaths.get(step));
 				wpaths.put(step, root.resolve(paths.get(step).getFileName()));
 			}
