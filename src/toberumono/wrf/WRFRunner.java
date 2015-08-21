@@ -177,6 +177,7 @@ public class WRFRunner {
 		
 		for (String step : executionOrder) {
 			if (paths.containsKey(step)) {
+				wpaths.put(step, wpaths.root.resolve(paths.get(step).getFileName()));
 				sim.linkWorkingDirectory(paths.get(step), wpaths.get(step));
 				wpaths.put(step, root.resolve(paths.get(step).getFileName()));
 			}
