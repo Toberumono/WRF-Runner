@@ -108,10 +108,10 @@ public class WRFRunner {
 	 */
 	protected void loadDefaultFeatures() {
 		addStep("wget", this::runWGet, (n, p) -> {} , null);
-		addStep("wps", this::runWPS, this::cleanUpWPS,
-				new Pair<>(Paths.get("namelist.wps"), (namelists, wpaths, sim) -> writeWPSPaths(updateWPSNamelistTimeRange(namelists, sim), wpaths, paths.get("wps"))));
-		addStep("wrf", this::runWRF, this::cleanUpWRF,
-				new Pair<>(Paths.get("run", "namelist.input"), (namelists, wpaths, sim) -> updateWRFNamelistTimeRange(namelists, sim)));
+		addStep("wps", this::runWPS, this::cleanUpWPS, new Pair<>(Paths.get("namelist.wps"),
+				(namelists, sim) -> updateWPSPaths(updateWPSNamelistTimeRange(namelists, sim), sim, paths.get("wps"))));
+		addStep("wrf", this::runWRF, this::cleanUpWRF, new Pair<>(Paths.get("run", "namelist.input"),
+				(namelists, sim) -> updateWRFNamelistTimeRange(namelists, sim)));
 	}
 	
 	/**
@@ -169,35 +169,34 @@ public class WRFRunner {
 				namelists.put(step, steps.get(step).getZ() != null ? new Namelist(paths.get(step).resolve(steps.get(step).getZ().getX())) : null);
 		}
 		JSONObject timestep = ((Boolean) features.get("wget").value()) ? (JSONObject) grib.get("timestep") : null;
-		Simulation sim = new Simulation(namelists, Calendar.getInstance(), timestep, timing, simLogger);
+		Simulation sim = new Simulation(namelists, Calendar.getInstance(), workingPath, Paths.get("./"), timestep, timing, true, (Boolean) general.get("always-suffix").value(), simLogger);
 		if (configuration.isModified())
 			JSONSystem.writeJSON(configuration, configurationPath);
-		Path root = sim.makeWorkingFolder(workingPath, (Boolean) general.get("always-suffix").value());
-		WRFPaths wpaths = new WRFPaths(root, root, true, log.getLogger("WRFRunner.WRFPaths"));
 		for (String step : steps.keySet())
 			if (paths.containsKey(step))
-				wpaths.put(step, wpaths.root.resolve(paths.get(step).getFileName()));
+				sim.put(step, sim.root.resolve(paths.get(step).getFileName()));
 				
 		for (String step : executionOrder) {
 			if (paths.containsKey(step)) {
-				sim.linkWorkingDirectory(paths.get(step), wpaths.get(step));
-				wpaths.put(step, root.resolve(paths.get(step).getFileName()));
+				sim.put(step, sim.root.resolve(paths.get(sim).getFileName()));
+				sim.linkWorkingDirectory(paths.get(step), sim.get(step));
+				sim.put(step, sim.root.resolve(paths.get(step).getFileName()));
 			}
 			else
-				wpaths.put(step, root.resolve(step));
+				sim.put(step, sim.root.resolve(step));
 			Pair<Path, NamelistUpdater> pair = steps.get(step).getZ();
 			if (pair != null)
-				pair.getY().update(namelists, wpaths, sim).write(wpaths.get(step).resolve(steps.get(step).getZ().getX()));
+				pair.getY().update(namelists, sim).write(sim.get(step).resolve(steps.get(step).getZ().getX()));
 		}
 		
 		for (String s : executionOrder) {
 			Triple<Step, CleanupFunction, Pair<Path, NamelistUpdater>> step = steps.get(s);
 			if (!features.containsKey(s) || ((Boolean) features.get(s).value()))
-				step.getX().run(namelists, wpaths, sim);
+				step.getX().run(namelists, sim);
 			if (((Boolean) general.get("keep-logs").value()))
-				Files.walkFileTree(wpaths.get(s), new TransferFileWalker(wpaths.output, Files::move, p -> p.getFileName().toString().toLowerCase().endsWith(".log"), p -> true, null, null, true));
+				Files.walkFileTree(sim.get(s), new TransferFileWalker(sim.output, Files::move, p -> p.getFileName().toString().toLowerCase().endsWith(".log"), p -> true, null, null, true));
 			if (((Boolean) features.get("cleanup").value()))
-				step.getY().cleanUp(namelists, wpaths);
+				step.getY().cleanUp(namelists, sim);
 		}
 		
 		int maxOutputs = ((Number) general.get("max-kept-outputs").value()).intValue();
@@ -350,14 +349,14 @@ public class WRFRunner {
 	 * 
 	 * @param namelists
 	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
-	 * @param paths
-	 *            the paths to the working directories in use by this {@link WRFRunner}
+	 * @param sim
+	 *            the current {@link Simulation}
 	 * @param wpsPath
 	 *            the <i>original</i> WPS path
 	 * @return the WPS {@link Namelist}
 	 */
 	@SuppressWarnings("unchecked")
-	public static Namelist writeWPSPaths(Map<String, Namelist> namelists, WRFPaths paths, Path wpsPath) {
+	public static Namelist updateWPSPaths(Map<String, Namelist> namelists, Simulation sim, Path wpsPath) {
 		Namelist wps = namelists.get("wps");
 		//Convert the geog_data_path to an absolute path so that WPS doesn't break trying to find a path relative to its original location
 		NamelistValueList<NamelistString> geogList = (NamelistValueList<NamelistString>) wps.get("geogrid").get("geog_data_path");
@@ -376,7 +375,7 @@ public class WRFRunner {
 			metList = new NamelistValueList<>();
 			wps.get("metgrid").put("opt_output_from_metgrid_path", metList);
 		}
-		String path = paths.get("wrf").resolve("run").toString();
+		String path = sim.get("wrf").resolve("run").toString();
 		if (!path.endsWith(System.getProperty("file.separator")))
 			path += System.getProperty("file.separator");
 		if (metList.size() == 0)
@@ -392,8 +391,6 @@ public class WRFRunner {
 	 * 
 	 * @param namelists
 	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
-	 * @param paths
-	 *            the paths to the working directories in use by this {@link WRFRunner}
 	 * @param sim
 	 *            the current {@link Simulation}
 	 * @throws IOException
@@ -401,7 +398,7 @@ public class WRFRunner {
 	 * @throws InterruptedException
 	 *             if one of the processes is interrupted
 	 */
-	public void runWGet(Map<String, Namelist> namelists, WRFPaths paths, Simulation sim) throws IOException, InterruptedException {
+	public void runWGet(Map<String, Namelist> namelists, Simulation sim) throws IOException, InterruptedException {
 		int[] offsets = new int[4], steps = new int[4], limits = new int[4];
 		String url = (String) grib.get("url").value();
 		Calendar start = sim.getStart(), end = sim.getEnd();
@@ -419,7 +416,7 @@ public class WRFRunner {
 		limits[3] = ((Number) duration.get("seconds").value()).intValue();
 		Calendar test = (Calendar) start.clone();
 		for (; !test.after(end); incrementOffsets(offsets, steps, test))
-			downloadGribFile(parseIncrementedURL(url, start, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), paths);
+			downloadGribFile(parseIncrementedURL(url, start, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), sim);
 	}
 	
 	private static final void incrementOffsets(int[] offsets, int[] steps, Calendar test) {
@@ -479,14 +476,14 @@ public class WRFRunner {
 	 * 
 	 * @param url
 	 *            a {@link String} representation of the {@link URL} to transfer
-	 * @param paths
-	 *            the paths to the working directories in use by this {@link WRFRunner}
+	 * @param sim
+	 *            the current {@link Simulation}
 	 * @throws IOException
 	 *             if the transfer fails
 	 */
-	public void downloadGribFile(String url, WRFPaths paths) throws IOException {
+	public void downloadGribFile(String url, Simulation sim) throws IOException {
 		String name = url.substring(url.lastIndexOf('/') + 1);
-		Path dest = paths.get("wget").resolve(name);
+		Path dest = sim.get("wget").resolve(name);
 		log.info("Transferring: " + url + " -> " + dest.toString());
 		try (ReadableByteChannel rbc = Channels.newChannel(new URL(url).openStream()); FileOutputStream fos = new FileOutputStream(dest.toString());) {
 			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
@@ -504,8 +501,6 @@ public class WRFRunner {
 	 * 
 	 * @param namelists
 	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
-	 * @param paths
-	 *            the paths to the working directories in use by this {@link WRFRunner}
 	 * @param sim
 	 *            the current {@link Simulation}
 	 * @throws IOException
@@ -513,9 +508,9 @@ public class WRFRunner {
 	 * @throws InterruptedException
 	 *             if one of the processes is interrupted
 	 */
-	public void runWPS(Map<String, Namelist> namelists, WRFPaths paths, Simulation sim) throws IOException, InterruptedException {
-		ProcessBuilder wpsPB = makePB(paths.get("wps").toFile());
-		String path = paths.get("wget").toString();
+	public void runWPS(Map<String, Namelist> namelists, Simulation sim) throws IOException, InterruptedException {
+		ProcessBuilder wpsPB = makePB(sim.get("wps").toFile());
+		String path = sim.get("wget").toString();
 		if (!path.endsWith(System.getProperty("file.separator"))) //link_grib.csh requires that the path end with a '/'
 			path += System.getProperty("file.separator");
 		runPB(wpsPB, "./link_grib.csh", path);
@@ -532,8 +527,6 @@ public class WRFRunner {
 	 * 
 	 * @param namelists
 	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
-	 * @param paths
-	 *            the paths to the working directories in use by this {@link WRFRunner}
 	 * @param sim
 	 *            the current {@link Simulation}
 	 * @throws IOException
@@ -541,8 +534,8 @@ public class WRFRunner {
 	 * @throws InterruptedException
 	 *             if one of the processes is interrupted
 	 */
-	public void runWRF(Map<String, Namelist> namelists, WRFPaths paths, Simulation sim) throws IOException, InterruptedException {
-		Path run = paths.get("wrf").resolve("run");
+	public void runWRF(Map<String, Namelist> namelists, Simulation sim) throws IOException, InterruptedException {
+		Path run = sim.get("wrf").resolve("run");
 		ProcessBuilder wrfPB = makePB(run.toFile());
 		runPB(wrfPB, "./real.exe", "2>&1", "|", "tee", "./real.log");
 		String[] wrfCommand = new String[0];
@@ -562,8 +555,8 @@ public class WRFRunner {
 			log.log(Level.SEVERE, "WRF error", t);
 		}
 		//Move the wrfout files to the output directory
-		Files.walkFileTree(run,
-				new TransferFileWalker(paths.output, Files::move, p -> p.getFileName().toString().toLowerCase().startsWith("wrfout"), p -> true, null, null, false));
+		Files.walkFileTree(run, new TransferFileWalker(sim.output, Files::move,
+				p -> p.getFileName().toString().toLowerCase().startsWith("wrfout"), p -> true, null, null, false));
 	}
 	
 	/**
@@ -572,15 +565,15 @@ public class WRFRunner {
 	 * 
 	 * @param namelists
 	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
-	 * @param paths
-	 *            the paths to the working directories in use by this {@link WRFRunner}
+	 * @param sim
+	 *            the current {@link Simulation}
 	 * @throws IOException
 	 *             if an I/O error occurs while cleaning up
 	 */
-	public void cleanUpWPS(Map<String, Namelist> namelists, WRFPaths paths) throws IOException {
+	public void cleanUpWPS(Map<String, Namelist> namelists, Simulation sim) throws IOException {
 		RecursiveEraser re = new RecursiveEraser();
-		Files.walkFileTree(paths.get("wps"), re);
-		Files.walkFileTree(paths.get("wget"), re);
+		Files.walkFileTree(sim.get("wps"), re);
+		Files.walkFileTree(sim.get("wget"), re);
 	}
 	
 	/**
@@ -589,12 +582,12 @@ public class WRFRunner {
 	 * 
 	 * @param namelists
 	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
-	 * @param paths
-	 *            the paths to the working directories in use by this {@link WRFRunner}
+	 * @param sim
+	 *            the current {@link Simulation}
 	 * @throws IOException
 	 *             if an I/O error occurs while cleaning up
 	 */
-	public void cleanUpWRF(Map<String, Namelist> namelists, WRFPaths paths) throws IOException {
-		Files.walkFileTree(paths.get("wrf"), new RecursiveEraser());
+	public void cleanUpWRF(Map<String, Namelist> namelists, Simulation sim) throws IOException {
+		Files.walkFileTree(sim.get("wrf"), new RecursiveEraser());
 	}
 }

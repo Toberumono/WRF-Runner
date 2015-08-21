@@ -17,11 +17,9 @@ public interface NamelistUpdater {
 	 * 
 	 * @param namelists
 	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
-	 * @param paths
-	 *            the {@link WRFPaths} currently in use
 	 * @param sim
 	 *            the current {@link Simulation}
 	 * @return the {@link Namelist} that was updated
 	 */
-	public Namelist update(Map<String, Namelist> namelists, WRFPaths paths, Simulation sim);
+	public Namelist update(Map<String, Namelist> namelists, Simulation sim);
 }

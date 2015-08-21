@@ -18,12 +18,12 @@ public interface CleanupFunction {
 	 * 
 	 * @param namelists
 	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
-	 * @param paths
-	 *            the paths to the working directories in use by this {@link WRFRunner}
+	 * @param sim
+	 *            the current {@link Simulation}
 	 * @throws IOException
 	 *             if the directory or any of the programs in it could not be opened
 	 * @throws InterruptedException
 	 *             if one of the processes is interrupted
 	 */
-	public void cleanUp(Map<String, Namelist> namelists, WRFPaths paths) throws IOException, InterruptedException;
+	public void cleanUp(Map<String, Namelist> namelists, Simulation sim) throws IOException, InterruptedException;
 }

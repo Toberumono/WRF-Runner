@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
@@ -20,6 +21,7 @@ import toberumono.namelist.parser.NamelistSection;
 import toberumono.structures.tuples.Pair;
 import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
+import toberumono.utils.general.MutedLogger;
 
 /**
  * An individual WRF simulation. This extends a {@link Pair} of {@link Calendar Calendars} because the start and end times
@@ -27,10 +29,20 @@ import toberumono.utils.files.TransferFileWalker;
  * 
  * @author Toberumono
  */
-public class Simulation {
+public class Simulation extends HashMap<String, Path> {
 	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
 	protected final Calendar start, end;
 	protected final Logger log;
+	protected final boolean create;
+	
+	/**
+	 * The timestamped working directory
+	 */
+	public final Path root;
+	/**
+	 * The directory into which the output files are moved
+	 */
+	public final Path output;
 	/**
 	 * The number of domains in use for the simulation.
 	 */
@@ -49,18 +61,34 @@ public class Simulation {
 	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
 	 * @param current
 	 *            a {@link Calendar} object with the current date/time data
+	 * @param working
+	 *            a {@link Path} to the root working directory.
+	 * @param output
+	 *            a {@link Path} to the output directory
 	 * @param timestep
-	 *            the grib--&gt;timestep subsection of the configuration file. If wget is not being used, this must be
-	 *            {@code null}.
+	 *            the grib--&gt;timestep subsection of the configuration file. If wget feature is not being used, this must
+	 *            be {@code null}.
 	 * @param timing
-	 *            a {@link JSONObject} holding the timing data in from the configuration file
+	 *            a {@link JSONObject} holding the timing data from the configuration file
+	 * @param create
+	 *            if {@code true}, this will call {@link Files#createDirectories} for each {@link Path}
+	 * @param always_suffix
+	 *            the value of the "use-suffix" field in the general--&gt;parallel subsection of the configuration file
 	 * @param log
 	 *            the {@link Logger} to use in the {@link Simulation TimeRange's} operations
+	 * @throws IOException
+	 *             if the timestamped working directory cannot be created
 	 */
-	public Simulation(Map<String, Namelist> namelists, Calendar current, JSONObject timestep, JSONObject timing, Logger log) {
+	public Simulation(Map<String, Namelist> namelists, Calendar current, Path working, Path output, JSONObject timestep, JSONObject timing, boolean create, boolean always_suffix, Logger log)
+			throws IOException {
+		if (working == null)
+			throw new NullPointerException("The working path cannot be null.");
+		if (log == null)
+			log = MutedLogger.getMutedLogger();
+		this.log = log;
+		this.create = create;
 		doms = ((Number) namelists.get("wrf").get("domains").get("max_dom").get(0).value()).intValue();
 		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
-		this.log = log;
 		start = (Calendar) current.clone();
 		NamelistSection tc = namelists.get("wrf").get("time_control");
 		JSONObject rounding = (JSONObject) timing.get("rounding");
@@ -136,6 +164,8 @@ public class Simulation {
 		end.add(Calendar.HOUR_OF_DAY, ((Number) duration.get("hours").value()).intValue());
 		end.add(Calendar.MINUTE, ((Number) duration.get("minutes").value()).intValue());
 		end.add(Calendar.SECOND, ((Number) duration.get("seconds").value()).intValue());
+		root = Simulation.makeWorkingFolder(start, working, always_suffix);
+		this.output = root.resolve(output);
 	}
 	
 	/**
@@ -220,6 +250,8 @@ public class Simulation {
 	 * If <tt>always_suffix</tt> is false and the timestamped folder already exists and there is an active simulation using
 	 * it, this method will fail.
 	 * 
+	 * @param timestamp
+	 *            a {@link Calendar} containing the date and time with which to timestamp the working directory.
 	 * @param working
 	 *            a {@link Path} to the root working directory, in which a timestamped folder will be created to hold the
 	 *            linked WRF and WPS installations, grib files, and output files
@@ -229,10 +261,10 @@ public class Simulation {
 	 * @throws IOException
 	 *             if an I/O error occurs
 	 */
-	public Path makeWorkingFolder(final Path working, boolean always_suffix) throws IOException {
+	public static Path makeWorkingFolder(Calendar timestamp, final Path working, boolean always_suffix) throws IOException {
 		Path active = Files.createDirectories(working).resolve("active");
 		try (FileChannel chan = FileChannel.open(active, StandardOpenOption.CREATE, StandardOpenOption.WRITE); FileLock lock = chan.lock();) {
-			String rootName = getWPSStartDate().replaceAll(":", "_"); //Having colons in the path messes up WRF, so... Underscores.
+			String rootName = makeWPSDateString(timestamp).replaceAll(":", "_"); //Having colons in the path messes up WRF, so... Underscores.
 			StringBuilder name = new StringBuilder(rootName);
 			try (Stream<Path> children = Files.list(working)) {
 				int count = children.filter(p -> p.getFileName().toString().startsWith(rootName)).toArray().length;
@@ -279,5 +311,23 @@ public class Simulation {
 		if (filename.startsWith("rsl.out") || filename.startsWith("rsl.error"))
 			return true;
 		return filename.startsWith("namelist") || filename.startsWith("readme") || extension.charAt(0) == 'f' || extension.charAt(0) == 'c' || extension.equals("log");
+	}
+	
+	@Override
+	public Path put(String key, Path value) {
+		if (create)
+			try {
+				Files.createDirectories(value);
+			}
+			catch (IOException e) {
+				log.log(Level.SEVERE, "Unable to create " + value.toString(), e);
+			}
+		return super.put(key, value);
+	}
+	
+	@Override
+	public void putAll(Map<? extends String, ? extends Path> m) {
+		for (Map.Entry<? extends String, ? extends Path> e : m.entrySet())
+			put(e.getKey(), e.getValue());
 	}
 }

@@ -34,7 +34,7 @@ public class WRFPaths extends HashMap<String, Path> {
 	 * @param root
 	 *            a {@link Path} to the root working directory.
 	 * @param output
-	 *            the output directory
+	 *            a {@link Path} to the output directory
 	 * @param create
 	 *            if {@code true}, this will call {@link Files#createDirectories} for each {@link Path}
 	 * @param log

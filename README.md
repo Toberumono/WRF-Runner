@@ -43,13 +43,15 @@ This guide does assume a basic level of comfort with a UNIX-based prompt.  If yo
 ### Setup
 #### <a name="rp"></a>Required programs (these are all command line utilities)
 
-* ruby
 * curl
 * git
+* ruby
+* wget
 * Homebrew/Linuxbrew
 * [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html) (update 45 or higher)
 
 If you don't have these, see [Getting the Required Programs](#gtrp) for how to get them.
+If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Brewless Setup](#hbs) section.
 
 #### <a name="rl"></a>Required Libraries
 These are all my libraries.
@@ -67,6 +69,7 @@ These are all automatically downloaded, compiled, and linked as part of the inst
   + If you don't, follow the directions in [Getting the Required Programs](#gtrp).
 2. Run `brew tap toberumono/tap` (This only needs to be run once.)
   + If you're on Linux and it cannot find the brew command, follow steps b and c in the [Linuxbrew Installation Instructions](#lbrewinstall).
+  + If that fails, follow the instructions in 
 3. Run `brew install wrf-runner`
   + Linuxbrew may have trouble with a few dependencies, running `brew install` for each dependency, while annoying, will fix that problem.
 4. While this does download and install the program, there is still the matter of creating symbolic links to WRFRunner.jar and configuration.json in the directory from which you want to run WRFRunner.jar.  If you just intend on using WRFRunner.jar as a library, you can ignore the remaining steps, otherwise, continue.
@@ -133,6 +136,9 @@ In order for this to run automatically, we need to set up a Cron task.
 6. Save the file and quit the editor.
 
 ## Help
+### <a name="bs"></a>Brewless Setup
+While this is *strongly* discouraged on Macs, 
+
 ### <a name="docv"></a>Description of Configuration Variables
 
 + general
@@ -222,6 +228,7 @@ In order for this to run automatically, we need to set up a Cron task.
 8. That's it.
 
 ### <a name="gtrp"></a>Getting the Required Programs
+If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Brewless Setup](#hbs) section.
 
 #### Linux
 
@@ -257,7 +264,8 @@ In order for this to run automatically, we need to set up a Cron task.
     * This is **not** recommended; however, it is technically a valid option.
 
 #### Mac
+A Quick Note: Ruby and Curl are already installed on Macs, so we don't need to worry about them.
 
-1. Ruby and Curl are already installed on Mac, so we don't need to worry about those.
-2. install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
-3. install [Homebrew](http://brew.sh/).
+1. Install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
+2. Install [Homebrew](http://brew.sh/).
+3. Run `brew install wget`
