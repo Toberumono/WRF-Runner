@@ -8,7 +8,7 @@
 		},
 		"parallel" : {
 			"is-dmpar" : true,
-			"boot-lam" : true,
+			"boot-lam" : false,
 			"processors" : 2
 		},
 		"keep-logs" : false,

@@ -150,6 +150,7 @@ While this is *strongly* discouraged on Macs,
   + parallel:
     - is-dmpar: This tells the script whether WRF and WPS were set up with DMPAR mode.  This is effectively the toggle for all parallel components.
     - boot-lam: True indicates that the mpich call should include the boot flag.  This should only be used on personal machines that will not have another mpich process running on them.
+    	* Note: Mpich appears to no-longer use this flag.  This option is now kept purely for backwards-compatibility and defaults to false.
     - processors: The number of processors to allow WRF to use.  If you intend to continue using the computer on which you are running the simulation while the simulation is in progress, leave your system at least 2 processors.
   + wait-for-WRF: True indicates that the script should wait for WRF to complete.  This *must* be true for it to perform the final stage of cleanup.  Otherwise, this is a matter of preference.
   + keep-logs: True indicates that the script should move log files out of the working directories.  This is generally only useful if you are encountering errors.
