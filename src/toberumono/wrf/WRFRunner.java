@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -148,11 +149,11 @@ public class WRFRunner {
 	
 	/**
 	 * Executes the steps needed to run wget, WPS, and then WRF. This method automatically calculates the appropriate start
-	 * and end times of the simulation from the configuration and Namelist files, and downloads the boundary data
+	 * and end times of the simulation from the configuration and {@link Namelist} files, and downloads the boundary data
 	 * accordingly.
 	 * 
 	 * @throws IOException
-	 *             if the Namelist files could not be read
+	 *             if the {@link Namelist} files could not be read
 	 * @throws InterruptedException
 	 *             if one of the processes gets interrupted
 	 */
@@ -199,16 +200,20 @@ public class WRFRunner {
 				step.getY().cleanUp(namelists, sim);
 		}
 		
-		int maxOutputs = ((Number) general.get("max-kept-outputs").value()).intValue();
-		if (maxOutputs < 1)
-			return;
-		SortedList<Path> sl = new SortedList<>(SortingMethods.PATH_MODIFIED_TIME_ASCENDING);
-		Files.newDirectoryStream(workingPath).forEach(p -> { //We only want to get directories for this.
-			if (Files.isDirectory(p))
-				sl.add(p);
-		});
-		while (sl.size() > maxOutputs)
-			Files.walkFileTree(sl.remove(0), new RecursiveEraser());
+		try (DirectoryStream<Path> stream = Files.newDirectoryStream(workingPath)) {
+			int maxOutputs = ((Number) general.get("max-kept-outputs").value()).intValue();
+			if (maxOutputs < 1)
+				return;
+			SortedList<Path> sl = new SortedList<>(SortingMethods.PATH_MODIFIED_TIME_ASCENDING);
+			for (Path p : stream)
+				if (Files.isDirectory(p))
+					sl.add(p);
+			while (sl.size() > maxOutputs)
+				Files.walkFileTree(sl.remove(0), new RecursiveEraser());
+		}
+		catch (IOException e) {
+			log.log(Level.SEVERE, "Unable to clean up old simulation data.", e);
+		}
 	}
 	
 	/**
