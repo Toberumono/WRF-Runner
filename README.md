@@ -37,11 +37,12 @@ This is a Java 8 program that simplifies automatically running predictive WRF si
 3. Run more complex simulations (e.g. those requiring ndown.exe or tc.exe)
 
 ##Usage
-###Experience
+###Experience Needed
 This guide does assume a basic level of comfort with a UNIX-based prompt.  If you are new to working with terminal, tutorial one at [http://www.ee.surrey.ac.uk/Teaching/Unix/](http://www.ee.surrey.ac.uk/Teaching/Unix/) will cover everything you need for this tutorial. (Its prompt likely looks a bit different, but those commands are effectively identical across UNIX shells)
 
 ###Setup
-####Required Programs (these are all command line utilities)
+####Required Programs
+#####(these are all command line utilities)
 
 * curl
 * git
@@ -50,10 +51,10 @@ This guide does assume a basic level of comfort with a UNIX-based prompt.  If yo
 * Homebrew/Linuxbrew
 * [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html) (update 45 or higher)
 
-If you don't have these, see [Getting the Required Programs](#gtrp) for how to get them.
-If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Brewless Setup](#hbs) section.
+If you don't have these, see [Getting the Required Programs](#getting-the-required-programs) for how to get them.
+If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Brewless Setup](#brewless-setup) section.
 
-####<a name="rl"></a>Required Libraries
+####Required Libraries
 These are all my libraries.
 
 * [JSON Library](https://github.com/Toberumono/JSON-Library)
@@ -65,26 +66,27 @@ These are all automatically downloaded, compiled, and linked as part of the inst
 
 ####Compiling WRFRunner.jar
 
-1. Make sure that you have the [Required Programs](#rp).
-  + If you don't, follow the directions in [Getting the Required Programs](#gtrp).
+1. Make sure that you have the [Required Programs](#required-programs).
+  + If you don't, follow the directions in [Getting the Required Programs](#getting-the-required-programs).
 2. Run `brew tap toberumono/tap` (This only needs to be run once.)
-  + If you're on Linux and it cannot find the brew command, follow steps b and c in the [Linuxbrew Installation Instructions](#lbrewinstall).
-  + If that fails, follow the instructions in 
+  + If you're on Linux and it cannot find the brew command, follow steps b and c in the [Linuxbrew Installation](#lbrewinstall) instructions.
+  + If that fails, follow the instructions in the [Brewless Setup](#brewless-setup) sections instead.
 3. Run `brew install wrf-runner`
-  + Linuxbrew may have trouble with a few dependencies, running `brew install` for each dependency, while annoying, will fix that problem.
+  + Linuxbrew may have trouble with a few dependencies, running `brew install` for each dependency, while annoying, will likely fix that problem.
+  + If that fails, follow the instructions in the [Brewless Setup](#brewless-setup) sections instead.
 4. While this does download and install the program, there is still the matter of creating symbolic links to WRFRunner.jar and configuration.json in the directory from which you want to run WRFRunner.jar.  If you just intend on using WRFRunner.jar as a library, you can ignore the remaining steps, otherwise, continue.
 5. cd into the directory into from which you want to run WRFRunner.jar
 6. Run `wrf-linker.sh`
-7. Proceed to [Running a WRF process](#rawrfp)
+7. Proceed to [Running a WRF process](#running-a-wrf-process)
 
-###<a name="rawrfp"></a>Running a WRF process
+###Running a WRF process
 ####A few quick notes
 
 * This program does not override any fields in the namelist files other than the run_, start_, end_, wps paths (it just makes them absolute), and interval_seconds (however, it is overriden with a user-defined value) - everything else is preserved.  Therefore, this can still be used with more advanced configurations.
 * This section describes only the minimal amount of configuration required for a successful run.  There are several options not visited here.
-  See [Description of Configuration Variables](#docv) for information on each option in the configuration.json file.
+  See [Description of Configuration Variables](#description-of-configuration-variables) for information on each option in the configuration.json file.
 
-####<a name="c"></a>Configuring
+####Configuring
 
 1. This program downloads data that needs the NAM Vtable in WPS by default.  To ensure that the correct Vtable is used, run: `ln -sf ./ungrib/Variable_Tables/Vtable.NAM ./Vtable` in the WPS installation directory if you are using NAM data.
 2. Edit the namelist files for WRF and WPS.  In the general case, this requires:
@@ -111,8 +113,8 @@ These are all automatically downloaded, compiled, and linked as part of the inst
   3. Set the duration values to match how long you wish your script to run.
     - The fields accept extended values.  e.g. setting hours to 36 is equivalent to setting days to 1 and hours to 12.
 7. Configure the grib section (this is only required if the wget feature is enabled):
-  + See [Writing a GRIB URL](#wagu) for the steps needed.
-8. That's it.  Proceed to [Running](#r)
+  + See [Writing a GRIB URL](#writing-a-grib-url) for the steps needed.
+8. That's it.  Proceed to [Running](#running)
 
 ####<a name="r"></a>Running
 1. cd to the directory into which you linked the WRFRunner.jar and configuration.json files.
@@ -168,7 +170,7 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
     ```bash
     cd WRF-Runner; ./build_brewless.sh -Dpackage.libs=true; cp configuration.json ../; cd ../
     ```
-6. You're all set.  Proceed to [Running a WRF Process](#rawrfp).
+6. You're all set.  Proceed to [Running a WRF Process](#running-a-wrf-process).
 
 ###<a name="docv"></a>Description of Configuration Variables
 
@@ -193,8 +195,8 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
   - working: A path to an arbitrary, preferably empty folder into which temporary files can be placed.
   - grib_data: A path to an arbitrary, preferably empty folder into which downloaded grib data can be placed.
 + grib: Settings for how the grib data is downloaded (This is only used if the wget feature is enabled)
-  - url: The URL template to be used for downloading grib data.  See [Writing a GRIB URL](#wagu) for information on how to write it
-  + timestep: These are used to increment the non-constant flags in the url template.  Generally, hours should be the only non-zero value; however, the others are included just in case.  See [Writing a GRIB URL](#wagu) for more information on how to determine what these values should be.
+  - url: The URL template to be used for downloading grib data.  See [Writing a GRIB URL](#writing-a-grib-url) for information on how to write it
+  + timestep: These are used to increment the non-constant flags in the url template.  Generally, hours should be the only non-zero value; however, the others are included just in case.  See [Writing a GRIB URL](#writing-a-grib-url) for more information on how to determine what these values should be.
     - days: Number of days to step forward per timestep.
     - hours: Number of hours to step forward per timestep.
     - minutes: Number of minutes to step forward per timestep.
@@ -260,7 +262,7 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
 8. That's it.
 
 ###<a name="gtrp"></a>Getting the Required Programs
-If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Brewless Setup](#hbs) section.
+If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Brewless Setup](#brewless-setup) section.
 
 ####Linux
 
@@ -270,7 +272,7 @@ If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Br
   ```bash
   bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/java/sudoless_install.sh)
   ```
-  + For information on what the script does, see its section in the readme of my [Miscellaneous](https://github.com/Toberumono/Miscellaneous#htujsi) repo.
+  + For information on what the script does, see its section in the Readme of my [Miscellaneous](https://github.com/Toberumono/Miscellaneous#htujsi) repo.
 3. <a name="lbrewinstall"></a>Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#installation). Run one of the following:
   1. If you have sudo privileges, do the following:
     1. Install [Linuxbrew](https://github.com/Homebrew/linuxbrew#installation).
