@@ -6,14 +6,14 @@ prefix="$(brew --prefix)"
 config="$prefix/etc/wrf-runner/configuration.json"
 jar="$prefix/lib/WRFRunner.jar"
 path=""
-if [ $# -eq 0 ]; then
-	path="./"
+if [ "$#" -eq "0" ]; then
+	path="$(pwd)"
 else
 	path="$1"
 fi
 if [ ! -e "$path" ] || [ ! -d "$path" ]; then
 	echo "Making $path"
-	mkdir "$path"
+	mkdir -p "$path"
 fi
 echo "Linking into $path"
 ln -sf "$jar" "$path/WRFRunner.jar"

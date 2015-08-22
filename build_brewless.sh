@@ -1,5 +1,5 @@
 #A script to download the required libraries for this project from gitHub and then build it.
-#Author: Toberumono
+#Author: Toberumono (https://github.com/Toberumono)
 
 use_release=true
 if [ "$#" -gt "0" ] && [ "$1" == "use_latest" ]; then
@@ -7,13 +7,13 @@ if [ "$#" -gt "0" ] && [ "$1" == "use_latest" ]; then
 	shift
 fi
 
+#Determine the correct downloader to use.  Also, we want a progress bar for this script, hence the no -s/-q.
+[ "$(which wget)" == "" ] && pull_command="curl -fSL" || pull_command="wget -O -"
+
 clone_project() {
-	if ( $use_release ); then
-		git clone -b "$(git ls-remote --tags https://github.com/Toberumono/$1.git | grep -o -E '([0-9]+\.)*[0-9]+$' | sort -g | tail -1)" \
-			--depth=1 "https://github.com/Toberumono/$1.git" "../$1" 1>/dev/null 2>/dev/null
-	else
-		git clone "https://github.com/Toberumono/$1.git" "../$1"
-	fi
+	( $use_release ) && tar_name="$(git ls-remote --tags https://github.com/Toberumono/$1.git | grep -oE '([0-9]+\.)*[0-9]+$' | sort -g | tail -1)" || tar_name="master"
+	mkdir -p "../$1"
+	$pull_command "https://github.com/Toberumono/$1/archive/$tar_name.tar.gz" | tar -xz --strip-components 1 -C "../$1"
 }
 
 build_project() {
