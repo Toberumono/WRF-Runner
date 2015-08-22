@@ -1,4 +1,4 @@
-# <a name="readme"></a><a name="Readme"></a>WRF-Runner
+#WRF-Runner
 ## <a name="wii"></a>What is it?
 This is a Java 8 program that simplifies automatically running predictive WRF simulations.
 
