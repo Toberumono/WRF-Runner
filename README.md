@@ -2,7 +2,7 @@
 ##What is it?
 This is a Java 8 program that simplifies automatically running predictive WRF simulations.
 
-## A Summary of Features
+##A Summary of Features
 
 1. Runs on personal systems, desktops, workstations, etc. (It has *not* been tested or deployed on large-scale systems or clusters with job-management systems)
 2. Simplifies the process by deriving as much information as possible, and shifts the repeated configuration values into a central location so that they only need to be set once.
@@ -12,7 +12,7 @@ This is a Java 8 program that simplifies automatically running predictive WRF si
 6. Allows for a large amount of customization, but only requires a small amount.
 7. Can be used as a library for programmers that want an even deeper level of customization.
 
-## <a name="wdtpd"></a>What does this program do?
+##What does this program do?
 
 1. Automatically acquires GRIB data
   + By default, this is set to the NAM 212 AWIPS Grid - Regional - CONUS Double Resolution (40-km Resolution) dataset
@@ -30,18 +30,18 @@ This is a Java 8 program that simplifies automatically running predictive WRF si
 4. Cleans up temporary files
 5. Deletes old forecasts if there are more forecasts than the user-defined limit
 
-## <a name="wdtpnd"></a>What does this program not do?
+##What does this program not do?
 
 1. Set up WRF and WPS - Check out my [WRF Setup Script](https://github.com/Toberumono/WRF-Setup-Script) for automating that.
 2. Postprocess data
 3. Run more complex simulations (e.g. those requiring ndown.exe or tc.exe)
 
-## Usage
-### Experience
+##Usage
+###Experience
 This guide does assume a basic level of comfort with a UNIX-based prompt.  If you are new to working with terminal, tutorial one at [http://www.ee.surrey.ac.uk/Teaching/Unix/](http://www.ee.surrey.ac.uk/Teaching/Unix/) will cover everything you need for this tutorial. (Its prompt likely looks a bit different, but those commands are effectively identical across UNIX shells)
 
-### Setup
-#### <a name="rp"></a>Required Programs (these are all command line utilities)
+###Setup
+####Required Programs (these are all command line utilities)
 
 * curl
 * git
@@ -53,7 +53,7 @@ This guide does assume a basic level of comfort with a UNIX-based prompt.  If yo
 If you don't have these, see [Getting the Required Programs](#gtrp) for how to get them.
 If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Brewless Setup](#hbs) section.
 
-#### <a name="rl"></a>Required Libraries
+####<a name="rl"></a>Required Libraries
 These are all my libraries.
 
 * [JSON Library](https://github.com/Toberumono/JSON-Library)
@@ -63,7 +63,7 @@ These are all my libraries.
 
 These are all automatically downloaded, compiled, and linked as part of the installation process if you are using Homebrew/Linuxbrew.
 
-#### Compiling WRFRunner.jar
+####Compiling WRFRunner.jar
 
 1. Make sure that you have the [Required Programs](#rp).
   + If you don't, follow the directions in [Getting the Required Programs](#gtrp).
@@ -77,14 +77,14 @@ These are all automatically downloaded, compiled, and linked as part of the inst
 6. Run `wrf-linker.sh`
 7. Proceed to [Running a WRF process](#rawrfp)
 
-### <a name="rawrfp"></a>Running a WRF process
-#### A few quick notes
+###<a name="rawrfp"></a>Running a WRF process
+####A few quick notes
 
 * This program does not override any fields in the namelist files other than the run_, start_, end_, wps paths (it just makes them absolute), and interval_seconds (however, it is overriden with a user-defined value) - everything else is preserved.  Therefore, this can still be used with more advanced configurations.
 * This section describes only the minimal amount of configuration required for a successful run.  There are several options not visited here.
   See [Description of Configuration Variables](#docv) for information on each option in the configuration.json file.
 
-#### <a name="c"></a>Configuring
+####<a name="c"></a>Configuring
 
 1. This program downloads data that needs the NAM Vtable in WPS by default.  To ensure that the correct Vtable is used, run: `ln -sf ./ungrib/Variable_Tables/Vtable.NAM ./Vtable` in the WPS installation directory if you are using NAM data.
 2. Edit the namelist files for WRF and WPS.  In the general case, this requires:
@@ -114,11 +114,11 @@ These are all automatically downloaded, compiled, and linked as part of the inst
   + See [Writing a GRIB URL](#wagu) for the steps needed.
 8. That's it.  Proceed to [Running](#r)
 
-#### <a name="r"></a>Running
+####<a name="r"></a>Running
 1. cd to the directory into which you linked the WRFRunner.jar and configuration.json files.
 2. run `java -jar WRFRunner.jar configuration.json`
 
-#### <a name="cron"></a>Setting up a Cron task
+####<a name="cron"></a>Setting up a Cron task
 In order for this to run automatically, we need to set up a Cron task.
 
 1. cd to the directory into which you linked the WRFRunner.jar and configuration.json files.
@@ -135,8 +135,8 @@ In order for this to run automatically, we need to set up a Cron task.
   * See [http://www.nncron.ru/help/EN/working/cron-format.htm](http://www.nncron.ru/help/EN/working/cron-format.htm) for syntax help.
 6. Save the file and quit the editor.
 
-## Help
-### <a name="bs"></a>Brewless Setup
+##Help
+###<a name="bs"></a>Brewless Setup
 These instructions will walk you through setting up the program without Homebrew/Linuxbrew.  While this is *strongly* discouraged on Macs, Linuxbrew has been known to have some issues on Linux-based machines.  These instructions are an equally stable alternative to Homebrew/Linuxbrew; however, they do take a few more steps.<br>
 Note that, unlike every other section of the tutorial, these commands use curl.  This is because installing wget on a Mac without Homebrew can be a pain.<br>
 
@@ -170,7 +170,7 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
     ```
 6. You're all set.  Proceed to [Running a WRF Process](#rawrfp).
 
-### <a name="docv"></a>Description of Configuration Variables
+###<a name="docv"></a>Description of Configuration Variables
 
 + general
   + features: These are toggles for the pieces of the script, mostly useful in debugging.  Generally, the first three must be enabled for an actual run.
@@ -217,8 +217,8 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
     - minutes: Number of minutes over which the simulation will be run
     - seconds: Number of seconds over which the simulation will be run
 
-### <a name="wagu"></a>Writing a GRIB URL
-#### Instructions
+###<a name="wagu"></a>Writing a GRIB URL
+####Instructions
 
 1. Copy the URL for a *specific* data file of the type that you will be using in your simulation.
 2. Paste it into the configuration.json file (or anywhere really, but you will have to paste it in there eventually, so why wait?)
@@ -238,7 +238,7 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
 7. Edit the grib->timestep subsection with the appropriate values so that the %iX values will update in sync with the values in your source.
 7. Save the configuration - that's it.
 
-#### Example
+####Example
 
 1. The URLs:
   1. http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.20150805/nam.t00z.awip3d00.tm00.grib2
@@ -259,10 +259,10 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
 7. Set the values in grib->timestep as described in step 2.
 8. That's it.
 
-### <a name="gtrp"></a>Getting the Required Programs
+###<a name="gtrp"></a>Getting the Required Programs
 If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Brewless Setup](#hbs) section.
 
-#### Linux
+####Linux
 
 1. Download the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 2. `cd` into the directory into which you downloaded the JDK (`cd $HOME/Downloads` will likely do it) and run:
@@ -295,7 +295,7 @@ If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Br
     ```
     * This is **not** recommended; however, it is technically a valid option.
 
-#### Mac
+####Mac
 A Quick Note: Ruby and Curl are already installed on Macs, so we don't need to worry about them.
 
 1. Install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
