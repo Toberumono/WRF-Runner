@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #A script to download the required libraries for this project from gitHub and then build it.
 #Author: Toberumono (https://github.com/Toberumono)
 
