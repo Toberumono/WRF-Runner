@@ -7,8 +7,8 @@ if [ "$#" -gt "0" ] && [ "$1" == "use_latest" ]; then
 	shift
 fi
 
-#Determine the correct downloader to use.  Also, we want a progress bar for this script, hence the no -s/-q.
-[ "$(which wget)" == "" ] && pull_command="curl -fSL" || pull_command="wget -O -"
+#Determine the correct downloader to use.  Also, we want a progress bar for this script, hence the -# and --show-progress.
+[ "$(which wget)" == "" ] && pull_command="curl -#fsSL" || pull_command="wget --show-progress -qO -"
 
 clone_project() {
 	( $use_release ) && tar_name="$(git ls-remote --tags https://github.com/Toberumono/$1.git | grep -oE '([0-9]+\.)*[0-9]+$' | sort -g | tail -1)" || tar_name="master"
@@ -25,7 +25,7 @@ build_project() {
 		ant
 	fi
 	cd "$stored"
-	rm -r "./$1"
+	rm -r "../$1"
 }
 
 clone_build_project() {
