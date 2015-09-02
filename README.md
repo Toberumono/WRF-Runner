@@ -116,11 +116,11 @@ These are all automatically downloaded, compiled, and linked as part of the inst
   + See [Writing a GRIB URL](#writing-a-grib-url) for the steps needed.
 8. That's it.  Proceed to [Running](#running)
 
-####<a name="r"></a>Running
+####Running
 1. cd to the directory into which you linked the WRFRunner.jar and configuration.json files.
 2. run `java -jar WRFRunner.jar configuration.json`
 
-####<a name="cron"></a>Setting up a Cron task
+####Setting Up a Cron Task
 In order for this to run automatically, we need to set up a Cron task.
 
 1. cd to the directory into which you linked the WRFRunner.jar and configuration.json files.
@@ -138,7 +138,7 @@ In order for this to run automatically, we need to set up a Cron task.
 6. Save the file and quit the editor.
 
 ##Help
-###<a name="bs"></a>Brewless Setup
+###Brewless Setup
 These instructions will walk you through setting up the program without Homebrew/Linuxbrew.  While this is *strongly* discouraged on Macs, Linuxbrew has been known to have some issues on Linux-based machines.  These instructions are an equally stable alternative to Homebrew/Linuxbrew; however, they do take a few more steps.<br>
 Note that, unlike every other section of the tutorial, these commands use curl.  This is because installing wget on a Mac without Homebrew can be a pain.
 
@@ -172,7 +172,7 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
     ```
 6. You're all set.  Proceed to [Running a WRF Process](#running-a-wrf-process).
 
-###<a name="docv"></a>Description of Configuration Variables
+###Description of Configuration Variables
 
 + general
   + features: These are toggles for the pieces of the script, mostly useful in debugging.  Generally, the first three must be enabled for an actual run.
@@ -219,7 +219,7 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
     - minutes: Number of minutes over which the simulation will be run
     - seconds: Number of seconds over which the simulation will be run
 
-###<a name="wagu"></a>Writing a GRIB URL
+###Writing a GRIB URL
 ####Instructions
 
 1. Copy the URL for a *specific* data file of the type that you will be using in your simulation.
@@ -261,7 +261,7 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
 7. Set the values in grib->timestep as described in step 2.
 8. That's it.
 
-###<a name="gtrp"></a>Getting the Required Programs
+###Getting the Required Programs
 If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Brewless Setup](#brewless-setup) section.
 
 ####Linux
