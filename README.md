@@ -140,7 +140,7 @@ In order for this to run automatically, we need to set up a Cron task.
 ##Help
 ###<a name="bs"></a>Brewless Setup
 These instructions will walk you through setting up the program without Homebrew/Linuxbrew.  While this is *strongly* discouraged on Macs, Linuxbrew has been known to have some issues on Linux-based machines.  These instructions are an equally stable alternative to Homebrew/Linuxbrew; however, they do take a few more steps.<br>
-Note that, unlike every other section of the tutorial, these commands use curl.  This is because installing wget on a Mac without Homebrew can be a pain.<br>
+Note that, unlike every other section of the tutorial, these commands use curl.  This is because installing wget on a Mac without Homebrew can be a pain.
 
 1. Install `curl` if needed:
   1. Run `which curl`.  If a path is printed, you have curl, so continue to step 2.  Otherwise, run one of the following to install it:
@@ -150,13 +150,13 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
   * To install the JDK on Linux, cd into the directory into which you downloaded the JDK and run:
   
     ```bash
-    bash <(wget -qO - https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/linuxbrew/append_paths.sh)
+    bash <(curl -#fsSL "https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/linuxbrew/append_paths.sh")
     ```
 3. Download and Install the appropriate version of ANT.
   * It's all automated now.  Just run:
 
     ```bash
-    bash <(wget -qO - "https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/ant/append_paths.sh")
+    bash <(curl -#fsSL "https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/ant/append_paths.sh")
     ```
 4. Get the latest stable version of the WRF-Runner program:
   1. create and/or cd into an empty directory from which you want to run the .jar file.
