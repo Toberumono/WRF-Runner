@@ -147,6 +147,18 @@ public class WRFRunner {
 		grib = (JSONObject) configuration.get("grib");
 	}
 	
+	private void fixConfigurationFile() {
+		if (!general.containsKey("keep-logs"))
+			general.put("keep-logs", new JSONBoolean(false));
+		if (!general.containsKey("always-suffix"))
+			general.put("always-suffix", new JSONBoolean(false));
+		boolean cleanup = true;
+		if (features.containsKey("cleanup"))
+			cleanup = ((Boolean) features.remove("cleanup").value()).booleanValue();
+		if (!general.containsKey("cleanup"))
+			general.put("cleanup", cleanup);
+	}
+	
 	/**
 	 * Executes the steps needed to run wget, WPS, and then WRF. This method automatically calculates the appropriate start
 	 * and end times of the simulation from the configuration and {@link Namelist} files, and downloads the boundary data
@@ -158,11 +170,8 @@ public class WRFRunner {
 	 *             if one of the processes gets interrupted
 	 */
 	public void runWRF() throws IOException, InterruptedException {
-		if (!general.containsKey("keep-logs"))
-			general.put("keep-logs", new JSONBoolean(false));
-		if (!general.containsKey("always-suffix"))
-			general.put("always-suffix", new JSONBoolean(false));
-			
+		fixConfigurationFile();
+		
 		Logger simLogger = log.getLogger("WRFRunner.Simulation");
 		simLogger.setLevel(Level.WARNING);
 		for (String step : steps.keySet()) {
@@ -196,7 +205,7 @@ public class WRFRunner {
 				step.getX().run(namelists, sim);
 			if (((Boolean) general.get("keep-logs").value()))
 				Files.walkFileTree(sim.get(s), new TransferFileWalker(sim.output, Files::move, p -> p.getFileName().toString().toLowerCase().endsWith(".log"), p -> true, null, null, true));
-			if (((Boolean) features.get("cleanup").value()))
+			if (((Boolean) general.get("cleanup").value()))
 				step.getY().cleanUp(namelists, sim);
 		}
 		

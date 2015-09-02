@@ -3,14 +3,14 @@
 		"features" : {
 			"wget" : true,
 			"wps" : true,
-			"wrf" : true,
-			"cleanup" : true
+			"wrf" : true
 		},
 		"parallel" : {
 			"is-dmpar" : true,
 			"boot-lam" : false,
 			"processors" : 2
 		},
+		"cleanup" : true,
 		"keep-logs" : false,
 		"always-suffix" : false,
 		"max-kept-outputs" : 15
