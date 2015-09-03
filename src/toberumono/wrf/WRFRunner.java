@@ -50,7 +50,7 @@ public class WRFRunner {
 	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
 	
 	protected JSONObject configuration, general, features, parallel, timing, grib;
-	protected Path configurationPath;
+	protected Path configurationFile;
 	protected final Logger log;
 	protected final Map<String, Path> paths;
 	protected final Map<String, Namelist> namelists;
@@ -96,7 +96,7 @@ public class WRFRunner {
 	 * @return the {@link Path} to the current configuration file
 	 */
 	public Path getConfigurationPath() {
-		return configurationPath;
+		return configurationFile;
 	}
 	
 	/**
@@ -126,7 +126,7 @@ public class WRFRunner {
 	 * @see #getConfigurationPath()
 	 */
 	public void refreshConfiguration() throws IOException {
-		refreshConfiguration(configurationPath);
+		refreshConfiguration(configurationFile);
 	}
 	
 	/**
@@ -139,8 +139,8 @@ public class WRFRunner {
 	 *             if the configuration file cannot be read from disk
 	 */
 	public void refreshConfiguration(Path configurationFile) throws IOException {
-		this.configurationPath = configurationFile;
-		configuration = (JSONObject) JSONSystem.loadJSON(this.configurationPath);
+		this.configurationFile = configurationFile;
+		configuration = (JSONObject) JSONSystem.loadJSON(this.configurationFile);
 		((JSONObject) configuration.get("paths")).forEach((n, p) -> paths.put(n, Paths.get(((String) p.value())).normalize().toAbsolutePath()));
 		general = (JSONObject) configuration.get("general");
 		features = (JSONObject) general.get("features");
@@ -161,7 +161,7 @@ public class WRFRunner {
 				general.put("working-directory", working);
 			((JSONObject) configuration.get("paths")).remove("working");
 		}
-		transferField("working-directory", new JSONString(configurationPath.getParent().resolve("Working").toString()), general);
+		transferField("working-directory", new JSONString(configurationFile.toAbsolutePath().getParent().resolve("Working").toString()), general);
 	}
 	
 	private static void transferField(String name, JSONData<?> defaultValue, JSONObject... stChain) {
@@ -200,7 +200,7 @@ public class WRFRunner {
 		JSONObject timestep = ((Boolean) features.get("wget").value()) ? (JSONObject) grib.get("timestep") : null;
 		Simulation sim = new Simulation(namelists, Calendar.getInstance(), workingPath, Paths.get("./"), timestep, timing, true, (Boolean) general.get("always-suffix").value(), simLogger);
 		if (configuration.isModified())
-			JSONSystem.writeJSON(configuration, configurationPath);
+			JSONSystem.writeJSON(configuration, configurationFile);
 		for (String step : steps.keySet())
 			if (paths.containsKey(step))
 				sim.put(step, sim.root.resolve(paths.get(step).getFileName()));
