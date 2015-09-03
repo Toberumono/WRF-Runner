@@ -11,14 +11,14 @@
 			"processors" : 2
 		},
 		"cleanup" : true,
+		"working-directory" : "/Users/toberumono/Working",
 		"keep-logs" : false,
 		"always-suffix" : false,
 		"max-kept-outputs" : 15
 	},
 	"paths" : {
 		"wrf" : "/Users/toberumono/WRFV3",
-		"wps" : "/Users/toberumono/WPS",
-		"working" : "/Users/toberumono/Working"
+		"wps" : "/Users/toberumono/WPS"
 	},
 	"grib" : {
 		"url" : "http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.%tY%tm%td/nam.t00z.awip3d%iH.tm00.grib2",

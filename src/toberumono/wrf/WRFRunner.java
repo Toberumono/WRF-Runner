@@ -18,7 +18,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import toberumono.json.JSONBoolean;
+import toberumono.json.JSONData;
+import toberumono.json.JSONNumber;
 import toberumono.json.JSONObject;
+import toberumono.json.JSONString;
 import toberumono.json.JSONSystem;
 import toberumono.namelist.parser.Namelist;
 import toberumono.namelist.parser.NamelistNumber;
@@ -47,7 +50,7 @@ public class WRFRunner {
 	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
 	
 	protected JSONObject configuration, general, features, parallel, timing, grib;
-	protected Path configurationPath, workingPath;
+	protected Path configurationPath;
 	protected final Logger log;
 	protected final Map<String, Path> paths;
 	protected final Map<String, Namelist> namelists;
@@ -139,24 +142,38 @@ public class WRFRunner {
 		this.configurationPath = configurationFile;
 		configuration = (JSONObject) JSONSystem.loadJSON(this.configurationPath);
 		((JSONObject) configuration.get("paths")).forEach((n, p) -> paths.put(n, Paths.get(((String) p.value())).normalize().toAbsolutePath()));
-		workingPath = paths.remove("working");
 		general = (JSONObject) configuration.get("general");
 		features = (JSONObject) general.get("features");
 		parallel = (JSONObject) general.get("parallel");
 		timing = (JSONObject) configuration.get("timing");
 		grib = (JSONObject) configuration.get("grib");
+		fixConfigurationFile();
 	}
 	
 	private void fixConfigurationFile() {
-		if (!general.containsKey("keep-logs"))
-			general.put("keep-logs", new JSONBoolean(false));
-		if (!general.containsKey("always-suffix"))
-			general.put("always-suffix", new JSONBoolean(false));
-		boolean cleanup = true;
-		if (features.containsKey("cleanup"))
-			cleanup = ((Boolean) features.remove("cleanup").value()).booleanValue();
-		if (!general.containsKey("cleanup"))
-			general.put("cleanup", cleanup);
+		transferField("cleanup", new JSONBoolean(true), features, general);
+		transferField("keep-logs", new JSONBoolean(false), general);
+		transferField("always-suffix", new JSONBoolean(false), general);
+		transferField("max-kept-outputs", new JSONNumber<>(15), general);
+		if (paths.containsKey("working")) {
+			JSONString working = new JSONString(paths.remove("working").toString());
+			if (!general.containsKey("working-directory"))
+				general.put("working-directory", working);
+			((JSONObject) configuration.get("paths")).remove("working");
+		}
+		transferField("working-directory", new JSONString(configurationPath.getParent().resolve("Working").toString()), general);
+	}
+	
+	private static void transferField(String name, JSONData<?> defaultValue, JSONObject... stChain) {
+		if (stChain.length == 1) {
+			stChain[0].put(name, defaultValue);
+			return;
+		}
+		for (int i = 0, j = 1; j < stChain.length; i++, j++)
+			if (!stChain[j].containsKey(name))
+				stChain[j].put(name, stChain[i].containsKey(name) ? stChain[i].remove(name) : defaultValue);
+			else if (stChain[i].containsKey(name))
+				stChain[i].remove(name);
 	}
 	
 	/**
@@ -170,8 +187,10 @@ public class WRFRunner {
 	 *             if one of the processes gets interrupted
 	 */
 	public void runWRF() throws IOException, InterruptedException {
-		fixConfigurationFile();
-		
+		Path workingPath = Paths.get(general.get("working-directory").value().toString());
+		if (!Files.isDirectory(workingPath))
+			Files.createDirectories(workingPath);
+			
 		Logger simLogger = log.getLogger("WRFRunner.Simulation");
 		simLogger.setLevel(Level.WARNING);
 		for (String step : steps.keySet()) {
