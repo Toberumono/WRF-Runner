@@ -134,6 +134,7 @@ In order for this to run automatically, we need to set up a Cron task.
       - For Mac: `brew install vim`
     + If you are new to using vim, see [http://vim.wikia.com/wiki/Tutorial](http://vim.wikia.com/wiki/Tutorial) for help.
 5. Add a cron task that runs: `cd linked_directory && java -jar WRFRunner.jar` where `linked_directory` is the path obtained in step 2.
+  * Note: You might need to use the full path to the java executable instead of just `java`.  Run `which java` to get it.
   * See [http://www.nncron.ru/help/EN/working/cron-format.htm](http://www.nncron.ru/help/EN/working/cron-format.htm) for syntax help.
 6. Save the file and quit the editor.
 
