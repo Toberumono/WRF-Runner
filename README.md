@@ -98,22 +98,22 @@ These are all automatically downloaded, compiled, and linked as part of the inst
   4. For NAM data, setting num_metgrid_levels to 40 and num_metgrid_soil_levels to 4 in namelist.input
   5. For runs *not* using wget, settting interval_seconds in the time_control and share sections (This is computed from the grib->timestep subsection when wget is being used)
 3. Open the configuration file (configuration.json) in the directory into which you linked the WRFRunner.jar and configuration.json files.
-4. Configure the parallelization options in the general->parallel subsection:
+4. Set the working directory (general -> "working-directory") to an *empty or uncreated* directory.  This is path from which the simulations will be run and where the timestamped output folders will be placed.
+5. Configure the parallelization options in the general->parallel subsection:
   1. If you expect to have multiple simulations with the same start time and wish to keep them, set "use-suffix" to true.
-  2. Set "is-dmpar" to false in case you did not compile wrf in DMPAR mode.
+  2. Set "is-dmpar" to false if you are using a non-DMPAR build of WRF.
   3. If WRF was compiled in DMPAR mode, set "processors" to the number of processors you would like to allow WRF to use.
     + It is a good idea to set this value to at most two less than the number of processors (or cores) in your system.
 5. Configure the paths section (All of these *must* be absolute paths):
   1. Set the "wrf" path to the root directory of your WRF installation.
   2. Set the "wps" path to the root directory of your WPS installation.
-  3. Set the "working" path to an empty or non-existent directory.
 6. Configure the timing section (These are used to determine the values used in the run_, start_, and end_ fields):
   1. Go through and set the variables as appropriate.  If you are unsure about "rounding", leave it enabled.
   2. Set the offset values if you want the simulation to start at a time different from that produced by rounding (e.g. with rounding set to current day, setting hours 6 and the other fields to 0 would cause the simulation to start 6:00am on the current day).  Otherwise, disable it (set "enabled" to false).
   3. Set the duration values to match how long you wish your script to run.
     - The fields accept extended values.  e.g. setting hours to 36 is equivalent to setting days to 1 and hours to 12.
 7. Configure the grib section (this is only required if the wget feature is enabled):
-  + See [Writing a GRIB URL](#writing-a-grib-url) for the steps needed.
+  + See [Writing a GRIB URL](https://github.com/Toberumono/WRF-Runner/wiki/Writing-a-GRIB-URL) for the steps needed.
 8. That's it.  Proceed to [Running](#running)
 
 ####Running
@@ -147,16 +147,16 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
     + On Debian-based Linux (e.g. Ubuntu), run `sudo apt-get install curl`
     + On RedHat-based Linux (e.g. Fedora), run `sudo yum install curl`
 2. Download and Install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
-  * To install the JDK on Linux, cd into the directory into which you downloaded the JDK and run:
+  * To install the JDK on Linux, cd into the directory into which you downloaded the JDK's .tar.gz and run:
   
     ```bash
-    bash <(curl -#fsSL "https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/linuxbrew/append_paths.sh")
+    bash <(curl -#fsSL "https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/java/sudoless_install.sh")
     ```
 3. Download and Install the appropriate version of ANT.
   * It's all automated now.  Just run:
 
     ```bash
-    bash <(curl -#fsSL "https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/ant/append_paths.sh")
+    bash <(curl -#fsSL "https://raw.githubusercontent.com/Toberumono/Miscellaneous/master/ant/automatic_install.sh")
     ```
 4. Get the latest stable version of the WRF-Runner program:
   1. create and/or cd into an empty directory from which you want to run the .jar file.
@@ -171,48 +171,6 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
     cd WRF-Runner; ./build_brewless.sh -Dpackage.libs=true; cp configuration.json ../; cd ../
     ```
 6. You're all set.  Proceed to [Running a WRF Process](#running-a-wrf-process).
-
-###Writing a GRIB URL
-####Instructions
-
-1. Copy the URL for a *specific* data file of the type that you will be using in your simulation.
-2. Paste it into the configuration.json file (or anywhere really, but you will have to paste it in there eventually, so why wait?)
-2. Copy the URL for *another specific* data file and compare it to the first one.
-3. Within the URL there will be values that change day to day, but won't change during a run of your simulation.
-4. Replace these numbers with Java's [Date/Time formatter syntax](http://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html#dt).  A few common suffixes are listed here.
-  - Y: current year (with at least 4 digits)
-  - y: last two digits of the year
-  - m: current month (with padding)
-  - d: current day (with padding)
-  - H: hour of the day (24-hour clock, with padding)
-5. There will also be values that change during your simulation. (e.g. the timestamp for the specific hour of a file)
-6. Replace these with the same syntax that Java uses, but with the following modifications:
-  - Instead of %t, use %i. e.g. %tH would become %iH
-  - For minutes without padding, use i
-  - For seconds without padding, use s
-7. Edit the grib->timestep subsection with the appropriate values so that the %iX values will update in sync with the values in your source.
-7. Save the configuration - that's it.
-
-####Example
-
-1. The URLs:
-  1. http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.20150805/nam.t00z.awip3d00.tm00.grib2
-  2. http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.20150805/nam.t00z.awip3d03.tm00.grib2
-  2. http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.20150806/nam.t00z.awip3d03.tm00.grib2
-2. Differences:
-  1. For this source, the date on the folder is constant for all of the data files used in a run.
-  2. However, the timestamp towards the end, "awip3d00" changes to "awip3d03" for the second file.
-  3. Because this is the hour, we know that we will need to set the hour field in the grib->timestep subsection to 3, and all of the other fields to 0
-3. Change the parts of the URL that don't change within the run:
-  1. "nam.20150805" becomes "nam.%tY%tm%td"
-4. The URL after the first set of changes:
-  1. http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.%tY%tm%td/nam.t00z.awip3d00.tm00.grib2
-5. Change the parts of the URL that change within the run:
-  1. "awip3d00" becomes "awip3d%iH"
-6. The final URL:
-  1. http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.%tY%tm%td/nam.t00z.awip3d%iH.tm00.grib2
-7. Set the values in grib->timestep as described in step 2.
-8. That's it.
 
 ###Getting the Required Programs
 If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Brewless Setup](#brewless-setup) section.
