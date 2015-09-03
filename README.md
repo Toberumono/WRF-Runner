@@ -84,7 +84,7 @@ These are all automatically downloaded, compiled, and linked as part of the inst
 
 * This program does not override any fields in the namelist files other than the run_, start_, end_, wps paths (it just makes them absolute), and interval_seconds (however, it is overriden with a user-defined value) - everything else is preserved.  Therefore, this can still be used with more advanced configurations.
 * This section describes only the minimal amount of configuration required for a successful run.  There are several options not visited here.
-  See [Description of Configuration Variables](#description-of-configuration-variables) for information on each option in the configuration.json file.
+  See [Description of Configuration Variables](https://github.com/Toberumono/WRF-Runner/wiki/Description-of-Configuration-Variables) for information on each option in the configuration.json file.
 
 ####Configuring
 
@@ -171,53 +171,6 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
     cd WRF-Runner; ./build_brewless.sh -Dpackage.libs=true; cp configuration.json ../; cd ../
     ```
 6. You're all set.  Proceed to [Running a WRF Process](#running-a-wrf-process).
-
-###Description of Configuration Variables
-
-+ general
-  + features: These are toggles for the pieces of the script, mostly useful in debugging.  Generally, the first three must be enabled for an actual run.
-    - wget: Toggle the wget step
-    - wps: Toggle the WPS step
-    - wrf: Toggle the WRF step
-    - cleanup: If this is true, then the script will automatically delete downloaded or other intermediate files that are no longer needed.
-  + parallel:
-    - is-dmpar: This tells the script whether WRF and WPS were set up with DMPAR mode.  This is effectively the toggle for all parallel components.
-    - boot-lam: True indicates that the mpich call should include the boot flag.  This should only be used on personal machines that will not have another mpich process running on them.
-    	* Note: Mpich appears to no-longer use this flag.  This option is now kept purely for backwards-compatibility and defaults to false.
-    - processors: The number of processors to allow WRF to use.  If you intend to continue using the computer on which you are running the simulation while the simulation is in progress, leave your system at least 2 processors.
-  + wait-for-WRF: True indicates that the script should wait for WRF to complete.  This *must* be true for it to perform the final stage of cleanup.  Otherwise, this is a matter of preference.
-  + keep-logs: True indicates that the script should move log files out of the working directories.  This is generally only useful if you are encountering errors.
-  + always-suffix: True indicates that the script should add "+1" to simulation folder names.  This is generally only useful if you expect to have multiple simulations with the same start times.
-  + max-kept-outputs: The maximum number of completed simulations to keep around (well, the data from them, anyway).  A value of less than 1 disables automatic deletion.
-+ paths: Absolute paths to the executable directories for WRF and WPS as well as the working and grib data directories.  These must *not* end in '/'.  
-  - wrf: The path to the WRF *root* directory.
-  - wps: The path to the WPS *root* directory.
-  - working: A path to an arbitrary, preferably empty folder into which temporary files can be placed.
-  - grib_data: A path to an arbitrary, preferably empty folder into which downloaded grib data can be placed.
-+ grib: Settings for how the grib data is downloaded (This is only used if the wget feature is enabled)
-  - url: The URL template to be used for downloading grib data.  See [Writing a GRIB URL](#writing-a-grib-url) for information on how to write it
-  + timestep: These are used to increment the non-constant flags in the url template.  Generally, hours should be the only non-zero value; however, the others are included just in case.  See [Writing a GRIB URL](#writing-a-grib-url) for more information on how to determine what these values should be.
-    - days: Number of days to step forward per timestep.
-    - hours: Number of hours to step forward per timestep.
-    - minutes: Number of minutes to step forward per timestep.
-    - seconds: Number of seconds to step forward per timestep.
-+ timing: Settings for calculating the appropriate start and end times of the simulation.
-  - use-computed-times: If true, then the times are computed at runtime using the values in this section.  Otherwise, they are statically copied from the namelist files.
-  + rounding: This is used to set the first non-zero field in the time settings and give it a simple offset.
-    - enabled: Toggles this feature
-    - diff: A quick offset setting, can be previous, current, or next.  Generally, leaving this on current is advisable.
-    - magnitude: The first non-zero value.  While this can be second, minute, hour, day, month, or year, day is generally recommended.
-  + offset: These are used to fine-tune the start time of the simulation.  These values *can* be negative.
-    - enabled: Toggles this feature
-    - days: Number of days to shift the start time by.  This field's magnitude should generally never exceed 2.
-    - hours: Number of hours to shift the start time by.  This field's magnitude should generally never exceed 48.
-    - minutes: While it is possible to set an offset with minutes, this is highly inadvisable and will cause the simulation to fail with the default dataset.
-    - seconds: While it is possible to set an offset with seconds, this is highly inadvisable and will cause the simulation to fail with the default dataset.
-  + duration: These control the duration of the simulation.  If this subsection is not in the configuration file, it will be populated using the values in the WRF namelist file.
-    - days: Number of days over which the simulation will be run
-    - hours: Number of hours over which the simulation will be run
-    - minutes: Number of minutes over which the simulation will be run
-    - seconds: Number of seconds over which the simulation will be run
 
 ###Writing a GRIB URL
 ####Instructions
