@@ -9,7 +9,7 @@ if [ "$#" -gt "0" ] && [ "$1" == "use_latest" ]; then
 fi
 
 #Determine the correct downloader to use.  Also, we want a progress bar for this script, hence the -# and --show-progress.
-[ "$(which wget)" == "" ] && pull_command="curl -#fsSL" || pull_command="wget --show-progress -qO -"
+[ "$(which wget)" == "" ] && pull_command="curl -#fsSL" || pull_command="wget -qO -"
 
 clone_project() {
 	( $use_release ) && tar_name="$(git ls-remote --tags https://github.com/Toberumono/$1.git | grep -oE '([0-9]+\.)*[0-9]+$' | sort -g | tail -1)" || tar_name="master"
