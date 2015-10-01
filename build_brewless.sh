@@ -12,7 +12,7 @@ fi
 [ "$(which wget)" == "" ] && pull_command="curl -#fsSL" || pull_command="wget -qO -"
 
 clone_project() {
-	( $use_release ) && tar_name="$(git ls-remote --tags https://github.com/Toberumono/$1.git | grep -oE '([0-9]+\.)*[0-9]+$' | sort -g | tail -1)" || tar_name="master"
+	( $use_release ) && tar_name="$(git ls-remote --tags https://github.com/Toberumono/$1.git | grep -oE '([0-9]+\.)*[0-9]+$' | sort -t. -k 1,1n -k 2,2n -k 3,3n -k 4,4n | tail -1)" || tar_name="master"
 	mkdir -p "../$1"
 	$pull_command "https://github.com/Toberumono/$1/archive/$tar_name.tar.gz" | tar -xz --strip-components 1 -C "../$1"
 }
