@@ -161,14 +161,15 @@ public class WRFRunner {
 				general.put("working-directory", working);
 			((JSONObject) configuration.get("paths")).remove("working");
 		}
-		transferField("working-directory", new JSONString(configurationFile.toAbsolutePath().getParent().resolve("Working").toString()), general);
+		transferField("working-directory", new JSONString(configurationFile.toAbsolutePath().getParent().resolve("Working").normalize().toString()), general);
 		transferField("fraction", new JSONNumber<>(1.0), new JSONObject[]{(JSONObject) timing.get("rounding")});
 		transferField("use-computed-times", ((JSONObject) timing.get("rounding")).get("enabled"), timing); //If use-computed-times hasn't been set, use rounding.enabled as its value.
 	}
 	
 	private static void transferField(String name, JSONData<?> defaultValue, JSONObject... stChain) {
 		if (stChain.length == 1) {
-			stChain[0].put(name, defaultValue);
+			if (!stChain[0].containsKey(name))
+				stChain[0].put(name, defaultValue);
 			return;
 		}
 		for (int i = 0, j = 1; j < stChain.length; i++, j++)
