@@ -162,6 +162,8 @@ public class WRFRunner {
 			((JSONObject) configuration.get("paths")).remove("working");
 		}
 		transferField("working-directory", new JSONString(configurationFile.toAbsolutePath().getParent().resolve("Working").toString()), general);
+		transferField("fraction", new JSONNumber<>(1.0), new JSONObject[]{(JSONObject) timing.get("rounding")});
+		transferField("use-computed-times", ((JSONObject) timing.get("rounding")).get("enabled"), timing); //If use-computed-times hasn't been set, use rounding.enabled as its value.
 	}
 	
 	private static void transferField(String name, JSONData<?> defaultValue, JSONObject... stChain) {

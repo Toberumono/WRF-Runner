@@ -22,6 +22,7 @@ import toberumono.structures.tuples.Pair;
 import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
 import toberumono.utils.general.MutedLogger;
+import toberumono.utils.general.Numbers;
 
 /**
  * An individual WRF simulation. This extends a {@link Pair} of {@link Calendar Calendars} because the start and end times
@@ -31,6 +32,8 @@ import toberumono.utils.general.MutedLogger;
  */
 public class Simulation extends HashMap<String, Path> {
 	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
+	private static final String[] userStringMap = {"millisecond", "second", "minute", "hour", "day", "month", "year"};
+	private static final int[] fields = {Calendar.MILLISECOND, Calendar.SECOND, Calendar.MINUTE, Calendar.HOUR_OF_DAY, Calendar.DAY_OF_MONTH, Calendar.MONTH, Calendar.YEAR};
 	protected final Calendar start, end;
 	protected final Logger log;
 	protected final boolean create;
@@ -93,8 +96,6 @@ public class Simulation extends HashMap<String, Path> {
 		NamelistSection tc = namelists.get("wrf").get("time_control");
 		JSONObject rounding = (JSONObject) timing.get("rounding");
 		JSONObject duration = (JSONObject) timing.get("duration");
-		if (timing.get("use-computed-times") == null) //If use-computed-times hasn't been set, this is an older installation, so we can copy the value from the old flag.
-			timing.put("use-computed-times", rounding.get("enabled"));
 		if (!((Boolean) timing.get("use-computed-times").value()).booleanValue()) {
 			start.set(start.YEAR, ((Number) tc.get("start_year").get(0).value()).intValue());
 			start.set(start.MONTH, ((Number) tc.get("start_month").get(0).value()).intValue() - 1);
@@ -108,39 +109,30 @@ public class Simulation extends HashMap<String, Path> {
 		else {
 			String magnitude = ((String) rounding.get("magnitude").value()).toLowerCase();
 			String diff = ((String) rounding.get("diff").value()).toLowerCase();
-			rounding: if (((Boolean) rounding.get("enabled").value()).booleanValue()) {
+			double fraction = (Double) rounding.get("fraction").value();
+			boolean doRounding = ((Boolean) rounding.get("enabled").value()).booleanValue();
+			int rp = 1;
+			for (; rp < userStringMap.length && !userStringMap[rp].equals(magnitude); rp++);
+			if (rp == userStringMap.length) {
+				log.log(Level.WARNING, "The magnitude field in rounding has an invalid value.  Skipping rounding.");
+				doRounding = false;
+			}
+			if (fraction <= 0.0 || fraction > 1.0) {
+				log.log(Level.WARNING, "The fraction field in rounding is outside of its valid range of (0.0, 1.0].  Assuming 1.0.");
+				fraction = 1.0;
+			}
+			if (doRounding) {
 				//The logic here is that if we are rounding to something, then we want to set everything before it to 0.
-				if (magnitude.equals("second")) {
-					round(Calendar.SECOND, start, diff);
-					break rounding;
+				round(fields[rp], start, diff); //First, we handle the diff on the field that the user is rounding on
+				if (fraction < 1.0) { //If they want to keep some portion of the field before this, then fraction will be less than 1.0.
+					--rp;
+					start.set(fields[rp], (int) Numbers.semifloor(start.getActualMaximum(fields[rp]), fraction, start.get(fields[rp])));
 				}
-				start.set(Calendar.SECOND, 0);
-				if (magnitude.equals("minute")) {
-					round(Calendar.MINUTE, start, diff);
-					break rounding;
-				}
-				start.set(Calendar.MINUTE, 0);
-				if (magnitude.equals("hour")) {
-					round(Calendar.HOUR_OF_DAY, start, diff);
-					break rounding;
-				}
-				start.set(Calendar.HOUR_OF_DAY, 0);
-				//Yes, I know these last three are kind of ridiculous, but you never know.
-				if (magnitude.equals("day")) {
-					round(Calendar.DAY_OF_MONTH, start, diff);
-					break rounding;
-				}
-				start.set(Calendar.DAY_OF_MONTH, 1);
-				if (magnitude.equals("month")) {
-					round(Calendar.YEAR, start, diff);
-					break rounding;
-				}
-				start.set(Calendar.MONTH, 0);
-				if (magnitude.equals("year")) {
-					round(Calendar.YEAR, start, diff);
-					break rounding;
-				}
-				start.set(Calendar.YEAR, 0);
+				//Note that this does not interfere with the partial rounding of the next smallest field because the decrementation needs to happen regardless.
+				for (--rp; rp >= 0; --rp) //Set all of the smaller fields to their minimum values (presumably 0)
+					start.set(fields[rp], start.getActualMinimum(fields[rp]));
+				System.out.println(start.toString());
+				System.out.println(start.getActualMinimum(Calendar.DAY_OF_MONTH));
 			}
 			
 			//Update the start time with the offset
