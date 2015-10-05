@@ -34,7 +34,7 @@ public class Simulation extends HashMap<String, Path> {
 	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
 	private static final String[] userStringMap = {"millisecond", "second", "minute", "hour", "day", "month", "year"};
 	private static final int[] fields = {Calendar.MILLISECOND, Calendar.SECOND, Calendar.MINUTE, Calendar.HOUR_OF_DAY, Calendar.DAY_OF_MONTH, Calendar.MONTH, Calendar.YEAR};
-	protected final Calendar start, end;
+	protected final Calendar increment, start, end;
 	protected final Logger log;
 	protected final boolean create;
 	
@@ -93,6 +93,7 @@ public class Simulation extends HashMap<String, Path> {
 		doms = ((Number) namelists.get("wrf").get("domains").get("max_dom").get(0).value()).intValue();
 		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
 		start = (Calendar) current.clone();
+		increment = (Calendar) start.clone();
 		NamelistSection tc = namelists.get("wrf").get("time_control");
 		JSONObject rounding = (JSONObject) timing.get("rounding");
 		JSONObject duration = (JSONObject) timing.get("duration");
@@ -114,11 +115,11 @@ public class Simulation extends HashMap<String, Path> {
 			int rp = 1;
 			for (; rp < userStringMap.length && !userStringMap[rp].equals(magnitude); rp++);
 			if (rp == userStringMap.length) {
-				log.log(Level.WARNING, "The magnitude field in rounding has an invalid value.  Skipping rounding.");
+				log.log(Level.WARNING, "The magnitude field in timing.rounding has an invalid value.  Skipping rounding.");
 				doRounding = false;
 			}
 			if (fraction <= 0.0 || fraction > 1.0) {
-				log.log(Level.WARNING, "The fraction field in rounding is outside of its valid range of (0.0, 1.0].  Assuming 1.0.");
+				log.log(Level.WARNING, "The fraction field in timing.rounding is outside of its valid range of (0.0, 1.0].  Assuming 1.0.");
 				fraction = 1.0;
 			}
 			if (doRounding) {
@@ -126,22 +127,25 @@ public class Simulation extends HashMap<String, Path> {
 				round(fields[rp], start, diff); //First, we handle the diff on the field that the user is rounding on
 				if (fraction < 1.0) { //If they want to keep some portion of the field before this, then fraction will be less than 1.0.
 					--rp;
-					start.set(fields[rp], (int) Numbers.semifloor(start.getActualMaximum(fields[rp]), fraction, start.get(fields[rp])));
+					int offset = 1 - start.getActualMinimum(fields[rp]);
+					start.set(fields[rp], (int) Numbers.semifloor(start.getActualMaximum(fields[rp]) + offset, fraction, start.get(fields[rp])));
+					increment.set(fields[rp], increment.getActualMinimum(fields[rp]));
 				}
 				//Note that this does not interfere with the partial rounding of the next smallest field because the decrementation needs to happen regardless.
-				for (--rp; rp >= 0; --rp) //Set all of the smaller fields to their minimum values (presumably 0)
-					start.set(fields[rp], start.getActualMinimum(fields[rp]));
-				System.out.println(start.toString());
-				System.out.println(start.getActualMinimum(Calendar.DAY_OF_MONTH));
+				--rp;
+				for (int min = 0; rp >= 0; --rp) {//Set all of the smaller fields to their minimum values (presumably 0)
+					start.set(fields[rp], min = start.getActualMinimum(fields[rp]));
+					increment.set(fields[rp], min);
+				}
 			}
 			
 			//Update the start time with the offset
 			JSONObject offset = (JSONObject) timing.get("offset");
 			if (((Boolean) offset.get("enabled").value()).booleanValue()) {
-				start.add(Calendar.DAY_OF_MONTH, ((Number) offset.get("days").value()).intValue());
-				start.add(Calendar.HOUR_OF_DAY, ((Number) offset.get("hours").value()).intValue());
-				start.add(Calendar.MINUTE, ((Number) offset.get("minutes").value()).intValue());
-				start.add(Calendar.SECOND, ((Number) offset.get("seconds").value()).intValue());
+				increment.add(Calendar.DAY_OF_MONTH, ((Number) offset.get("days").value()).intValue());
+				increment.add(Calendar.HOUR_OF_DAY, ((Number) offset.get("hours").value()).intValue());
+				increment.add(Calendar.MINUTE, ((Number) offset.get("minutes").value()).intValue());
+				increment.add(Calendar.SECOND, ((Number) offset.get("seconds").value()).intValue());
 			}
 			
 			if (duration == null) { //If there is no duration data, grab it from the WRF namelist file's "time_control" section
@@ -184,6 +188,14 @@ public class Simulation extends HashMap<String, Path> {
 			cal.add(field, 1);
 		else if (diff.equals("previous"))
 			cal.add(field, -1);
+	}
+	
+	/**
+	 * @return the {@link Calendar} containing the rounded version of {@link Simulation#getStart() Simulation's start} time
+	 *         wherein all fields below <tt>timing.rounding.magnitude</tt> are at their minimum values.
+	 */
+	public Calendar getIncrement() {
+		return increment;
 	}
 	
 	/**

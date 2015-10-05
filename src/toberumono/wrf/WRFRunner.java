@@ -48,6 +48,7 @@ import static toberumono.utils.general.ProcessBuilders.*;
  */
 public class WRFRunner {
 	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
+	private static final int[] calendarOffsetFields = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
 	
 	protected JSONObject configuration, general, features, parallel, timing, grib;
 	protected Path configurationFile;
@@ -437,7 +438,7 @@ public class WRFRunner {
 	public void runWGet(Map<String, Namelist> namelists, Simulation sim) throws IOException, InterruptedException {
 		int[] offsets = new int[4], steps = new int[4], limits = new int[4];
 		String url = (String) grib.get("url").value();
-		Calendar start = sim.getStart(), end = sim.getEnd();
+		Calendar start = sim.getStart(), end = sim.getEnd(), test = (Calendar) start.clone(), increment = sim.getIncrement();
 		
 		JSONObject timestep = (JSONObject) grib.get("timestep");
 		steps[0] = ((Number) timestep.get("days").value()).intValue();
@@ -450,18 +451,16 @@ public class WRFRunner {
 		limits[1] = ((Number) duration.get("hours").value()).intValue();
 		limits[2] = ((Number) duration.get("minutes").value()).intValue();
 		limits[3] = ((Number) duration.get("seconds").value()).intValue();
-		Calendar test = (Calendar) start.clone();
-		for (; !test.after(end); incrementOffsets(offsets, steps, test))
-			downloadGribFile(parseIncrementedURL(url, start, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), sim);
+		for (; !test.after(end); incrementOffsets(offsets, steps, test, increment))
+			downloadGribFile(parseIncrementedURL(url, start, increment, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), sim);
 	}
 	
-	private static final void incrementOffsets(int[] offsets, int[] steps, Calendar test) {
-		for (int i = 0; i < offsets.length; i++)
+	private static final void incrementOffsets(int[] offsets, int[] steps, Calendar test, Calendar base) {
+		for (int i = 0; i < offsets.length; i++) {
 			offsets[i] += steps[i];
-		test.add(Calendar.DAY_OF_MONTH, steps[0]);
-		test.add(Calendar.HOUR_OF_DAY, steps[1]);
-		test.add(Calendar.MINUTE, steps[2]);
-		test.add(Calendar.SECOND, steps[3]);
+			test.add(calendarOffsetFields[i], steps[i]);
+			base.add(calendarOffsetFields[i], steps[i]);
+		}
 	}
 	
 	/**
@@ -478,7 +477,9 @@ public class WRFRunner {
 	 * @param url
 	 *            the base form of the URL <i>prior</i> to <i>any</i> calls to {@link String#format(String, Object...)}
 	 * @param start
-	 *            the {@link Calendar} containing the start time
+	 *            the {@link Calendar} containing the start time - this is constant across URLs
+	 * @param increment
+	 *            the {@link Calendar} containing the incremented time - this changes across URLs
 	 * @param years
 	 *            the year offset from <tt>start</tt>
 	 * @param months
@@ -493,7 +494,7 @@ public class WRFRunner {
 	 *            the second offset from <tt>start</tt>
 	 * @return a {@link String} representation of a {@link URL} pointing to the generated location
 	 */
-	public String parseIncrementedURL(String url, Calendar start, int years, int months, int days, int hours, int minutes, int seconds) {
+	public String parseIncrementedURL(String url, Calendar start, Calendar increment, int years, int months, int days, int hours, int minutes, int seconds) {
 		url = url.trim().replaceAll("%([\\Q-#+ 0,(\\E]*?[tT])", "%1\\$$1"); //Force the formatter to use the first argument for all of the default date/time markers
 		url = url.replaceAll("%[iI]Y", "%2\\$04d").replaceAll("%[iI]y", "%2\\$d"); //Year
 		url = url.replaceAll("%[iI]m", "%3\\$02d").replaceAll("%[iI]e", "%3\\$d"); //Month
@@ -501,8 +502,8 @@ public class WRFRunner {
 		url = url.replaceAll("%[iI]H", "%5\\$02d").replaceAll("%[iI]k", "%5\\$d"); //Hour
 		url = url.replaceAll("%[iI]M", "%6\\$02d").replaceAll("%[iI]i", "%6\\$d"); //Minute
 		url = url.replaceAll("%[iI]S", "%7\\$02d").replaceAll("%[iI]s", "%7\\$d"); //Second
-		return String.format(url, start, years + start.get(Calendar.YEAR), months + start.get(Calendar.MONTH) + 1, days + start.get(Calendar.DAY_OF_MONTH),
-				hours + start.get(Calendar.HOUR_OF_DAY), minutes + start.get(Calendar.MINUTE), seconds + start.get(Calendar.SECOND));
+		return String.format(url, start, increment.get(Calendar.YEAR), increment.get(Calendar.MONTH) + 1, increment.get(Calendar.DAY_OF_MONTH),
+				increment.get(Calendar.HOUR_OF_DAY), increment.get(Calendar.MINUTE), increment.get(Calendar.SECOND));
 	}
 	
 	/**
