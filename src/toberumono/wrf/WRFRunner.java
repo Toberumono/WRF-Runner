@@ -438,7 +438,7 @@ public class WRFRunner {
 	public void runWGet(Map<String, Namelist> namelists, Simulation sim) throws IOException, InterruptedException {
 		int[] offsets = new int[4], steps = new int[4], limits = new int[4];
 		String url = (String) grib.get("url").value();
-		Calendar start = sim.getStart(), end = sim.getEnd(), test = (Calendar) start.clone(), increment = sim.getIncrement();
+		Calendar constant = sim.getConstant(), end = sim.getEnd(), test = (Calendar) sim.getStart().clone(), increment = sim.getIncrement();
 		
 		JSONObject timestep = (JSONObject) grib.get("timestep");
 		steps[0] = ((Number) timestep.get("days").value()).intValue();
@@ -452,7 +452,7 @@ public class WRFRunner {
 		limits[2] = ((Number) duration.get("minutes").value()).intValue();
 		limits[3] = ((Number) duration.get("seconds").value()).intValue();
 		for (; !test.after(end); incrementOffsets(offsets, steps, test, increment))
-			downloadGribFile(parseIncrementedURL(url, start, increment, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), sim);
+			downloadGribFile(parseIncrementedURL(url, constant, increment, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), sim);
 	}
 	
 	private static final void incrementOffsets(int[] offsets, int[] steps, Calendar test, Calendar base) {

@@ -34,7 +34,7 @@ public class Simulation extends HashMap<String, Path> {
 	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
 	private static final String[] userStringMap = {"millisecond", "second", "minute", "hour", "day", "month", "year"};
 	private static final int[] fields = {Calendar.MILLISECOND, Calendar.SECOND, Calendar.MINUTE, Calendar.HOUR_OF_DAY, Calendar.DAY_OF_MONTH, Calendar.MONTH, Calendar.YEAR};
-	protected final Calendar increment, start, end;
+	protected final Calendar increment, constant, start, end;
 	protected final Logger log;
 	protected final boolean create;
 	
@@ -92,20 +92,21 @@ public class Simulation extends HashMap<String, Path> {
 		this.create = create;
 		doms = ((Number) namelists.get("wrf").get("domains").get("max_dom").get(0).value()).intValue();
 		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
-		start = (Calendar) current.clone();
-		increment = (Calendar) start.clone();
+		constant = (Calendar) current.clone();
+		increment = (Calendar) constant.clone();
 		NamelistSection tc = namelists.get("wrf").get("time_control");
 		JSONObject rounding = (JSONObject) timing.get("rounding");
 		JSONObject duration = (JSONObject) timing.get("duration");
 		if (!((Boolean) timing.get("use-computed-times").value()).booleanValue()) {
-			start.set(start.YEAR, ((Number) tc.get("start_year").get(0).value()).intValue());
-			start.set(start.MONTH, ((Number) tc.get("start_month").get(0).value()).intValue() - 1);
-			start.set(start.DAY_OF_MONTH, ((Number) tc.get("start_day").get(0).value()).intValue());
-			start.set(start.HOUR_OF_DAY, ((Number) tc.get("start_hour").get(0).value()).intValue());
-			start.set(start.MINUTE, ((Number) tc.get("start_minute").get(0).value()).intValue());
-			start.set(start.SECOND, ((Number) tc.get("start_second").get(0).value()).intValue());
+			constant.set(constant.YEAR, ((Number) tc.get("start_year").get(0).value()).intValue());
+			constant.set(constant.MONTH, ((Number) tc.get("start_month").get(0).value()).intValue() - 1);
+			constant.set(constant.DAY_OF_MONTH, ((Number) tc.get("start_day").get(0).value()).intValue());
+			constant.set(constant.HOUR_OF_DAY, ((Number) tc.get("start_hour").get(0).value()).intValue());
+			constant.set(constant.MINUTE, ((Number) tc.get("start_minute").get(0).value()).intValue());
+			constant.set(constant.SECOND, ((Number) tc.get("start_second").get(0).value()).intValue());
 			generateDuration(tc);
 			duration.clearModified();
+			start = (Calendar) constant.clone();
 		}
 		else {
 			String magnitude = ((String) rounding.get("magnitude").value()).toLowerCase();
@@ -124,28 +125,26 @@ public class Simulation extends HashMap<String, Path> {
 			}
 			if (doRounding) {
 				//The logic here is that if we are rounding to something, then we want to set everything before it to 0.
-				round(fields[rp], start, diff); //First, we handle the diff on the field that the user is rounding on
+				round(fields[rp], constant, diff); //First, we handle the diff on the field that the user is rounding on
 				if (fraction < 1.0) { //If they want to keep some portion of the field before this, then fraction will be less than 1.0.
 					--rp;
-					int offset = 1 - start.getActualMinimum(fields[rp]);
-					start.set(fields[rp], (int) Numbers.semifloor(start.getActualMaximum(fields[rp]) + offset, fraction, start.get(fields[rp])));
+					int offset = 1 - constant.getActualMinimum(fields[rp]);
+					constant.set(fields[rp], (int) Numbers.semifloor(constant.getActualMaximum(fields[rp]) + offset, fraction, constant.get(fields[rp])));
 					increment.set(fields[rp], increment.getActualMinimum(fields[rp]));
 				}
 				//Note that this does not interfere with the partial rounding of the next smallest field because the decrementation needs to happen regardless.
 				--rp;
 				for (int min = 0; rp >= 0; --rp) {//Set all of the smaller fields to their minimum values (presumably 0)
-					start.set(fields[rp], min = start.getActualMinimum(fields[rp]));
+					constant.set(fields[rp], min = constant.getActualMinimum(fields[rp]));
 					increment.set(fields[rp], min);
 				}
 			}
-			
+			start = (Calendar) constant.clone();
 			//Update the start time with the offset
 			JSONObject offset = (JSONObject) timing.get("offset");
 			if (((Boolean) offset.get("enabled").value()).booleanValue()) {
-				increment.add(Calendar.DAY_OF_MONTH, ((Number) offset.get("days").value()).intValue());
-				increment.add(Calendar.HOUR_OF_DAY, ((Number) offset.get("hours").value()).intValue());
-				increment.add(Calendar.MINUTE, ((Number) offset.get("minutes").value()).intValue());
-				increment.add(Calendar.SECOND, ((Number) offset.get("seconds").value()).intValue());
+				addJSONDiff(increment, offset);
+				addJSONDiff(start, offset);
 			}
 			
 			if (duration == null) { //If there is no duration data, grab it from the WRF namelist file's "time_control" section
@@ -154,14 +153,16 @@ public class Simulation extends HashMap<String, Path> {
 			}
 		}
 		end = (Calendar) start.clone();
-		//Calculate the end time from the duration data in the configuration file
-		//Coincidentally, this is the same process needed for generating the timing data from the namelist file alone
-		end.add(Calendar.DAY_OF_MONTH, ((Number) duration.get("days").value()).intValue());
-		end.add(Calendar.HOUR_OF_DAY, ((Number) duration.get("hours").value()).intValue());
-		end.add(Calendar.MINUTE, ((Number) duration.get("minutes").value()).intValue());
-		end.add(Calendar.SECOND, ((Number) duration.get("seconds").value()).intValue());
-		root = Simulation.makeWorkingFolder(start, working, always_suffix);
+		addJSONDiff(end, duration); //Calculate the end time from the duration data in the configuration file
+		root = Simulation.makeWorkingFolder(constant, working, always_suffix);
 		this.output = root.resolve(output);
+	}
+	
+	private void addJSONDiff(Calendar cal, JSONObject diff) {
+		cal.add(Calendar.DAY_OF_MONTH, ((Number) diff.get("days").value()).intValue());
+		cal.add(Calendar.HOUR_OF_DAY, ((Number) diff.get("hours").value()).intValue());
+		cal.add(Calendar.MINUTE, ((Number) diff.get("minutes").value()).intValue());
+		cal.add(Calendar.SECOND, ((Number) diff.get("seconds").value()).intValue());
 	}
 	
 	/**
@@ -191,8 +192,16 @@ public class Simulation extends HashMap<String, Path> {
 	}
 	
 	/**
-	 * @return the {@link Calendar} containing the rounded version of {@link Simulation#getStart() Simulation's start} time
-	 *         wherein all fields below <tt>timing.rounding.magnitude</tt> are at their minimum values.
+	 * @return the {@link Calendar} representing the {@link Simulation Simulation's} constant component of the timing for the
+	 *         GRIB download URL pattern
+	 */
+	public Calendar getConstant() {
+		return constant;
+	}
+	
+	/**
+	 * @return the {@link Calendar} representing the {@link Simulation Simulation's} incremented component of the timing for
+	 *         the GRIB download URL pattern
 	 */
 	public Calendar getIncrement() {
 		return increment;
