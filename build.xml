@@ -71,8 +71,11 @@
 	</target>
 
 	<target if="${use.homebrew}" name="find.brew">
-		<exec unless:set="brew.path" executable="which" outputproperty="brew.path">
-			<arg value="brew" />
+		<exec unless:set="brew.path" searchpath="true" executable="env" outputproperty="brew.path">
+			<arg value="bash" />
+			<arg value="-l" />
+			<arg value="-c" />
+			<arg value="which brew" />
 		</exec>
 		<exec unless:set="brew.prefix" executable="${brew.path}" outputproperty="brew.prefix">
 			<arg value="--prefix" />
