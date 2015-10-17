@@ -49,14 +49,20 @@
 	</patternset>
 
 	<patternset id="Build Excludes">
+		<exclude name="**/*.css" />
 		<!--Add the names of files to exclude from the src directory here.-->
-		<exclude name="testCases/**" />
+	</patternset>
+
+	<patternset id="Debug">
+		<!--Add the names of debug classes that should be excluded from the packaged jar here.-->
+		<exclude name="**/testCases/**" />
 	</patternset>
 
 	<target name="javadoc">
 		<javadoc access="protected" author="true" destdir="${doc}" packagenames="*" source="1.8" splitindex="true" use="true" version="true">
 			<fileset dir="${src}">
 				<patternset refid="Build Excludes" />
+				<patternset refid="Debug" />
 			</fileset>
 			<classpath if:true="${use.libs}" refid="build.classpath" />
 		</javadoc>
@@ -68,6 +74,10 @@
 			<patternset refid="Build Excludes" />
 			<classpath if:true="${use.libs}" refid="build.classpath" />
 		</javac>
+		<!--Copy css files to their appropriate locations in the bin directory (for JavaFx)-->
+		<copy todir="${bin}">
+			<fileset dir="${src}" includes="**/*.css" />
+		</copy>
 	</target>
 
 	<target if="${use.homebrew}" name="find.brew">
@@ -77,29 +87,23 @@
 			<arg value="-c" />
 			<arg value="which brew" />
 		</exec>
-		<exec unless:set="brew.prefix" executable="${brew.path}" outputproperty="brew.prefix">
+		<exec unless:set="brew.prefix" searchpath="true" executable="${brew.path}" outputproperty="brew.prefix">
 			<arg value="--prefix" />
 		</exec>
-		<property name="build.libs" location="${brew.prefix}/lib/" />
 	</target>
 
 	<target if="${use.libs}" name="construct.classpath" depends="find.brew">
 		<echo if:true="${use.homebrew}" level="info" message="Using libraries from homebrew." />
 		<echo unless:true="${use.homebrew}" level="info" message="Using libraries from ${libs}" />
-		<property unless:set="build.libs" name="build.libs" location="${libs}" />
-		<path id="build.classpath">
-			<fileset id="library" dir="${build.libs}">
-				<patternset refid="libraries" />
-			</fileset>
-		</path>
 		<pathconvert property="manifest.classpath" pathsep=" ">
-			<path refid="build.classpath" />
-			<mapper>
-				<chainedmapper>
-					<flattenmapper />
-					<globmapper from="*.jar" to="${build.libs}/*.jar" />
-				</chainedmapper>
-			</mapper>
+			<path id="build.classpath">
+				<multirootfileset id="library">
+					<basedir if:set="brew.prefix" file="${brew.prefix}/lib/" />
+					<basedir file="${libs}" />
+					<patternset refid="libraries" />
+				</multirootfileset>
+			</path>
+			<identitymapper />
 		</pathconvert>
 	</target>
 
@@ -110,14 +114,18 @@
 				<attribute if:true="${use.libs}" name="Class-Path" value="${manifest.classpath}" />
 				<attribute unless:true="${use.libs}" name="Class-Path" value="." />
 			</manifest>
-			<fileset dir="${bin}" />
+			<fileset dir="${bin}">
+				<patternset refid="Build Excludes" />
+				<patternset refid="Debug" />
+			</fileset>
 			<fileset if:true="${package.doc}" dir="." includes="${doc}/**" />
+			<fileset if:true="${package.nativelibs}" dir="." includes="${nativelibs}/**" />
 			<fileset if:true="${package.src}" dir="${src}" />
 			<restrict if:true="${package.libs}">
 				<name regex=".*\.(class|java)" />
 				<archives>
 					<zips>
-						<fileset refid="library" />
+						<multirootfileset refid="library" />
 					</zips>
 				</archives>
 			</restrict>
