@@ -5,6 +5,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -14,11 +15,17 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+import toberumono.json.JSONBoolean;
+import toberumono.json.JSONData;
+import toberumono.json.JSONNumber;
 import toberumono.json.JSONObject;
+import toberumono.json.JSONString;
+import toberumono.json.JSONSystem;
 import toberumono.namelist.parser.Namelist;
 import toberumono.namelist.parser.NamelistNumber;
 import toberumono.namelist.parser.NamelistSection;
 import toberumono.structures.tuples.Pair;
+import toberumono.structures.tuples.Triple;
 import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
 import toberumono.utils.general.MutedLogger;
@@ -35,8 +42,36 @@ public class Simulation extends HashMap<String, Path> {
 	private static final String[] userStringMap = {"millisecond", "second", "minute", "hour", "day", "month", "year"};
 	private static final int[] fields = {Calendar.MILLISECOND, Calendar.SECOND, Calendar.MINUTE, Calendar.HOUR_OF_DAY, Calendar.DAY_OF_MONTH, Calendar.MONTH, Calendar.YEAR};
 	protected final Calendar increment, constant, start, end;
-	protected final Logger log;
-	protected final boolean create;
+	private final Logger log;
+	private final boolean create;
+	protected final Map<String, Path> sourcePaths;
+	/**
+	 * The {@link JSONObject} holding the root of the configuration file.
+	 */
+	public final JSONObject configuration;
+	/**
+	 * The {@link JSONObject} holding the general subsection of the configuration file.
+	 */
+	public final JSONObject general;
+	/**
+	 * The {@link JSONObject} holding the features subsection of the configuration file.
+	 */
+	public final JSONObject features;
+	/**
+	 * The {@link JSONObject} holding the parallel subsection of the configuration file.
+	 */
+	public final JSONObject parallel;
+	/**
+	 * The {@link JSONObject} holding the timing subsection of the configuration file.
+	 */
+	public final JSONObject timing;
+	private final JSONObject timestep;
+	/**
+	 * The {@link JSONObject} holding the grib subsection of the configuration file.
+	 */
+	public final JSONObject grib;
+	private final Path configurationFile, working;
+	protected final Map<String, Namelist> namelists;
 	
 	/**
 	 * The timestamped working directory
@@ -60,43 +95,77 @@ public class Simulation extends HashMap<String, Path> {
 	 * Calculates the appropriate start and end times for the simulation from the configuration data and WRF {@link Namelist}
 	 * file.
 	 * 
-	 * @param namelists
-	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
-	 * @param current
-	 *            a {@link Calendar} object with the current date/time data
-	 * @param working
-	 *            a {@link Path} to the root working directory.
 	 * @param output
 	 *            a {@link Path} to the output directory
-	 * @param timestep
-	 *            the grib--&gt;timestep subsection of the configuration file. If wget feature is not being used, this must
-	 *            be {@code null}.
-	 * @param timing
-	 *            a {@link JSONObject} holding the timing data from the configuration file
 	 * @param create
 	 *            if {@code true}, this will call {@link Files#createDirectories} for each {@link Path}
-	 * @param always_suffix
-	 *            the value of the "use-suffix" field in the general--&gt;parallel subsection of the configuration file
 	 * @param log
 	 *            the {@link Logger} to use in the {@link Simulation TimeRange's} operations
 	 * @throws IOException
 	 *             if the timestamped working directory cannot be created
 	 */
-	public Simulation(Map<String, Namelist> namelists, Calendar current, Path working, Path output, JSONObject timestep, JSONObject timing, boolean create, boolean always_suffix, Logger log)
+	public Simulation(Path configurationFile, Path output, Map<String, Triple<Step, CleanupFunction, Pair<Path, NamelistUpdater>>> steps, boolean create, Logger log)
 			throws IOException {
-		if (working == null)
-			throw new NullPointerException("The working path cannot be null.");
+		constant = Calendar.getInstance();
 		if (log == null)
 			log = MutedLogger.getMutedLogger();
+			
+		this.configurationFile = configurationFile;
+		sourcePaths = new HashMap<>();
+		configuration = (JSONObject) JSONSystem.loadJSON(this.configurationFile);
+		((JSONObject) configuration.get("paths")).forEach((n, p) -> sourcePaths.put(n, Paths.get(((String) p.value())).normalize().toAbsolutePath()));
+		general = (JSONObject) configuration.get("general");
+		features = (JSONObject) general.get("features");
+		parallel = (JSONObject) general.get("parallel");
+		timing = (JSONObject) configuration.get("timing");
+		grib = (JSONObject) configuration.get("grib");
+		timestep = ((Boolean) features.get("wget").value()) ? (JSONObject) grib.get("timestep") : null;
+		fixConfigurationFile();
+		
+		namelists = new HashMap<>();
+		for (String step : steps.keySet()) {
+			if (sourcePaths.containsKey(step))
+				namelists.put(step, steps.get(step).getZ() != null ? new Namelist(sourcePaths.get(step).resolve(steps.get(step).getZ().getX())) : null);
+		}
+		
+		working = Paths.get(general.get("working-directory").value().toString());
+		if (!Files.isDirectory(working))
+			Files.createDirectories(working);
+		if (working == null)
+			throw new NullPointerException("The working path cannot be null.");
+		if (configuration.isModified())
+			JSONSystem.writeJSON(configuration, configurationFile);
+			
 		this.log = log;
 		this.create = create;
 		doms = ((Number) namelists.get("wrf").get("domains").get("max_dom").get(0).value()).intValue();
 		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
-		constant = (Calendar) current.clone();
 		increment = (Calendar) constant.clone();
 		NamelistSection tc = namelists.get("wrf").get("time_control");
 		JSONObject rounding = (JSONObject) timing.get("rounding");
 		JSONObject duration = (JSONObject) timing.get("duration");
+		initializeConstant(tc, rounding, duration);
+		start = (Calendar) constant.clone();
+		if (!((Boolean) timing.get("use-computed-times").value()).booleanValue()) {
+			//Update the start time with the offset
+			JSONObject offset = (JSONObject) timing.get("offset");
+			if (((Boolean) offset.get("enabled").value()).booleanValue()) {
+				addJSONDiff(increment, offset);
+				addJSONDiff(start, offset);
+			}
+			
+			if (duration == null) { //If there is no duration data, grab it from the WRF namelist file's "time_control" section
+				duration = generateDuration(tc);
+				timing.put("duration", duration);
+			}
+		}
+		end = (Calendar) start.clone();
+		addJSONDiff(end, duration); //Calculate the end time from the duration data in the configuration file
+		root = Simulation.makeWorkingFolder(constant, working, (Boolean) general.get("always-suffix").value());
+		this.output = root.resolve(output);
+	}
+	
+	private void initializeConstant(NamelistSection tc, JSONObject rounding, JSONObject duration) {
 		if (!((Boolean) timing.get("use-computed-times").value()).booleanValue()) {
 			constant.set(constant.YEAR, ((Number) tc.get("start_year").get(0).value()).intValue());
 			constant.set(constant.MONTH, ((Number) tc.get("start_month").get(0).value()).intValue() - 1);
@@ -106,7 +175,6 @@ public class Simulation extends HashMap<String, Path> {
 			constant.set(constant.SECOND, ((Number) tc.get("start_second").get(0).value()).intValue());
 			generateDuration(tc);
 			duration.clearModified();
-			start = (Calendar) constant.clone();
 		}
 		else {
 			String magnitude = ((String) rounding.get("magnitude").value()).toLowerCase();
@@ -139,23 +207,51 @@ public class Simulation extends HashMap<String, Path> {
 					increment.set(fields[rp], min);
 				}
 			}
-			start = (Calendar) constant.clone();
-			//Update the start time with the offset
-			JSONObject offset = (JSONObject) timing.get("offset");
-			if (((Boolean) offset.get("enabled").value()).booleanValue()) {
-				addJSONDiff(increment, offset);
-				addJSONDiff(start, offset);
-			}
-			
-			if (duration == null) { //If there is no duration data, grab it from the WRF namelist file's "time_control" section
-				duration = generateDuration(tc);
-				timing.put("duration", duration);
-			}
 		}
-		end = (Calendar) start.clone();
-		addJSONDiff(end, duration); //Calculate the end time from the duration data in the configuration file
-		root = Simulation.makeWorkingFolder(constant, working, always_suffix);
-		this.output = root.resolve(output);
+		
+	}
+	
+	/**
+	 * @return the {@link Path} to the current configuration file
+	 */
+	public Path getConfigurationPath() {
+		return configurationFile;
+	}
+	
+	/**
+	 * @return the {@link Path} to the current working directory
+	 */
+	public Path getWorkingPath() {
+		return working;
+	}
+	
+	private void fixConfigurationFile() {
+		transferField("cleanup", new JSONBoolean(true), features, general);
+		transferField("keep-logs", new JSONBoolean(false), general);
+		transferField("always-suffix", new JSONBoolean(false), general);
+		transferField("max-kept-outputs", new JSONNumber<>(15), general);
+		if (sourcePaths.containsKey("working")) {
+			JSONString working = new JSONString(sourcePaths.remove("working").toString());
+			if (!general.containsKey("working-directory"))
+				general.put("working-directory", working);
+			((JSONObject) configuration.get("paths")).remove("working");
+		}
+		transferField("working-directory", new JSONString(configurationFile.toAbsolutePath().getParent().resolve("Working").normalize().toString()), general);
+		transferField("fraction", new JSONNumber<>(1.0), new JSONObject[]{(JSONObject) timing.get("rounding")});
+		transferField("use-computed-times", ((JSONObject) timing.get("rounding")).get("enabled"), timing); //If use-computed-times hasn't been set, use rounding.enabled as its value.
+	}
+	
+	private static void transferField(String name, JSONData<?> defaultValue, JSONObject... stChain) {
+		if (stChain.length == 1) {
+			if (!stChain[0].containsKey(name))
+				stChain[0].put(name, defaultValue);
+			return;
+		}
+		for (int i = 0, j = 1; j < stChain.length; i++, j++)
+			if (!stChain[j].containsKey(name))
+				stChain[j].put(name, stChain[i].containsKey(name) ? stChain[i].remove(name) : defaultValue);
+			else if (stChain[i].containsKey(name))
+				stChain[i].remove(name);
 	}
 	
 	private void addJSONDiff(Calendar cal, JSONObject diff) {
@@ -189,6 +285,24 @@ public class Simulation extends HashMap<String, Path> {
 			cal.add(field, 1);
 		else if (diff.equals("previous"))
 			cal.add(field, -1);
+	}
+	
+	/**
+	 * @return the {@link Logger Log} being used by the {@link Simulation}
+	 */
+	public final Logger getLog() {
+		return log;
+	}
+	
+	/**
+	 * Gets the source {@link Path} for the given module
+	 * 
+	 * @param module
+	 *            the name of the module (e.g. wrf or wps)
+	 * @return the source {@link Path} for the module or {@code null} if it cannot be found
+	 */
+	public Path getSourcePath(String module) {
+		return sourcePaths.get(module);
 	}
 	
 	/**
