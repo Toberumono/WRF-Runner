@@ -95,8 +95,12 @@ public class Simulation extends HashMap<String, Path> {
 	 * Calculates the appropriate start and end times for the simulation from the configuration data and WRF {@link Namelist}
 	 * file.
 	 * 
+	 * @param configurationFile
+	 *            the {@link Path} to the configuration file to use
 	 * @param output
 	 *            a {@link Path} to the output directory
+	 * @param steps
+	 *            the steps to be performed
 	 * @param create
 	 *            if {@code true}, this will call {@link Files#createDirectories} for each {@link Path}
 	 * @param log
@@ -238,6 +242,7 @@ public class Simulation extends HashMap<String, Path> {
 		}
 		transferField("working-directory", new JSONString(configurationFile.toAbsolutePath().getParent().resolve("Working").normalize().toString()), general);
 		transferField("fraction", new JSONNumber<>(1.0), new JSONObject[]{(JSONObject) timing.get("rounding")});
+		transferField("wrap-timestep", new JSONBoolean(true), grib);
 		transferField("use-computed-times", ((JSONObject) timing.get("rounding")).get("enabled"), timing); //If use-computed-times hasn't been set, use rounding.enabled as its value.
 	}
 	

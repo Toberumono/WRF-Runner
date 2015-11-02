@@ -10,6 +10,7 @@ import java.util.Calendar;
 import java.util.Map;
 import java.util.logging.Level;
 
+import toberumono.json.JSONBoolean;
 import toberumono.json.JSONObject;
 import toberumono.namelist.parser.Namelist;
 import toberumono.wrf.Simulation;
@@ -52,7 +53,7 @@ public class WgetLogic {
 		limits[2] = ((Number) duration.get("minutes").value()).intValue();
 		limits[3] = ((Number) duration.get("seconds").value()).intValue();
 		for (; !test.after(end); incrementOffsets(offsets, steps, test, increment))
-			downloadGribFile(parseIncrementedURL(url, constant, increment, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), sim);
+			downloadGribFile(parseIncrementedURL(url, constant, increment, ((JSONBoolean) sim.grib.get("wrap-timestep")).value(), 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), sim);
 	}
 	
 	/**
@@ -72,6 +73,9 @@ public class WgetLogic {
 	 *            the {@link Calendar} containing the start time - this is constant across URLs
 	 * @param increment
 	 *            the {@link Calendar} containing the incremented time - this changes across URLs
+	 * @param wrapTimestep
+	 *            whether the increment {@link Calendar} or the offsets should be used (if false, the time fields will not
+	 *            wrap)
 	 * @param years
 	 *            the year offset from <tt>start</tt>
 	 * @param months
@@ -86,7 +90,7 @@ public class WgetLogic {
 	 *            the second offset from <tt>start</tt>
 	 * @return a {@link String} representation of a {@link URL} pointing to the generated location
 	 */
-	public static String parseIncrementedURL(String url, Calendar start, Calendar increment, int years, int months, int days, int hours, int minutes, int seconds) {
+	public static String parseIncrementedURL(String url, Calendar start, Calendar increment, boolean wrapTimestep, int years, int months, int days, int hours, int minutes, int seconds) {
 		url = url.trim().replaceAll("%([\\Q-#+ 0,(\\E]*?[tT])", "%1\\$$1"); //Force the formatter to use the first argument for all of the default date/time markers
 		url = url.replaceAll("%[iI]Y", "%2\\$04d").replaceAll("%[iI]y", "%2\\$d"); //Year
 		url = url.replaceAll("%[iI]m", "%3\\$02d").replaceAll("%[iI]e", "%3\\$d"); //Month
@@ -94,6 +98,8 @@ public class WgetLogic {
 		url = url.replaceAll("%[iI]H", "%5\\$02d").replaceAll("%[iI]k", "%5\\$d"); //Hour
 		url = url.replaceAll("%[iI]M", "%6\\$02d").replaceAll("%[iI]i", "%6\\$d"); //Minute
 		url = url.replaceAll("%[iI]S", "%7\\$02d").replaceAll("%[iI]s", "%7\\$d"); //Second
+		if (!wrapTimestep)
+			return String.format(url, start, years, months + 1, days, hours, minutes, seconds);
 		return String.format(url, start, increment.get(Calendar.YEAR), increment.get(Calendar.MONTH) + 1, increment.get(Calendar.DAY_OF_MONTH),
 				increment.get(Calendar.HOUR_OF_DAY), increment.get(Calendar.MINUTE), increment.get(Calendar.SECOND));
 	}

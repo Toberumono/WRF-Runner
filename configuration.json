@@ -27,7 +27,8 @@
 			"hours" : 3,
 			"minutes" : 0,
 			"seconds" : 0
-		}
+		},
+		"wrap-timestep" : true
 	},
 	"timing" : {
 		"use-computed-times" : true,
