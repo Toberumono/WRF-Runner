@@ -1,6 +1,6 @@
 #WRF-Runner
 ##What is it?
-This is a Java 8 program that simplifies automatically running predictive WRF simulations.
+This is a Java 8 program that simplifies automatically running WRF simulations.
 
 ##A Summary of Features
 
