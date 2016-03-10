@@ -118,7 +118,6 @@
 				<attribute unless:true="${use.libs}" name="Class-Path" value="." />
 			</manifest>
 			<fileset dir="${bin}">
-				<patternset refid="Build Excludes" />
 				<patternset refid="Debug" />
 			</fileset>
 			<fileset if:true="${package.doc}" dir="." includes="${doc}/**" />
