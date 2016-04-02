@@ -279,7 +279,7 @@ public class Simulation extends HashMap<String, Path> {
 		JSONObject duration = new JSONObject();
 		for (String timeCode : timeCodes)
 			if (tc.containsKey("run_" + timeCode))
-				duration.put(timeCode, (Number) tc.get("run_" + timeCode).get(0).value());
+				duration.put(timeCode, tc.get("run_" + timeCode).get(0).value());
 		duration.clearModified();
 		return duration;
 	}
