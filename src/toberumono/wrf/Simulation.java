@@ -16,7 +16,6 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import toberumono.json.JSONBoolean;
-import toberumono.json.JSONData;
 import toberumono.json.JSONNumber;
 import toberumono.json.JSONObject;
 import toberumono.json.JSONString;
@@ -226,33 +225,20 @@ public class Simulation extends HashMap<String, Path> {
 	}
 	
 	private void fixConfigurationFile() {
-		transferField("cleanup", new JSONBoolean(true), features, general);
-		transferField("keep-logs", new JSONBoolean(false), general);
-		transferField("always-suffix", new JSONBoolean(false), general);
-		transferField("max-kept-outputs", new JSONNumber<>(15), general);
+		JSONSystem.transferField("cleanup", new JSONBoolean(true), features, general);
+		JSONSystem.transferField("keep-logs", new JSONBoolean(false), general);
+		JSONSystem.transferField("always-suffix", new JSONBoolean(false), general);
+		JSONSystem.transferField("max-kept-outputs", new JSONNumber<>(15), general);
 		if (sourcePaths.containsKey("working")) {
 			JSONString working = new JSONString(sourcePaths.remove("working").toString());
 			if (!general.containsKey("working-directory"))
 				general.put("working-directory", working);
 			((JSONObject) configuration.get("paths")).remove("working");
 		}
-		transferField("working-directory", new JSONString(configurationFile.toAbsolutePath().getParent().resolve("Working").normalize().toString()), general);
-		transferField("fraction", new JSONNumber<>(1.0), new JSONObject[]{(JSONObject) timing.get("rounding")});
-		transferField("wrap-timestep", new JSONBoolean(true), grib);
-		transferField("use-computed-times", ((JSONObject) timing.get("rounding")).get("enabled"), timing); //If use-computed-times hasn't been set, use rounding.enabled as its value.
-	}
-	
-	private static void transferField(String name, JSONData<?> defaultValue, JSONObject... stChain) {
-		if (stChain.length == 1) {
-			if (!stChain[0].containsKey(name))
-				stChain[0].put(name, defaultValue);
-			return;
-		}
-		for (int i = 0, j = 1; j < stChain.length; i++, j++)
-			if (!stChain[j].containsKey(name))
-				stChain[j].put(name, stChain[i].containsKey(name) ? stChain[i].remove(name) : defaultValue);
-			else if (stChain[i].containsKey(name))
-				stChain[i].remove(name);
+		JSONSystem.transferField("working-directory", new JSONString(configurationFile.toAbsolutePath().getParent().resolve("Working").normalize().toString()), general);
+		JSONSystem.transferField("fraction", new JSONNumber<>(1.0), new JSONObject[]{(JSONObject) timing.get("rounding")});
+		JSONSystem.transferField("wrap-timestep", new JSONBoolean(true), grib);
+		JSONSystem.transferField("use-computed-times", ((JSONObject) timing.get("rounding")).get("enabled"), timing); //If use-computed-times hasn't been set, use rounding.enabled as its value.
 	}
 	
 	private void addJSONDiff(Calendar cal, JSONObject diff) {
