@@ -113,7 +113,7 @@ public class Simulation extends HashMap<String, Path> {
 		constant = Calendar.getInstance();
 		if (log == null)
 			log = MutedLogger.getMutedLogger();
-			
+		
 		this.configurationFile = configurationFile;
 		sourcePaths = new HashMap<>();
 		configuration = (JSONObject) JSONSystem.loadJSON(this.configurationFile);
@@ -139,7 +139,7 @@ public class Simulation extends HashMap<String, Path> {
 			throw new NullPointerException("The working path cannot be null.");
 		if (configuration.isModified())
 			JSONSystem.writeJSON(configuration, configurationFile);
-			
+		
 		this.log = log;
 		this.create = create;
 		doms = ((Number) namelists.get("wrf").get("domains").get("max_dom").get(0).value()).intValue();
@@ -148,20 +148,18 @@ public class Simulation extends HashMap<String, Path> {
 		NamelistSection tc = namelists.get("wrf").get("time_control");
 		JSONObject rounding = (JSONObject) timing.get("rounding");
 		JSONObject duration = (JSONObject) timing.get("duration");
-		initializeConstant(tc, rounding, duration);
+		initializeConstant(tc, rounding);
 		start = (Calendar) constant.clone();
-		if (!((Boolean) timing.get("use-computed-times").value()).booleanValue()) {
-			//Update the start time with the offset
-			JSONObject offset = (JSONObject) timing.get("offset");
-			if (((Boolean) offset.get("enabled").value()).booleanValue()) {
-				addJSONDiff(increment, offset);
-				addJSONDiff(start, offset);
-			}
-			
-			if (duration == null) { //If there is no duration data, grab it from the WRF namelist file's "time_control" section
-				duration = generateDuration(tc);
-				timing.put("duration", duration);
-			}
+		//Update the start time with the offset
+		JSONObject offset = (JSONObject) timing.get("offset");
+		if (((Boolean) offset.get("enabled").value()).booleanValue()) {
+			addJSONDiff(increment, offset);
+			addJSONDiff(start, offset);
+		}
+		//If we aren't using computed times or there is no duration data, grab it from the WRF namelist file's "time_control" section
+		if (!((Boolean) timing.get("use-computed-times").value()).booleanValue() || duration == null) {
+			duration = generateDuration(tc);
+			timing.put("duration", duration);
 		}
 		end = (Calendar) start.clone();
 		addJSONDiff(end, duration); //Calculate the end time from the duration data in the configuration file
@@ -169,7 +167,7 @@ public class Simulation extends HashMap<String, Path> {
 		this.output = root.resolve(output);
 	}
 	
-	private void initializeConstant(NamelistSection tc, JSONObject rounding, JSONObject duration) {
+	private void initializeConstant(NamelistSection tc, JSONObject rounding) {
 		if (!((Boolean) timing.get("use-computed-times").value()).booleanValue()) {
 			constant.set(constant.YEAR, ((Number) tc.get("start_year").get(0).value()).intValue());
 			constant.set(constant.MONTH, ((Number) tc.get("start_month").get(0).value()).intValue() - 1);
@@ -177,8 +175,6 @@ public class Simulation extends HashMap<String, Path> {
 			constant.set(constant.HOUR_OF_DAY, ((Number) tc.get("start_hour").get(0).value()).intValue());
 			constant.set(constant.MINUTE, ((Number) tc.get("start_minute").get(0).value()).intValue());
 			constant.set(constant.SECOND, ((Number) tc.get("start_second").get(0).value()).intValue());
-			generateDuration(tc);
-			duration.clearModified();
 		}
 		else {
 			String magnitude = ((String) rounding.get("magnitude").value()).toLowerCase();
