@@ -110,8 +110,7 @@ public class Simulation extends HashMap<String, Path> {
 	public Simulation(Path configurationFile, Path output, Map<String, Triple<Step, CleanupFunction, Pair<Path, NamelistUpdater>>> steps, boolean create, Logger log)
 			throws IOException {
 		constant = Calendar.getInstance();
-		if (log == null)
-			log = MutedLogger.getMutedLogger();
+		this.log = log == null ? MutedLogger.getMutedLogger() : log;
 		
 		this.configurationFile = configurationFile;
 		sourcePaths = new HashMap<>();
@@ -139,7 +138,6 @@ public class Simulation extends HashMap<String, Path> {
 		if (configuration.isModified())
 			JSONSystem.writeJSON(configuration, configurationFile);
 		
-		this.log = log;
 		this.create = create;
 		doms = ((Number) namelists.get("wrf").get("domains").get("max_dom").get(0).value()).intValue();
 		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
