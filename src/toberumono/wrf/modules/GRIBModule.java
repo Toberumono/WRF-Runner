@@ -7,60 +7,64 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 import java.util.Calendar;
-import java.util.Map;
 import java.util.logging.Level;
 
 import toberumono.json.JSONBoolean;
 import toberumono.json.JSONObject;
-import toberumono.namelist.parser.Namelist;
-import toberumono.wrf.Simulation;
+import toberumono.wrf.Module;
+import toberumono.wrf.Simulation2;
+import toberumono.wrf.timing.Timing;
 
 /**
  * Contains the logic for running wget.
  * 
  * @author Toberumono
  */
-public class WgetLogic {
+public class GRIBModule extends Module {
 	private static final int[] calendarOffsetFields = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
+	private final String url;
+	private final Timing incremented;
+	private final JSONObject timestep;
+	private final boolean wrap;
 	
-	/**
-	 * This downloads the necessary grib data for running the current simulation.<br>
-	 * Override this method to change how grib data is downloaded (e.g. change the source, timing offset)
-	 * 
-	 * @param namelists
-	 *            a {@link Map} connecting the name of each WRF module to its loaded {@link Namelist}
-	 * @param sim
-	 *            the current {@link Simulation}
-	 * @throws IOException
-	 *             if an IO error occurs
-	 * @throws InterruptedException
-	 *             if one of the processes is interrupted
-	 */
-	public static void runWGet(Map<String, Namelist> namelists, Simulation sim) throws IOException, InterruptedException {
-		int[] offsets = new int[4], steps = new int[4], limits = new int[4];
-		String url = (String) sim.grib.get("url").value();
-		Calendar constant = sim.getConstant(), end = sim.getEnd(), test = (Calendar) sim.getStart().clone(), increment = sim.getIncrement();
+	public GRIBModule(JSONObject parameters, Simulation2 sim) throws IOException {
+		super(parameters, sim);
+		JSONObject grib = (JSONObject) parameters.get("configuration");
+		url = (String) grib.get("url").value();
+		incremented = new Timing((JSONObject) ((JSONObject) parameters.get("timing")).get("incremented"), getTiming());
+		timestep = (JSONObject) grib.get("timestep");
+		wrap = ((JSONBoolean) timestep.get("wrap")).value();
+	}
+	
+	@Override
+	protected Timing parseTiming(JSONObject timing) {
+		return super.parseTiming((JSONObject) timing.get("constant"));
+	}
+
+	@Override
+	public void updateNamelist() throws IOException, InterruptedException {
+		//This module has no Namelist
+	}
+
+	@Override
+	public void execute() throws IOException, InterruptedException {
+		int[] offsets = new int[4], steps = new int[4];
+		Calendar constant = getTiming().getStart(), end = getSim().getGlobalTiming().getEnd(), test = (Calendar) getSim().getGlobalTiming().getStart().clone(), increment = (Calendar) incremented.getStart().clone();
 		
-		JSONObject timestep = (JSONObject) sim.grib.get("timestep");
 		steps[0] = ((Number) timestep.get("days").value()).intValue();
 		steps[1] = ((Number) timestep.get("hours").value()).intValue();
 		steps[2] = ((Number) timestep.get("minutes").value()).intValue();
 		steps[3] = ((Number) timestep.get("seconds").value()).intValue();
 		
-		JSONObject duration = (JSONObject) sim.timing.get("duration");
-		limits[0] = ((Number) duration.get("days").value()).intValue();
-		limits[1] = ((Number) duration.get("hours").value()).intValue();
-		limits[2] = ((Number) duration.get("minutes").value()).intValue();
-		limits[3] = ((Number) duration.get("seconds").value()).intValue();
 		for (; !test.after(end); incrementOffsets(offsets, steps, test, increment))
-			downloadGribFile(parseIncrementedURL(url, constant, increment, ((JSONBoolean) sim.grib.get("wrap-timestep")).value(), 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), sim);
+			downloadGribFile(parseIncrementedURL(url, constant, increment, wrap, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), getSim());
 	}
 	
 	/**
 	 * Takes a URL with both the normal Java date/time markers (see
 	 * <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html#dt">Date/Time syntax</a>) and offset
-	 * markers. The offset markers are <i>almost identical</i> in syntax to the standard Java date/time markers with, but
-	 * they use 'i' instead of 't'.<br>
+	 * markers. The offset markers are <i>almost identical</i> in syntax to the standard Java date/time markers, but they use
+	 * 'i' instead of 't'.<br>
 	 * Differences:
 	 * <ul>
 	 * <li>%ii --&gt; minutes without padding</li>
@@ -124,18 +128,23 @@ public class WgetLogic {
 	 * @throws IOException
 	 *             if the transfer fails
 	 */
-	public static void downloadGribFile(String url, Simulation sim) throws IOException {
+	private void downloadGribFile(String url, Simulation2 sim) throws IOException {
 		String name = url.substring(url.lastIndexOf('/') + 1);
-		Path dest = sim.get("wget").resolve(name);
-		sim.getLog().info("Transferring: " + url + " -> " + dest.toString());
+		Path dest = sim.getActivePath(getName()).resolve(name);
+		logger.info("Transferring: " + url + " -> " + dest.toString());
 		try (ReadableByteChannel rbc = Channels.newChannel(new URL(url).openStream()); FileOutputStream fos = new FileOutputStream(dest.toString());) {
 			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-			sim.getLog().fine("Completed Transfer: " + url + " -> " + dest.toString());
+			logger.fine("Completed Transfer: " + url + " -> " + dest.toString());
 		}
 		catch (IOException e) {
-			sim.getLog().severe("Failed Transfer: " + url + " -> " + dest.toString());
-			sim.getLog().log(Level.FINE, e.getMessage(), e);
+			logger.severe("Failed Transfer: " + url + " -> " + dest.toString());
+			logger.log(Level.FINE, e.getMessage(), e);
 			throw e;
 		}
+	}
+
+	@Override
+	public void cleanUp() throws IOException, InterruptedException {
+		//This module doesn't perform any cleanup itself
 	}
 }
