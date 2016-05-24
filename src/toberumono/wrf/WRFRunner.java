@@ -56,16 +56,16 @@ public class WRFRunner {
 	}
 	
 	public static void initFactories() {
-		WRFRunnerComponentFactory<Offset> offsetFactory = WRFRunnerComponentFactory.getFactory(Offset.class, "Standard", DisabledOffset.getDisabledOffsetInstance());
-		offsetFactory.addComponentConstructor("Standard", StandardOffset::new);
-		offsetFactory.addComponentConstructor("Disabled", (p, s) -> offsetFactory.getDisabledComponentInstance());
-		WRFRunnerComponentFactory<Rounding> roundingFactory = WRFRunnerComponentFactory.getFactory(Rounding.class, "Bucket", DisabledRounding.getDisabledRoundingInstance());
-		roundingFactory.addComponentConstructor("Bucket", BucketRounding::new);
-		roundingFactory.addComponentConstructor("Fractional", FractionalRounding::new);
-		roundingFactory.addComponentConstructor("Disabled", (p, s) -> roundingFactory.getDisabledComponentInstance());
-		WRFRunnerComponentFactory<Duration> durationFactory = WRFRunnerComponentFactory.getFactory(Duration.class, "Standard", DisabledDuration.getDisabledDurationInstance());
-		durationFactory.addComponentConstructor("Standard", StandardDuration::new);
-		durationFactory.addComponentConstructor("Disabled", (p, s) -> durationFactory.getDisabledComponentInstance());
+		WRFRunnerComponentFactory<Offset> offsetFactory = WRFRunnerComponentFactory.getFactory(Offset.class, "standard", DisabledOffset.getDisabledOffsetInstance());
+		offsetFactory.addComponentConstructor("standard", StandardOffset::new);
+		offsetFactory.addComponentConstructor("disabled", (p, s) -> offsetFactory.getDisabledComponentInstance());
+		WRFRunnerComponentFactory<Rounding> roundingFactory = WRFRunnerComponentFactory.getFactory(Rounding.class, "bucket", DisabledRounding.getDisabledRoundingInstance());
+		roundingFactory.addComponentConstructor("bucket", BucketRounding::new);
+		roundingFactory.addComponentConstructor("fractional", FractionalRounding::new);
+		roundingFactory.addComponentConstructor("disabled", (p, s) -> roundingFactory.getDisabledComponentInstance());
+		WRFRunnerComponentFactory<Duration> durationFactory = WRFRunnerComponentFactory.getFactory(Duration.class, "standard", DisabledDuration.getDisabledDurationInstance());
+		durationFactory.addComponentConstructor("standard", StandardDuration::new);
+		durationFactory.addComponentConstructor("disabled", (p, s) -> durationFactory.getDisabledComponentInstance());
 	}
 	
 	/**

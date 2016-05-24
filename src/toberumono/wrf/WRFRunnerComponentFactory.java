@@ -55,6 +55,8 @@ public class WRFRunnerComponentFactory<T> {
 	}
 	
 	public T generateComponent(JSONObject parameters, T parent) {
+		if (parameters == null)
+			return getDisabledComponentInstance();
 		return generateComponent(parameters.containsKey("type") ? parameters.get("type").toString() : defaultComponentType, parameters, parent);
 	}
 	
