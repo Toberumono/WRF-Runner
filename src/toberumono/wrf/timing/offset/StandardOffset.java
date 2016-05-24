@@ -38,7 +38,7 @@ public class StandardOffset extends Offset {
 	
 	@Override
 	public boolean doesWrap() {
-		if (wrap == null)
+		if (wrap == null) //TODO implement inheritance
 			wrap = getParameters().containsKey("wrap") ? ((JSONBoolean) getParameters().get("wrap")).value() : (getParent() != null ? getParent().doesWrap() : true);
 		return wrap;
 	}

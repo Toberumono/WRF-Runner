@@ -7,12 +7,12 @@ import java.util.logging.Logger;
 import toberumono.json.JSONObject;
 import toberumono.wrf.InheritableItem;
 
-public abstract class TimingElement<T extends TimingElement<T>> extends InheritableItem<T> implements Function<Calendar, Calendar> {
+public abstract class TimingComponent<T extends TimingComponent<T>> extends InheritableItem<T> implements Function<Calendar, Calendar> {
 	private final JSONObject parameters;
 	private final Logger log;
 	private boolean computed;
 	
-	public TimingElement(JSONObject parameters, T parent, Logger log) {
+	public TimingComponent(JSONObject parameters, T parent, Logger log) {
 		super(parent);
 		this.parameters = parameters;
 		this.log = log;
@@ -23,8 +23,8 @@ public abstract class TimingElement<T extends TimingElement<T>> extends Inherita
 	 * {@inheritDoc}
 	 * 
 	 * @param base
-	 *            the {@link Calendar} to modify with the {@link TimingElement}
-	 * @return a <i>copy</i> of the provided {@link Calendar} as modified by the {@link TimingElement}
+	 *            the {@link Calendar} to modify with the {@link TimingComponent}
+	 * @return a <i>copy</i> of the provided {@link Calendar} as modified by the {@link TimingComponent}
 	 */
 	@Override
 	public final Calendar apply(Calendar base) {

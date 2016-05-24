@@ -38,26 +38,32 @@ public class NamelistTiming extends InheritableItem<Timing> implements Timing {
 		cal.set(cal.SECOND, ((Number) tc.get(prefix + "second").get(0).value()).intValue());
 	}
 	
+	@Override
 	public Calendar getBase() {
 		return base;
 	}
 	
+	@Override
 	public Calendar getStart() {
 		return start;
 	}
 	
+	@Override
 	public Calendar getEnd() {
 		return end;
 	}
 	
+	@Override
 	public Offset getOffset() {
 		return offset;
 	}
 	
+	@Override
 	public Rounding getRounding() {
 		return rounding;
 	}
 	
+	@Override
 	public Duration getDuration() {
 		return duration;
 	}
