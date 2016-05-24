@@ -5,16 +5,16 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import toberumono.json.JSONObject;
+import toberumono.wrf.InheritableItem;
 
-public abstract class TimingElement<T extends TimingElement<T>> implements Function<Calendar, Calendar> {
+public abstract class TimingElement<T extends TimingElement<T>> extends InheritableItem<T> implements Function<Calendar, Calendar> {
 	private final JSONObject parameters;
-	private final T parent;
 	private final Logger log;
 	private boolean computed;
 	
 	public TimingElement(JSONObject parameters, T parent, Logger log) {
+		super(parent);
 		this.parameters = parameters;
-		this.parent = parent;
 		this.log = log;
 	}
 	
@@ -49,9 +49,5 @@ public abstract class TimingElement<T extends TimingElement<T>> implements Funct
 	
 	protected JSONObject getParameters() {
 		return parameters;
-	}
-	
-	protected T getParent() {
-		return parent;
 	}
 }

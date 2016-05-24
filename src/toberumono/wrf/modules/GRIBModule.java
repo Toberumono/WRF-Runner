@@ -13,6 +13,7 @@ import toberumono.json.JSONBoolean;
 import toberumono.json.JSONObject;
 import toberumono.wrf.Module;
 import toberumono.wrf.Simulation2;
+import toberumono.wrf.timing.JSONTiming;
 import toberumono.wrf.timing.Timing;
 
 /**
@@ -31,7 +32,7 @@ public class GRIBModule extends Module {
 		super(parameters, sim);
 		JSONObject grib = (JSONObject) parameters.get("configuration");
 		url = (String) grib.get("url").value();
-		incremented = new Timing((JSONObject) ((JSONObject) parameters.get("timing")).get("incremented"), getTiming());
+		incremented = new JSONTiming((JSONObject) ((JSONObject) parameters.get("timing")).get("incremented"), getTiming());
 		timestep = (JSONObject) grib.get("timestep");
 		wrap = ((JSONBoolean) timestep.get("wrap")).value();
 	}

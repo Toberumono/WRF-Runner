@@ -10,6 +10,7 @@ import toberumono.json.JSONObject;
 import toberumono.namelist.parser.Namelist;
 import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
+import toberumono.wrf.timing.JSONTiming;
 import toberumono.wrf.timing.Timing;
 
 import static toberumono.wrf.SimulationConstants.*;
@@ -50,7 +51,7 @@ public abstract class Module {
 	public abstract void cleanUp() throws IOException, InterruptedException;
 	
 	protected Timing parseTiming(JSONObject timing) {
-		return new Timing(timing, getSim().getGlobalTiming());
+		return new JSONTiming(timing, getSim().getGlobalTiming());
 	}
 	
 	public Timing getTiming() {
