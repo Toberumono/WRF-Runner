@@ -20,10 +20,10 @@ import toberumono.utils.general.Numbers;
 import static toberumono.wrf.SimulationConstants.*;
 
 public class BucketRounding extends Rounding {
-	private final Map<Integer, Function<Integer, Integer>> roundingActions;
+	private Map<Integer, Function<Integer, Integer>> roundingActions;
 	
-	public BucketRounding(JSONObject parameters, Rounding parent) { //TODO implement inheritance
-		roundingActions = parseRoundingParameters(parameters);
+	public BucketRounding(JSONObject parameters, Rounding parent) {
+		super(parameters, parent);
 	}
 	
 	private static final Map<Integer, Function<Integer, Integer>> parseRoundingParameters(JSONObject parameters) { //TODO implement input scrubbing and error messages
@@ -90,10 +90,15 @@ public class BucketRounding extends Rounding {
 	}
 	
 	@Override
-	public Calendar apply(Calendar base) {
+	protected Calendar doApply(Calendar base) {
 		Calendar out = (Calendar) base.clone();
 		for (Entry<Integer, Function<Integer, Integer>> e : roundingActions.entrySet())
 			out.set(e.getKey(), e.getValue().apply(out.get(e.getKey())));
 		return out;
+	}
+	
+	@Override
+	protected void compute() { //TODO implement inheritance
+		roundingActions = parseRoundingParameters(getParameters());
 	}
 }

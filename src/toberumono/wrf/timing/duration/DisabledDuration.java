@@ -22,10 +22,15 @@ public class DisabledDuration extends Duration {
 		}
 	}
 	
-	private DisabledDuration() {/* This is a singleton */}
+	private DisabledDuration() {
+		super(null, null);
+	}
 
 	@Override
-	public Calendar apply(Calendar base) {
+	protected Calendar doApply(Calendar base) {
 		return (Calendar) base.clone();
 	}
+
+	@Override
+	protected void compute() {/* Nothing to do here */}
 }

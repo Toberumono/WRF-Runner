@@ -22,10 +22,15 @@ public class DisabledOffset extends Offset {
 		}
 	}
 	
-	private DisabledOffset() {/* This is a singleton */}
+	private DisabledOffset() {
+		super(null, null);
+	}
+	
+	@Override
+	protected void compute() {/* Nothing to do here */};
 
 	@Override
-	public Calendar apply(Calendar base) {
+	protected Calendar doApply(Calendar base) {
 		return (Calendar) base.clone();
 	}
 

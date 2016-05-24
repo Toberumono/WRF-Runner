@@ -7,20 +7,27 @@ import toberumono.namelist.parser.NamelistSection;
 import static toberumono.wrf.SimulationConstants.*;
 
 public class NamelistDuration extends Duration {
-	private final int[] duration;
+	private int[] duration;
+	private final NamelistSection timeControl;
 	
 	public NamelistDuration(NamelistSection timeControl) {
-		duration = new int[TIMING_FIELD_NAMES.size()];
-		for (int i = 0; i < duration.length; i++)
-			if (timeControl.containsKey("run_"  + TIMING_FIELD_NAMES.get(i) + "s")) //TODO implement inheritance via checking for String values equal to "inherit"
-				duration[i] = ((Number) timeControl.get("run_"  + TIMING_FIELD_NAMES.get(i) + "s").get(0).value()).intValue();
+		super(null, null);
+		this.timeControl = timeControl;
 	}
 	
 	@Override
-	public Calendar apply(Calendar base) {
+	protected Calendar doApply(Calendar base) {
 		Calendar out = (Calendar) base.clone();
 		for (int i = 0; i < duration.length; i++)
 			out.add(TIMING_FIELDS.get(i), duration[i]);
 		return out;
+	}
+
+	@Override
+	protected void compute() {
+		duration = new int[TIMING_FIELD_NAMES.size()];
+		for (int i = 0; i < duration.length; i++)
+			if (timeControl.containsKey("run_"  + TIMING_FIELD_NAMES.get(i) + "s")) //TODO implement inheritance via checking for String values equal to "inherit"
+				duration[i] = ((Number) timeControl.get("run_"  + TIMING_FIELD_NAMES.get(i) + "s").get(0).value()).intValue();
 	}
 }

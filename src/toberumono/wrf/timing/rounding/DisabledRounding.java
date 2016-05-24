@@ -22,10 +22,15 @@ public class DisabledRounding extends Rounding {
 		}
 	}
 	
-	private DisabledRounding() {/* This is a singleton */}
+	private DisabledRounding() {
+		super(null, null);
+	}
 	
 	@Override
-	public Calendar apply(Calendar base) {
+	protected Calendar doApply(Calendar base) {
 		return (Calendar) base.clone();
 	}
+
+	@Override
+	protected void compute() {/* Nothing to do here */}
 }

@@ -8,33 +8,38 @@ import toberumono.json.JSONObject;
 import static toberumono.wrf.SimulationConstants.*;
 
 public class StandardOffset extends Offset {
-	private final int[] offsets;
-	private final boolean wrap;
+	private int[] offsets;
+	private Boolean wrap;
 	
 	public StandardOffset(JSONObject parameters, Offset parent) {
-		wrap = parameters.containsKey("wrap") ? ((JSONBoolean) parameters.get("wrap")).value() : parent.doesWrap();
-		offsets = new int[TIMING_FIELD_NAMES.size()];
-		for (int i = 0; i < offsets.length; i++)
-			if (parameters.containsKey(TIMING_FIELD_NAMES.get(i))) //TODO implement inheritance via checking for String values equal to "inherit"
-				offsets[i] = ((Number) parameters.get(TIMING_FIELD_NAMES.get(i)).value()).intValue();
+		super(parameters, parent);
+		wrap = null;
 	}
 	
 	@Override
-	public Calendar apply(Calendar base) {
+	protected void compute() {
+		offsets = new int[TIMING_FIELD_NAMES.size()];
+		for (int i = 0; i < offsets.length; i++)
+			if (getParameters().containsKey(TIMING_FIELD_NAMES.get(i))) //TODO implement inheritance via checking for String values equal to "inherit"
+				offsets[i] = ((Number) getParameters().get(TIMING_FIELD_NAMES.get(i)).value()).intValue();
+	}
+	
+	@Override
+	protected Calendar doApply(Calendar base) {
 		Calendar out = (Calendar) base.clone();
-		if (doesWrap()) {
+		if (doesWrap())
 			for (int i = 0; i < offsets.length; i++)
 				out.add(TIMING_FIELDS.get(i), offsets[i]);
-		}
-		else {
+		else
 			for (int i = 0; i < offsets.length; i++)
 				out.set(TIMING_FIELDS.get(i), out.get(TIMING_FIELDS.get(i)) + offsets[i]);
-		}
 		return out;
 	}
 	
 	@Override
 	public boolean doesWrap() {
+		if (wrap == null)
+			wrap = getParameters().containsKey("wrap") ? ((JSONBoolean) getParameters().get("wrap")).value() : (getParent() != null ? getParent().doesWrap() : true);
 		return wrap;
 	}
 }

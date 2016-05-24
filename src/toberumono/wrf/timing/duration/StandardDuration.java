@@ -7,20 +7,25 @@ import toberumono.json.JSONObject;
 import static toberumono.wrf.SimulationConstants.*;
 
 public class StandardDuration extends Duration {
-	private final int[] duration;
+	private int[] duration;
 	
 	public StandardDuration(JSONObject parameters, Duration parent) {
-		duration = new int[TIMING_FIELD_NAMES.size()];
-		for (int i = 0; i < duration.length; i++)
-			if (parameters.containsKey(TIMING_FIELD_NAMES.get(i))) //TODO implement inheritance via checking for String values equal to "inherit"
-				duration[i] = ((Number) parameters.get(TIMING_FIELD_NAMES.get(i)).value()).intValue();
+		super(parameters, parent);
 	}
 	
 	@Override
-	public Calendar apply(Calendar base) {
+	protected Calendar doApply(Calendar base) {
 		Calendar out = (Calendar) base.clone();
 		for (int i = 0; i < duration.length; i++)
 			out.add(TIMING_FIELDS.get(i), duration[i]);
 		return out;
+	}
+
+	@Override
+	protected void compute() {
+		duration = new int[TIMING_FIELD_NAMES.size()];
+		for (int i = 0; i < duration.length; i++)
+			if (getParameters().containsKey(TIMING_FIELD_NAMES.get(i))) //TODO implement inheritance via checking for String values equal to "inherit"
+				duration[i] = ((Number) getParameters().get(TIMING_FIELD_NAMES.get(i)).value()).intValue();
 	}
 }

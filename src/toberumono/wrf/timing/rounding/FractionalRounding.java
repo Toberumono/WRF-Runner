@@ -9,34 +9,16 @@ import toberumono.utils.general.Numbers;
 import static toberumono.wrf.SimulationConstants.*;
 
 public class FractionalRounding extends Rounding {
-	private final int roundingPoint;
-	private final double fraction;
-	private final String diff;
+	private int roundingPoint;
+	private double fraction;
+	private String diff;
 	
-	public FractionalRounding(JSONObject parameters, Rounding parent) { //TODO implement inheritance, existence checks
-		String magnitude = ((String) parameters.get("magnitude").value()).toLowerCase();
-		diff = ((String) parameters.get("diff").value()).toLowerCase(); //TODO require diff to be either next, previous, or none
-		double fraction = ((Number) parameters.get("fraction").value()).doubleValue();
-		roundingPoint = TIMING_FIELD_NAMES.indexOf(magnitude);
-		if (roundingPoint == -1)
-			throw new IllegalArgumentException(magnitude + " is not a valid timing field name.");
-		if (fraction <= 0.0 || fraction > 1.0) {
-			getLogger().log(Level.WARNING, "The fraction field in timing.rounding is outside of its valid range of (0.0, 1.0].  Assuming 1.0.");
-			this.fraction = 1.0;
-		}
-		else
-			this.fraction = fraction;
-	}
-	
-	private void applyDiff(Calendar cal) {
-		if (diff.equals("next"))
-			cal.add(TIMING_FIELDS.get(roundingPoint), 1);
-		else if (diff.equals("previous"))
-			cal.add(TIMING_FIELDS.get(roundingPoint), -1);
+	public FractionalRounding(JSONObject parameters, Rounding parent) {
+		super(parameters, parent);
 	}
 
 	@Override
-	public Calendar apply(Calendar base) {
+	protected Calendar doApply(Calendar base) {
 		Calendar out = (Calendar) base.clone();
 		//First, we handle the diff on the field that the user is rounding on
 		int rp = roundingPoint;
@@ -54,4 +36,19 @@ public class FractionalRounding extends Rounding {
 		return out;
 	}
 	
+	@Override
+	protected void compute() { //TODO implement inheritance, existence checks
+		String magnitude = ((String) getParameters().get("magnitude").value()).toLowerCase();
+		diff = ((String) getParameters().get("diff").value()).toLowerCase(); //TODO require diff to be either next, previous, or none
+		double fraction = ((Number) getParameters().get("fraction").value()).doubleValue();
+		roundingPoint = TIMING_FIELD_NAMES.indexOf(magnitude);
+		if (roundingPoint == -1)
+			throw new IllegalArgumentException(magnitude + " is not a valid timing field name.");
+		if (fraction <= 0.0 || fraction > 1.0) {
+			getLogger().log(Level.WARNING, "The fraction field in timing.rounding is outside of its valid range of (0.0, 1.0].  Assuming 1.0.");
+			this.fraction = 1.0;
+		}
+		else
+			this.fraction = fraction;
+	}
 }
