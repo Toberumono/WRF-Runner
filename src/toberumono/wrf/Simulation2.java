@@ -8,7 +8,9 @@ import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,13 +26,18 @@ import toberumono.json.JSONArray;
 import toberumono.json.JSONBoolean;
 import toberumono.json.JSONData;
 import toberumono.json.JSONObject;
+import toberumono.json.JSONString;
 import toberumono.json.JSONSystem;
 import toberumono.namelist.parser.Namelist;
 import toberumono.namelist.parser.NamelistNumber;
 import toberumono.utils.files.TransferFileWalker;
+import toberumono.wrf.timing.JSONTiming;
+import toberumono.wrf.timing.NamelistTiming;
 import toberumono.wrf.timing.Timing;
 
 public class Simulation2 {
+	private static final Collection<String> REQUIRED_MODULES = Collections.unmodifiableCollection(Arrays.asList("wrf"));
+	
 	private final JSONObject configuration, general, timing;
 	private final JSONObject parallel;
 	private final Path working, resolver;
@@ -40,28 +47,28 @@ public class Simulation2 {
 	private final Map<String, Path> source, active;
 	private Integer doms;
 	private final NamelistNumber interval_seconds;
-
+	
 	public Simulation2(Calendar base, Path resolver, JSONObject configuration, JSONObject general, JSONObject modules, JSONObject paths, JSONObject timing) throws IOException {
 		this.resolver = resolver;
 		this.configuration = configuration;
 		this.general = general;
 		this.timing = timing;
-		this.parallel = (JSONObject) this.general.get("parallel");
-		globalTiming = ((Boolean) timing.get("use-computed-times").value()) ? new Timing((JSONObject) timing.get("global"), base) : new Timing(null); //TODO figure out how to grab WRF's namelist here
+		parallel = (JSONObject) getGeneral().get("parallel");
+		globalTiming = ((Boolean) getTiming().get("use-computed-times").value()) ? new JSONTiming((JSONObject) timing.get("global"), base) : new NamelistTiming(null); //TODO figure out how to grab WRF's namelist here
 		source = new HashMap<>();
 		active = new HashMap<>();
-		working = constructWorkingDirectory(getResolver().getFileSystem().getPath(general.get("working-directory").value().toString()), (Boolean) general.get("always-suffix").value());
+		working = constructWorkingDirectory(getResolver().getFileSystem().getPath(getGeneral().get("working-directory").value().toString()), (Boolean) general.get("always-suffix").value());
 		for (JSONData<?> mod : (JSONArray) modules.get("execution-order")) {
 			String name = (String) mod.value();
 			if (paths.containsKey(name)) {
 				source.put(name, getResolver().resolve(paths.get(name).value().toString()));
-				active.put(name, working.resolve(source.get(name).getFileName()));
+				active.put(name, getWorkingPath().resolve(source.get(name).getFileName()));
 			}
 			else
-				active.put(name, working.resolve(name));
+				active.put(name, getWorkingPath().resolve(name));
 		}
 		this.disabledModules = new HashSet<>();
-		this.modules = Collections.unmodifiableMap(parseModules(modules));
+		this.modules = Collections.unmodifiableMap(parseModules(modules, REQUIRED_MODULES));
 		JSONObject timestep = modules.containsKey("grib") && !disabledModules.contains(modules.get("grib")) ? (JSONObject) ((JSONObject) configuration.get("grib")).get("timestep") : null;
 		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
 		doms = null;
@@ -80,7 +87,7 @@ public class Simulation2 {
 	}
 	
 	public JSONObject getParallel() {
-		return (JSONObject) getGeneral().get("parallel");
+		return parallel;
 	}
 	
 	public Path getSourcePath(String module) {
@@ -110,12 +117,12 @@ public class Simulation2 {
 	}
 	
 	public Path constructWorkingDirectory(Path workingRoot, boolean always_suffix) throws IOException {
-		Path active = Files.createDirectories(working).resolve("active"), root;
+		Path active = Files.createDirectories(workingRoot).resolve("active"), root;
 		try (FileChannel channel = FileChannel.open(active, StandardOpenOption.CREATE, StandardOpenOption.WRITE); FileLock lock = channel.lock()) {
 			String name = makeWPSDateString(getGlobalTiming().getStart()).replaceAll(":", "_"); //Having colons in the path messes up WRF, so... Underscores.
-			try (Stream<Path> children = Files.list(working)) {
+			try (Stream<Path> children = Files.list(workingRoot)) {
 				int count = children.filter(p -> p.getFileName().toString().startsWith(name)).toArray().length;
-				root = Files.createDirectories(working.resolve(always_suffix || count > 0 ? name + "+" + (count + 1) : name));
+				root = Files.createDirectories(workingRoot.resolve(always_suffix || count > 0 ? name + "+" + (count + 1) : name));
 			}
 		}
 		return root;
@@ -139,26 +146,19 @@ public class Simulation2 {
 				continue;
 			module.execute();
 			if (((Boolean) general.get("keep-logs").value()))
-				Files.walkFileTree(getActivePath(module.getName()), new TransferFileWalker(getWorkingPath(), Files::move, p -> p.getFileName().toString().toLowerCase().endsWith(".log"), p -> true, null, null, true));
+				Files.walkFileTree(getActivePath(module.getName()),
+						new TransferFileWalker(getWorkingPath(), Files::move, p -> p.getFileName().toString().toLowerCase().endsWith(".log"), p -> true, null, null, true));
 			if (((Boolean) general.get("cleanup").value()))
 				module.cleanUp();
 		}
 	}
 	
-	private Map<String, Module> parseModules(JSONObject modules) {
+	private Map<String, Module> parseModules(JSONObject modules, Collection<String> requiredModules) {
 		Map<String, Module> out = new LinkedHashMap<>();
 		for (JSONData<?> mod : (JSONArray) modules.get("execution-order")) {
-			String name = mod.value().toString();
-			JSONObject description = (JSONObject) modules.get(name);
-			JSONObject parameters = condenseSubsections(name::equals, configuration, "configuration", Integer.MAX_VALUE);
-			parameters.put("name", mod);
 			try {
-				@SuppressWarnings("unchecked") Class<? extends Module> clazz = (Class<? extends Module>) Class.forName(description.get("class").value().toString());
-				Constructor<? extends Module> constructor = clazz.getConstructor(JSONObject.class, Simulation2.class);
-				Module m = constructor.newInstance(parameters, this);
-				out.put(name, m);
-				if (description.containsKey("execute") && !((Boolean) description.get("execute").value()))
-					disabledModules.add(m);
+				String name = mod.value().toString();
+				out.put(name, loadModule(name, modules));
 			}
 			catch (ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 				// TODO Auto-generated catch block
@@ -166,6 +166,19 @@ public class Simulation2 {
 			}
 		}
 		return out;
+	}
+	
+	private Module loadModule(String name, JSONObject modules)
+			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
+		JSONObject description = (JSONObject) modules.get(name);
+		JSONObject parameters = condenseSubsections(name::equals, configuration, "configuration", Integer.MAX_VALUE);
+		parameters.put("name", new JSONString(name));
+		@SuppressWarnings("unchecked") Class<? extends Module> clazz = (Class<? extends Module>) Class.forName(description.get("class").value().toString());
+		Constructor<? extends Module> constructor = clazz.getConstructor(JSONObject.class, Simulation2.class);
+		Module m = constructor.newInstance(parameters, this);
+		if (description.containsKey("execute") && !((Boolean) description.get("execute").value()))
+			disabledModules.add(m);
+		return m;
 	}
 	
 	private static int calcIntervalSeconds(JSONObject timestep) {
@@ -217,6 +230,6 @@ public class Simulation2 {
 			JSONSystem.transferField("use-computed-times", new JSONBoolean(true), timing);
 		}
 		
-		return new Simulation2(base, configurationPath.getParent(), configuration, general, module, path, timing);
+		return new Simulation2(base, configurationPath.toAbsolutePath().normalize().getParent(), configuration, general, module, path, timing);
 	}
 }
