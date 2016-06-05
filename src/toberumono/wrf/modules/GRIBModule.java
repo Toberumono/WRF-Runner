@@ -6,7 +6,13 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -19,11 +25,12 @@ import toberumono.wrf.WRFRunnerComponentFactory;
 import toberumono.wrf.timing.Timing;
 
 /**
- * Contains the logic for running wget.
+ * Contains the logic for running getting the grib files.
  * 
  * @author Toberumono
  */
 public class GRIBModule extends Module {
+	private static final ExecutorService pool = Executors.newWorkStealingPool(12);
 	private static final int[] calendarOffsetFields = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
 	private String url;
 	private Timing incremented;
@@ -31,7 +38,15 @@ public class GRIBModule extends Module {
 	private Boolean wrap;
 	private final Lock lock;
 	
-	public GRIBModule(JSONObject parameters, Simulation sim) throws IOException {
+	/**
+	 * Initializes a new {@link GRIBModule} with the given {@code parameters} for the given {@link Simulation}
+	 * 
+	 * @param parameters
+	 *            the {@link GRIBModule GRIBModule's} parameters
+	 * @param sim
+	 *            the {@link Simulation} for which the {@link GRIBModule} is being initialized
+	 */
+	public GRIBModule(JSONObject parameters, Simulation sim) {
 		super(parameters, sim);
 		url = null;
 		incremented = null;
@@ -49,6 +64,9 @@ public class GRIBModule extends Module {
 		return super.parseTiming((JSONObject) timing.get("constant"));
 	}
 	
+	/**
+	 * @return the {@link Timing} data for the incremented component of the download URL
+	 */
 	public Timing getIncrementedTiming() {
 		if (incremented != null)
 			return incremented;
@@ -69,6 +87,7 @@ public class GRIBModule extends Module {
 	@Override
 	public void execute() throws IOException, InterruptedException {
 		int[] offsets = new int[4], steps = new int[4];
+		List<Future<Boolean>> downloads = new ArrayList<>();
 		Calendar constant = getTiming().getStart(), test = (Calendar) getSim().getGlobalTiming().getStart().clone(), end = getSim().getGlobalTiming().getEnd(),
 				increment = (Calendar) getIncrementedTiming().getStart().clone();
 		
@@ -78,7 +97,25 @@ public class GRIBModule extends Module {
 		steps[3] = ((Number) timestep.get("seconds").value()).intValue();
 		
 		for (; !test.after(end); incrementOffsets(offsets, steps, test, increment))
-			downloadGribFile(parseIncrementedURL(url, constant, increment, wrap, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), getSim());
+			downloads.add(downloadGribFile(parseIncrementedURL(url, constant, increment, wrap, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), getSim()));
+		
+		IOException exc = null;
+		boolean failed = false;
+		for (Future<Boolean> download : downloads) {
+			try {
+				download.get();
+			}
+			catch (ExecutionException e) {
+				failed = true;
+				if (e.getCause() instanceof IOException) //We want to throw an IOException if it occured
+					exc = (IOException) e.getCause();
+			}
+		}
+		if (failed) {
+			if (exc != null)
+				throw exc;
+			throw new IOException("Failed to download the necessary GRIB files.");
+		}
 	}
 	
 	/**
@@ -149,19 +186,22 @@ public class GRIBModule extends Module {
 	 * @throws IOException
 	 *             if the transfer fails
 	 */
-	private void downloadGribFile(String url, Simulation sim) throws IOException {
-		String name = url.substring(url.lastIndexOf('/') + 1);
-		Path dest = sim.getActivePath(getName()).resolve(name);
-		logger.info("Transferring: " + url + " -> " + dest.toString());
-		try (ReadableByteChannel rbc = Channels.newChannel(new URL(url).openStream()); FileOutputStream fos = new FileOutputStream(dest.toString());) {
-			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-			logger.fine("Completed Transfer: " + url + " -> " + dest.toString());
-		}
-		catch (IOException e) {
-			logger.severe("Failed Transfer: " + url + " -> " + dest.toString());
-			logger.log(Level.FINE, e.getMessage(), e);
-			throw e;
-		}
+	private Future<Boolean> downloadGribFile(String url, Simulation sim) {
+		return pool.submit(() -> {
+			String name = url.substring(url.lastIndexOf('/') + 1);
+			Path dest = sim.getActivePath(getName()).resolve(name);
+			logger.info("Transferring: " + url + " -> " + dest.toString());
+			try (ReadableByteChannel rbc = Channels.newChannel(new URL(url).openStream()); FileOutputStream fos = new FileOutputStream(dest.toString());) {
+				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+				logger.fine("Completed Transfer: " + url + " -> " + dest.toString());
+				return true; //This makes it Callable
+			}
+			catch (IOException e) {
+				logger.severe("Failed Transfer: " + url + " -> " + dest.toString());
+				logger.log(Level.FINE, e.getMessage(), e);
+				throw e;
+			}
+		});
 	}
 	
 	@Override
