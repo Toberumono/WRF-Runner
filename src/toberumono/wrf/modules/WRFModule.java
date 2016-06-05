@@ -24,6 +24,7 @@ import static toberumono.utils.general.ProcessBuilders.*;
  */
 public class WRFModule extends Module {
 	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
+	private static final int[] calendarCodes = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
 	
 	public WRFModule(JSONObject parameters, Simulation2 sim) throws IOException {
 		super(parameters, sim);
@@ -64,9 +65,9 @@ public class WRFModule extends Module {
 		tc.put("end_hour", ehour);
 		tc.put("end_minute", eminute);
 		tc.put("end_second", esecond);
-		for (String timeCode : timeCodes)
-			if (tc.containsKey("run_" + timeCode))
-				((NamelistValueList<NamelistNumber>) tc.get("run_" + timeCode)).set(0, new NamelistNumber((Number) ((JSONObject) getSim().getTiming().get("duration")).get(timeCode).value()));
+		for (int i = 0; i < timeCodes.length; i++)
+			if (tc.containsKey("run_" + timeCodes[i]))
+				((NamelistValueList<NamelistNumber>) tc.get("run_" + timeCodes[i])).set(0, new NamelistNumber(getTiming().getEnd().get(calendarCodes[i]) - getTiming().getStart().get(calendarCodes[i])));
 	}
 	
 	@Override
