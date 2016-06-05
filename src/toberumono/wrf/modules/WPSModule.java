@@ -11,7 +11,7 @@ import toberumono.namelist.parser.NamelistString;
 import toberumono.namelist.parser.NamelistValueList;
 import toberumono.utils.files.RecursiveEraser;
 import toberumono.wrf.Module;
-import toberumono.wrf.Simulation2;
+import toberumono.wrf.Simulation;
 
 import static toberumono.utils.general.ProcessBuilders.*;
 
@@ -22,15 +22,15 @@ import static toberumono.utils.general.ProcessBuilders.*;
  */
 public class WPSModule extends Module {
 	
-	public WPSModule(JSONObject parameters, Simulation2 sim) throws IOException {
+	public WPSModule(JSONObject parameters, Simulation sim) throws IOException {
 		super(parameters, sim);
 	}
 	
 	@Override
 	public void updateNamelist() throws IOException, InterruptedException {
 		Namelist wps = getNamelist();
-		NamelistString start = new NamelistString(Simulation2.makeWPSDateString(getTiming().getStart()));
-		NamelistString end = new NamelistString(Simulation2.makeWPSDateString(getTiming().getEnd()));
+		NamelistString start = new NamelistString(Simulation.makeWPSDateString(getTiming().getStart()));
+		NamelistString end = new NamelistString(Simulation.makeWPSDateString(getTiming().getEnd()));
 		NamelistValueList<NamelistString> s = new NamelistValueList<>(), e = new NamelistValueList<>();
 		for (int i = 0; i < getSim().getDoms(); i++) {
 			s.add(start);

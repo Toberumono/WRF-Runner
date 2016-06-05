@@ -35,7 +35,7 @@ import toberumono.wrf.timing.JSONTiming;
 import toberumono.wrf.timing.NamelistTiming;
 import toberumono.wrf.timing.Timing;
 
-public class Simulation2 {
+public class Simulation {
 	private static final Collection<String> REQUIRED_MODULES = Collections.unmodifiableCollection(Arrays.asList("wrf"));
 	
 	private final JSONObject configuration, general, timing;
@@ -48,7 +48,7 @@ public class Simulation2 {
 	private Integer doms;
 	private final NamelistNumber interval_seconds;
 	
-	public Simulation2(Calendar base, Path resolver, JSONObject configuration, JSONObject general, JSONObject modules, JSONObject paths, JSONObject timing) throws IOException {
+	public Simulation(Calendar base, Path resolver, JSONObject configuration, JSONObject general, JSONObject modules, JSONObject paths, JSONObject timing) throws IOException {
 		this.resolver = resolver;
 		this.configuration = configuration;
 		this.general = general;
@@ -106,7 +106,7 @@ public class Simulation2 {
 		return working;
 	}
 	
-	public Integer getDoms() {
+	public Integer getDoms() throws IOException {
 		if (doms == null)
 			doms = ((Number) modules.get("wrf").getNamelist().get("domains").get("max_dom").get(0).value()).intValue();
 		return doms;
@@ -174,7 +174,7 @@ public class Simulation2 {
 		JSONObject parameters = condenseSubsections(name::equals, configuration, "configuration", Integer.MAX_VALUE);
 		parameters.put("name", new JSONString(name));
 		@SuppressWarnings("unchecked") Class<? extends Module> clazz = (Class<? extends Module>) Class.forName(description.get("class").value().toString());
-		Constructor<? extends Module> constructor = clazz.getConstructor(JSONObject.class, Simulation2.class);
+		Constructor<? extends Module> constructor = clazz.getConstructor(JSONObject.class, Simulation.class);
 		Module m = constructor.newInstance(parameters, this);
 		if (description.containsKey("execute") && !((Boolean) description.get("execute").value()))
 			disabledModules.add(m);
@@ -214,10 +214,10 @@ public class Simulation2 {
 			else if (remainingDepth > 0 && e.getValue() instanceof JSONObject)
 				condenseSubsections(condensed, lookingFor, (JSONObject) e.getValue(), e.getKey(), remainingDepth - 1);
 		}
-		return container;
+		return condensed;
 	}
 	
-	public static Simulation2 initSimulation(Path configurationPath, boolean updateFile) throws IOException {
+	public static Simulation initSimulation(Path configurationPath, boolean updateFile) throws IOException {
 		Calendar base = Calendar.getInstance();
 		JSONObject configuration = (JSONObject) JSONSystem.loadJSON(configurationPath);
 		//Extract configuration file sections
@@ -230,6 +230,6 @@ public class Simulation2 {
 			JSONSystem.transferField("use-computed-times", new JSONBoolean(true), timing);
 		}
 		
-		return new Simulation2(base, configurationPath.toAbsolutePath().normalize().getParent(), configuration, general, module, path, timing);
+		return new Simulation(base, configurationPath.toAbsolutePath().normalize().getParent(), configuration, general, module, path, timing);
 	}
 }

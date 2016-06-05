@@ -21,9 +21,9 @@ public abstract class Module {
 	private final Namelist namelist;
 	protected final Logger logger;
 	private final String name;
-	private final Simulation2 sim;
+	private final Simulation sim;
 	
-	public Module(JSONObject parameters, Simulation2 sim) throws IOException {
+	public Module(JSONObject parameters, Simulation sim) throws IOException {
 		this.sim = sim;
 		name = (String) parameters.get("name").value();
 		logger = Logger.getLogger("module::" + getName());
@@ -62,7 +62,7 @@ public abstract class Module {
 		return name;
 	}
 	
-	public Simulation2 getSim() {
+	public Simulation getSim() {
 		return sim;
 	}
 	

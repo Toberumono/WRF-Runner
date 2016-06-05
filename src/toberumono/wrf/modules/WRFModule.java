@@ -13,7 +13,7 @@ import toberumono.namelist.parser.NamelistValueList;
 import toberumono.utils.files.RecursiveEraser;
 import toberumono.utils.files.TransferFileWalker;
 import toberumono.wrf.Module;
-import toberumono.wrf.Simulation2;
+import toberumono.wrf.Simulation;
 
 import static toberumono.utils.general.ProcessBuilders.*;
 
@@ -26,7 +26,7 @@ public class WRFModule extends Module {
 	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
 	private static final int[] calendarCodes = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
 	
-	public WRFModule(JSONObject parameters, Simulation2 sim) throws IOException {
+	public WRFModule(JSONObject parameters, Simulation sim) throws IOException {
 		super(parameters, sim);
 	}
 	

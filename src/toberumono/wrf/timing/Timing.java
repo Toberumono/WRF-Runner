@@ -2,7 +2,7 @@ package toberumono.wrf.timing;
 
 import java.util.Calendar;
 
-import toberumono.wrf.Simulation2;
+import toberumono.wrf.Simulation;
 import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.offset.Offset;
@@ -21,12 +21,12 @@ public interface Timing {
 	public Calendar getBase();
 	
 	/**
-	 * @return the {@link Calendar} denoting the time that the {@link Simulation2} will start
+	 * @return the {@link Calendar} denoting the time that the {@link Simulation} will start
 	 */
 	public Calendar getStart();
 	
 	/**
-	 * @return the {@link Calendar} denoting the time that the {@link Simulation2} will end
+	 * @return the {@link Calendar} denoting the time that the {@link Simulation} will end
 	 */
 	public Calendar getEnd();
 	
@@ -41,12 +41,12 @@ public interface Timing {
 	public Rounding getRounding();
 	
 	/**
-	 * @return the {@link Duration} of the {@link Simulation2}
+	 * @return the {@link Duration} of the {@link Simulation}
 	 */
 	public Duration getDuration();
 	
 	/**
-	 * @return the {@link Clear} of the {@link Simulation2}
+	 * @return the {@link Clear} of the {@link Simulation}
 	 */
 	public Clear getClear();
 }

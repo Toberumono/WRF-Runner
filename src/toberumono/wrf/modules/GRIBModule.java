@@ -14,7 +14,7 @@ import java.util.logging.Level;
 import toberumono.json.JSONBoolean;
 import toberumono.json.JSONObject;
 import toberumono.wrf.Module;
-import toberumono.wrf.Simulation2;
+import toberumono.wrf.Simulation;
 import toberumono.wrf.WRFRunnerComponentFactory;
 import toberumono.wrf.timing.JSONTiming;
 import toberumono.wrf.timing.Timing;
@@ -32,7 +32,7 @@ public class GRIBModule extends Module {
 	private Boolean wrap;
 	private final Lock lock;
 	
-	public GRIBModule(JSONObject parameters, Simulation2 sim) throws IOException {
+	public GRIBModule(JSONObject parameters, Simulation sim) throws IOException {
 		super(parameters, sim);
 		url = null;
 		incremented = null;
@@ -150,7 +150,7 @@ public class GRIBModule extends Module {
 	 * @throws IOException
 	 *             if the transfer fails
 	 */
-	private void downloadGribFile(String url, Simulation2 sim) throws IOException {
+	private void downloadGribFile(String url, Simulation sim) throws IOException {
 		String name = url.substring(url.lastIndexOf('/') + 1);
 		Path dest = sim.getActivePath(getName()).resolve(name);
 		logger.info("Transferring: " + url + " -> " + dest.toString());

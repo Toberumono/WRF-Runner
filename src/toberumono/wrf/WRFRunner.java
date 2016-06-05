@@ -57,7 +57,7 @@ public class WRFRunner {
 	public static void main(String[] args) throws IOException, InterruptedException {
 		initFactories();
 		WRFRunner runner = new WRFRunner();
-		Simulation2 sim = runner.createSimulation(Paths.get(args.length > 0 ? args[0] : "configuration.json"));
+		Simulation sim = runner.createSimulation(Paths.get(args.length > 0 ? args[0] : "configuration.json"));
 		runner.runSimulation(sim);
 	}
 	
@@ -106,18 +106,18 @@ public class WRFRunner {
 	}
 	
 	/**
-	 * Constructs a {@link Simulation2} using the given configuration file.
+	 * Constructs a {@link Simulation} using the given configuration file.
 	 * 
 	 * @param configurationFile
 	 *            a {@link Path} to the configuration file
-	 * @return the {@link Simulation2} defined by that configuration file
+	 * @return the {@link Simulation} defined by that configuration file
 	 * @throws IOException
 	 *             if an I/O error occurs
 	 */
-	public Simulation2 createSimulation(Path configurationFile) throws IOException {
+	public Simulation createSimulation(Path configurationFile) throws IOException {
 		Logger simLogger = log.getLogger("WRFRunner.Simulation");
 		simLogger.setLevel(Level.WARNING);
-		return Simulation2.initSimulation(configurationFile, true);
+		return Simulation.initSimulation(configurationFile, true);
 	}
 	
 	/**
@@ -126,20 +126,20 @@ public class WRFRunner {
 	 * accordingly.
 	 * 
 	 * @param sim
-	 *            the {@link Simulation2} to run
+	 *            the {@link Simulation} to run
 	 * @throws IOException
 	 *             if the {@link Namelist} files could not be read
 	 * @throws InterruptedException
 	 *             if one of the processes gets interrupted
 	 */
-	public void runSimulation(Simulation2 sim) throws IOException, InterruptedException {
+	public void runSimulation(Simulation sim) throws IOException, InterruptedException {
 		sim.linkModules();
 		sim.updateNamelists();
 		sim.executeModules();
 		cleanUpOldSimulations(sim);
 	}
 	
-	private void cleanUpOldSimulations(Simulation2 sim) {
+	private void cleanUpOldSimulations(Simulation sim) {
 		try (DirectoryStream<Path> stream = Files.newDirectoryStream(sim.getWorkingPath())) {
 			int maxOutputs = ((Number) sim.getGeneral().get("max-kept-outputs").value()).intValue();
 			if (maxOutputs < 1)
