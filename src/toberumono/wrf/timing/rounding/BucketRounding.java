@@ -55,8 +55,8 @@ public class BucketRounding extends Rounding {
 					: globalRM;
 			if (value == null) { //Step-offset
 				//TODO implement existence checks and enforce Integer type requirement
-				final int step = ((Number) arguments.get(name + "-step")).intValue();
-				final int offset = arguments.containsKey(name + "-offset") ? ((Number) arguments.get(name + "-offset")).intValue() : 0;
+				final int step = ((Number) arguments.get(name + "-step").value()).intValue();
+				final int offset = arguments.containsKey(name + "-offset") ? ((Number) arguments.get(name + "-offset").value()).intValue() : 0;
 				roundingFunctions.put(TIMING_FIELDS.get(i), inp -> Numbers.bucketRounding(inp, rm, step, offset));
 			}
 			else if (value.value() instanceof JSONArray) { //Explicit buckets
@@ -80,8 +80,8 @@ public class BucketRounding extends Rounding {
 				}
 				else {
 					//TODO implement existence checks and enforce Integer type requirement
-					final int step = ((Number) arguments.get("step")).intValue();
-					final int offset = arguments.containsKey("offset") ? ((Number) arguments.get("offset")).intValue() : 0;
+					final int step = ((Number) arguments.get("step").value()).intValue();
+					final int offset = arguments.containsKey("offset") ? ((Number) arguments.get("offset").value()).intValue() : 0;
 					roundingFunctions.put(TIMING_FIELDS.get(i), inp -> Numbers.bucketRounding(inp, orm, step, offset));
 				}
 			}

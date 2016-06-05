@@ -27,7 +27,7 @@ public class NamelistDuration extends Duration {
 	protected void compute() {
 		duration = new int[TIMING_FIELD_NAMES.size()];
 		for (int i = 0; i < duration.length; i++)
-			if (timeControl.containsKey("run_"  + TIMING_FIELD_NAMES.get(i) + "s")) //TODO implement inheritance via checking for String values equal to "inherit"
-				duration[i] = ((Number) timeControl.get("run_"  + TIMING_FIELD_NAMES.get(i) + "s").get(0).value()).intValue();
+			if (timeControl.containsKey("run_"  + TIMING_FIELD_NAMES.get(i))) //TODO implement inheritance via checking for String values equal to "inherit"
+				duration[i] = ((Number) timeControl.get("run_"  + TIMING_FIELD_NAMES.get(i)).get(0).value()).intValue();
 	}
 }
