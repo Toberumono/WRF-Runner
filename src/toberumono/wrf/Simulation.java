@@ -54,21 +54,22 @@ public class Simulation {
 		this.general = general;
 		this.timing = timing;
 		parallel = (JSONObject) getGeneral().get("parallel");
-		globalTiming = ((Boolean) getTiming().get("use-computed-times").value()) ? new JSONTiming((JSONObject) timing.get("global"), base) : new NamelistTiming(null); //TODO figure out how to grab WRF's namelist here
 		source = new HashMap<>();
 		active = new HashMap<>();
+		this.disabledModules = new HashSet<>();
+		this.modules = Collections.unmodifiableMap(parseModules(modules, REQUIRED_MODULES));
+		for (JSONData<?> mod : (JSONArray) modules.get("execution-order")) {
+			String name = (String) mod.value();
+			if (paths.containsKey(name))
+				source.put(name, getResolver().resolve(paths.get(name).value().toString()));
+		}
+		globalTiming = ((Boolean) getTiming().get("use-computed-times").value()) ? new JSONTiming((JSONObject) timing.get("global"), base)
+				: new NamelistTiming(this.modules.get("wrf").getNamelist().get("time_control"));
 		working = constructWorkingDirectory(getResolver().getFileSystem().getPath(getGeneral().get("working-directory").value().toString()), (Boolean) general.get("always-suffix").value());
 		for (JSONData<?> mod : (JSONArray) modules.get("execution-order")) {
 			String name = (String) mod.value();
-			if (paths.containsKey(name)) {
-				source.put(name, getResolver().resolve(paths.get(name).value().toString()));
-				active.put(name, getWorkingPath().resolve(source.get(name).getFileName()));
-			}
-			else
-				active.put(name, getWorkingPath().resolve(name));
+			active.put(name, paths.containsKey(name) ? getWorkingPath().resolve(source.get(name).getFileName()) : getWorkingPath().resolve(name));
 		}
-		this.disabledModules = new HashSet<>();
-		this.modules = Collections.unmodifiableMap(parseModules(modules, REQUIRED_MODULES));
 		JSONObject timestep = modules.containsKey("grib") && !disabledModules.contains(modules.get("grib")) ? (JSONObject) ((JSONObject) configuration.get("grib")).get("timestep") : null;
 		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
 		doms = null;
