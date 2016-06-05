@@ -7,12 +7,15 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 import java.util.Calendar;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
 import toberumono.json.JSONBoolean;
 import toberumono.json.JSONObject;
 import toberumono.wrf.Module;
 import toberumono.wrf.Simulation2;
+import toberumono.wrf.WRFRunnerComponentFactory;
 import toberumono.wrf.timing.JSONTiming;
 import toberumono.wrf.timing.Timing;
 
@@ -23,34 +26,52 @@ import toberumono.wrf.timing.Timing;
  */
 public class GRIBModule extends Module {
 	private static final int[] calendarOffsetFields = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
-	private final String url;
-	private final Timing incremented;
-	private final JSONObject timestep;
-	private final boolean wrap;
+	private String url;
+	private Timing incremented;
+	private JSONObject timestep;
+	private Boolean wrap;
+	private final Lock lock;
 	
 	public GRIBModule(JSONObject parameters, Simulation2 sim) throws IOException {
 		super(parameters, sim);
+		url = null;
+		incremented = null;
+		timestep = null;
+		wrap = null;
 		JSONObject grib = (JSONObject) parameters.get("configuration");
 		url = (String) grib.get("url").value();
-		incremented = new JSONTiming((JSONObject) ((JSONObject) parameters.get("timing")).get("incremented"), getTiming());
 		timestep = (JSONObject) grib.get("timestep");
 		wrap = ((JSONBoolean) timestep.get("wrap")).value();
+		lock = new ReentrantLock();
 	}
 	
 	@Override
 	protected Timing parseTiming(JSONObject timing) {
 		return super.parseTiming((JSONObject) timing.get("constant"));
 	}
-
-	@Override
-	public void updateNamelist() throws IOException, InterruptedException {
-		//This module has no Namelist
+	
+	public Timing getIncrementedTiming() {
+		if (incremented != null)
+			return incremented;
+		try {
+			lock.lock();
+			if (incremented == null)
+				incremented = WRFRunnerComponentFactory.generateComponent(Timing.class, (JSONObject) ((JSONObject) getParameters().get("timing")).get("incremented"), getTiming());
+		}
+		finally {
+			lock.unlock();
+		}
+		return incremented;
 	}
-
+	
+	@Override
+	public void updateNamelist() throws IOException, InterruptedException {/* This module has no Namelist */}
+	
 	@Override
 	public void execute() throws IOException, InterruptedException {
 		int[] offsets = new int[4], steps = new int[4];
-		Calendar constant = getTiming().getStart(), end = getSim().getGlobalTiming().getEnd(), test = (Calendar) getSim().getGlobalTiming().getStart().clone(), increment = (Calendar) incremented.getStart().clone();
+		Calendar constant = getTiming().getStart(), test = (Calendar) getSim().getGlobalTiming().getStart().clone(), end = getSim().getGlobalTiming().getEnd(),
+				increment = (Calendar) getIncrementedTiming().getStart().clone();
 		
 		steps[0] = ((Number) timestep.get("days").value()).intValue();
 		steps[1] = ((Number) timestep.get("hours").value()).intValue();
@@ -143,9 +164,7 @@ public class GRIBModule extends Module {
 			throw e;
 		}
 	}
-
+	
 	@Override
-	public void cleanUp() throws IOException, InterruptedException {
-		//This module doesn't perform any cleanup itself
-	}
+	public void cleanUp() throws IOException, InterruptedException {/* This module doesn't perform any cleanup */}
 }
