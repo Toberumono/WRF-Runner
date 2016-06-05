@@ -16,7 +16,6 @@ import toberumono.json.JSONObject;
 import toberumono.wrf.Module;
 import toberumono.wrf.Simulation;
 import toberumono.wrf.WRFRunnerComponentFactory;
-import toberumono.wrf.timing.JSONTiming;
 import toberumono.wrf.timing.Timing;
 
 /**

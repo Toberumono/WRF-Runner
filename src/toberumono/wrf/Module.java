@@ -16,32 +16,38 @@ import toberumono.wrf.timing.Timing;
 import static toberumono.wrf.SimulationConstants.*;
 
 public abstract class Module {
-	private final Timing timing;
-	private final Path namelistPath;
-	private final Namelist namelist;
 	protected final Logger logger;
 	private final String name;
 	private final Simulation sim;
+	private final JSONObject parameters, module;
+	private Timing timing;
+	private Path namelistPath;
+	private Namelist namelist;
 	
 	public Module(JSONObject parameters, Simulation sim) throws IOException {
 		this.sim = sim;
+		this.parameters = parameters;
+		namelistPath = null;
+		namelist = null;
+		timing = null;
 		name = (String) parameters.get("name").value();
-		logger = Logger.getLogger("module::" + getName());
-		JSONObject module = ((JSONObject) parameters.get("module"));
-		namelistPath = module.containsKey(NAMELIST_FIELD_NAME) ? Paths.get((String) module.get(NAMELIST_FIELD_NAME).value()) : null; //namelistPath holds the relative location of the namelist file
-		namelist = ingestNamelist();
-		timing = parseTiming((JSONObject) parameters.get("timing"));
+		logger = Logger.getLogger(LOGGER_ROOT + ".module::" + getName());
+		module = ((JSONObject) parameters.get("module"));
 	}
 	
-	public Namelist ingestNamelist() throws IOException {
-		if (namelistPath != null && getSim().getSourcePath(getName()) != null)
-			return new Namelist(getSim().getSourcePath(getName()).resolve(namelistPath));
+	protected Timing parseTiming(JSONObject timing) {
+		return WRFRunnerComponentFactory.generateComponent(Timing.class, timing, getSim().getGlobalTiming());
+	}
+	
+	protected Namelist ingestNamelist() throws IOException {
+		if (getNamelistPath() != null && getSim().getSourcePath(getName()) != null)
+			return new Namelist(getSim().getSourcePath(getName()).resolve(getNamelistPath()));
 		return null;
 	}
 	
-	public void writeNamelist() throws IOException {
-		if (namelist != null && getSim().getActivePath(getName()) != null)
-			namelist.write(getSim().getActivePath(getName()).resolve(namelistPath));
+	protected void writeNamelist() throws IOException {
+		if (getNamelist() != null && getSim().getActivePath(getName()) != null)
+			getNamelist().write(getSim().getActivePath(getName()).resolve(getNamelistPath()));
 	}
 	
 	public abstract void updateNamelist() throws IOException, InterruptedException;
@@ -50,12 +56,20 @@ public abstract class Module {
 	
 	public abstract void cleanUp() throws IOException, InterruptedException;
 	
-	protected Timing parseTiming(JSONObject timing) {
-		return new JSONTiming(timing, getSim().getGlobalTiming());
+	public Path getNamelistPath() { //namelistPath holds the location of the namelist file relative to the module's root directory
+		if (namelistPath == null)
+			namelistPath = (module.containsKey(NAMELIST_FIELD_NAME) ? Paths.get((String) module.get(NAMELIST_FIELD_NAME).value()) : null);
+		return namelistPath;
 	}
 	
 	public Timing getTiming() {
-		return timing;
+		if (timing != null) //First one is to avoid unnecessary use of synchronization
+			return timing;
+		synchronized (name) {
+			if (timing != null)
+				return timing;
+			return timing = parseTiming((JSONObject) parameters.get("timing"));
+		}
 	}
 	
 	public String getName() {
@@ -66,8 +80,18 @@ public abstract class Module {
 		return sim;
 	}
 	
-	public Namelist getNamelist() {
-		return namelist;
+	public Namelist getNamelist() throws IOException {
+		if (namelist != null) //First one is to avoid unnecessary use of synchronization
+			return namelist;
+		synchronized (name) {
+			if (namelist != null)
+				return namelist;
+			return namelist = ingestNamelist();
+		}
+	}
+	
+	public JSONObject getParameters() {
+		return parameters;
 	}
 	
 	/**
@@ -78,9 +102,10 @@ public abstract class Module {
 	 *             if an error occured while creating the links.
 	 */
 	public void linkToWorkingDirectory() throws IOException {
-		if (sim.getSourcePath(getName()) != null)
+		Files.createDirectories(getSim().getActivePath(getName()));
+		if (getSim().getSourcePath(getName()) != null)
 			//We don't need anything from the src directories, so we exclude them.
-			Files.walkFileTree(sim.getSourcePath(getName()), new TransferFileWalker(sim.getActivePath(getName()), BasicTransferActions.SYMLINK,
+			Files.walkFileTree(getSim().getSourcePath(getName()), new TransferFileWalker(getSim().getActivePath(getName()), BasicTransferActions.SYMLINK,
 					p -> !filenameTest(p.getFileName().toString()), p -> !p.getFileName().toString().equals("src"), null, logger, false));
 	}
 	
