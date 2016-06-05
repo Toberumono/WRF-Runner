@@ -8,9 +8,7 @@ import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,6 +18,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import toberumono.json.JSONArray;
@@ -36,8 +36,8 @@ import toberumono.wrf.timing.NamelistTiming;
 import toberumono.wrf.timing.Timing;
 
 public class Simulation {
-	private static final Collection<String> REQUIRED_MODULES = Collections.unmodifiableCollection(Arrays.asList("wrf"));
 	
+	private final Logger logger;
 	private final JSONObject configuration, general, timing;
 	private final JSONObject parallel;
 	private final Path working, resolver;
@@ -53,16 +53,13 @@ public class Simulation {
 		this.configuration = configuration;
 		this.general = general;
 		this.timing = timing;
+		logger = Logger.getLogger("WRFRunner.Simulation");
+		logger.setLevel(Level.parse(((String) general.get("logging-level").value()).toUpperCase()));
 		parallel = (JSONObject) getGeneral().get("parallel");
 		source = new HashMap<>();
 		active = new HashMap<>();
-		this.disabledModules = new HashSet<>();
-		this.modules = Collections.unmodifiableMap(parseModules(modules, REQUIRED_MODULES));
-		for (JSONData<?> mod : (JSONArray) modules.get("execution-order")) {
-			String name = (String) mod.value();
-			if (paths.containsKey(name))
-				source.put(name, getResolver().resolve(paths.get(name).value().toString()));
-		}
+		disabledModules = new HashSet<>();
+		this.modules = Collections.unmodifiableMap(parseModules(modules, paths));
 		globalTiming = ((Boolean) getTiming().get("use-computed-times").value()) ? new JSONTiming((JSONObject) timing.get("global"), base)
 				: new NamelistTiming(this.modules.get("wrf").getNamelist().get("time_control"));
 		working = constructWorkingDirectory(getResolver().getFileSystem().getPath(getGeneral().get("working-directory").value().toString()), (Boolean) general.get("always-suffix").value());
@@ -154,15 +151,17 @@ public class Simulation {
 		}
 	}
 	
-	private Map<String, Module> parseModules(JSONObject modules, Collection<String> requiredModules) {
+	private Map<String, Module> parseModules(JSONObject modules, JSONObject paths) {
 		Map<String, Module> out = new LinkedHashMap<>();
 		for (JSONData<?> mod : (JSONArray) modules.get("execution-order")) {
 			try {
 				String name = mod.value().toString();
+				if (paths.containsKey(name))
+					source.put(name, getResolver().resolve(paths.get(name).value().toString()));
 				out.put(name, loadModule(name, modules));
 			}
 			catch (ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-				// TODO Auto-generated catch block
+				// TODO Deal with failures when loading modules
 				e.printStackTrace();
 			}
 		}
@@ -229,6 +228,7 @@ public class Simulation {
 		
 		if (updateFile) {
 			JSONSystem.transferField("use-computed-times", new JSONBoolean(true), timing);
+			JSONSystem.transferField("logging-level", new JSONString("INFO"), general);
 		}
 		
 		return new Simulation(base, configurationPath.toAbsolutePath().normalize().getParent(), configuration, general, module, path, timing);
