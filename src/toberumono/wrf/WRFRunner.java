@@ -13,6 +13,12 @@ import toberumono.namelist.parser.Namelist;
 import toberumono.structures.SortingMethods;
 import toberumono.structures.collections.lists.SortedList;
 import toberumono.utils.files.RecursiveEraser;
+import toberumono.wrf.timing.DisabledTiming;
+import toberumono.wrf.timing.JSONTiming;
+import toberumono.wrf.timing.Timing;
+import toberumono.wrf.timing.clear.Clear;
+import toberumono.wrf.timing.clear.DisabledClear;
+import toberumono.wrf.timing.clear.StandardClear;
 import toberumono.wrf.timing.duration.DisabledDuration;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.duration.StandardDuration;
@@ -56,16 +62,22 @@ public class WRFRunner {
 	}
 	
 	public static void initFactories() {
-		WRFRunnerComponentFactory<Offset> offsetFactory = WRFRunnerComponentFactory.getFactory(Offset.class, "standard", DisabledOffset.getDisabledOffsetInstance());
+		WRFRunnerComponentFactory<Offset> offsetFactory = WRFRunnerComponentFactory.getFactory(Offset.class, "standard", DisabledOffset::getDisabledOffsetInstance);
 		offsetFactory.addComponentConstructor("standard", StandardOffset::new);
 		offsetFactory.addComponentConstructor("disabled", (p, s) -> offsetFactory.getDisabledComponentInstance());
-		WRFRunnerComponentFactory<Rounding> roundingFactory = WRFRunnerComponentFactory.getFactory(Rounding.class, "bucket", DisabledRounding.getDisabledRoundingInstance());
+		WRFRunnerComponentFactory<Rounding> roundingFactory = WRFRunnerComponentFactory.getFactory(Rounding.class, "bucket", DisabledRounding::getDisabledRoundingInstance);
 		roundingFactory.addComponentConstructor("bucket", BucketRounding::new);
 		roundingFactory.addComponentConstructor("fractional", FractionalRounding::new);
 		roundingFactory.addComponentConstructor("disabled", (p, s) -> roundingFactory.getDisabledComponentInstance());
-		WRFRunnerComponentFactory<Duration> durationFactory = WRFRunnerComponentFactory.getFactory(Duration.class, "standard", DisabledDuration.getDisabledDurationInstance());
+		WRFRunnerComponentFactory<Duration> durationFactory = WRFRunnerComponentFactory.getFactory(Duration.class, "standard", DisabledDuration::getDisabledDurationInstance);
 		durationFactory.addComponentConstructor("standard", StandardDuration::new);
 		durationFactory.addComponentConstructor("disabled", (p, s) -> durationFactory.getDisabledComponentInstance());
+		WRFRunnerComponentFactory<Clear> clearFactory = WRFRunnerComponentFactory.getFactory(Clear.class, "standard", DisabledClear::getDisabledClearInstance);
+		clearFactory.addComponentConstructor("standard", StandardClear::new);
+		clearFactory.addComponentConstructor("disabled", (p, s) -> clearFactory.getDisabledComponentInstance());
+		WRFRunnerComponentFactory<Timing> timingFactory = WRFRunnerComponentFactory.getFactory(Timing.class, "json", DisabledTiming::getDisabledTimingInstance);
+		timingFactory.addComponentConstructor("json", JSONTiming::new);
+		timingFactory.addComponentConstructor("disabled", (p, s) -> timingFactory.getDisabledComponentInstance());
 	}
 	
 	/**

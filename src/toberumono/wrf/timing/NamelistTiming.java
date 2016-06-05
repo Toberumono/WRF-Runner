@@ -5,6 +5,7 @@ import java.util.Calendar;
 import toberumono.namelist.parser.NamelistSection;
 import toberumono.wrf.InheritableItem;
 import toberumono.wrf.WRFRunnerComponentFactory;
+import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.duration.NamelistDuration;
 import toberumono.wrf.timing.offset.Offset;
@@ -16,6 +17,7 @@ public class NamelistTiming extends InheritableItem<Timing> implements Timing {
 	private final Offset offset;
 	private final Rounding rounding;
 	private final Duration duration;
+	private final Clear clear;
 	
 	public NamelistTiming(NamelistSection timeControl) { //No need for lazy computation - everything is either Disabled or independent
 		super(null);
@@ -24,6 +26,7 @@ public class NamelistTiming extends InheritableItem<Timing> implements Timing {
 		offset = WRFRunnerComponentFactory.getDisabledComponentInstance(Offset.class);
 		rounding = WRFRunnerComponentFactory.getDisabledComponentInstance(Rounding.class);
 		duration = new NamelistDuration(timeControl);
+		clear = WRFRunnerComponentFactory.getDisabledComponentInstance(Clear.class);
 		start = getOffset().apply(getRounding().apply(getBase()));
 		end = getDuration().apply(getStart());
 	}
@@ -66,5 +69,10 @@ public class NamelistTiming extends InheritableItem<Timing> implements Timing {
 	@Override
 	public Duration getDuration() {
 		return duration;
+	}
+
+	@Override
+	public Clear getClear() {
+		return clear;
 	}
 }

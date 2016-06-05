@@ -3,6 +3,7 @@ package toberumono.wrf.timing;
 import java.util.Calendar;
 
 import toberumono.wrf.Simulation2;
+import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.offset.Offset;
 import toberumono.wrf.timing.rounding.Rounding;
@@ -43,4 +44,9 @@ public interface Timing {
 	 * @return the {@link Duration} of the {@link Simulation2}
 	 */
 	public Duration getDuration();
+	
+	/**
+	 * @return the {@link Clear} of the {@link Simulation2}
+	 */
+	public Clear getClear();
 }

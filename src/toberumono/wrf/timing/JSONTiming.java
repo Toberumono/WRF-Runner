@@ -6,6 +6,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import toberumono.json.JSONObject;
 import toberumono.wrf.InheritableItem;
 import toberumono.wrf.WRFRunnerComponentFactory;
+import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.offset.Offset;
 import toberumono.wrf.timing.rounding.Rounding;
@@ -18,6 +19,8 @@ public class JSONTiming extends InheritableItem<Timing> implements Timing {
 	private Offset offset;
 	private Rounding rounding;
 	private Duration duration;
+	private Clear clear;
+	private boolean appliedClear;
 	
 	public JSONTiming(JSONObject parameters, Calendar base) {
 		super(null);
@@ -27,6 +30,8 @@ public class JSONTiming extends InheritableItem<Timing> implements Timing {
 		offset = null;
 		rounding = null;
 		duration = null;
+		clear = null;
+		appliedClear = false;
 		this.base = base;
 	}
 	
@@ -38,11 +43,37 @@ public class JSONTiming extends InheritableItem<Timing> implements Timing {
 		offset = null;
 		rounding = null;
 		duration = null;
+		clear = null;
+		appliedClear = false;
 	}
 	
 	@Override
 	public Calendar getBase() {
-		return base == null ? base = getParent().getBase() : base;
+		if (base == null) {
+			try {
+				computationLock.lock();
+				if (base == null) { //Have to re-check for synchronization
+					base = getClear().apply(getParent().getBase());
+					appliedClear = true;
+				}
+			}
+			finally {
+				computationLock.unlock();
+			}
+		}
+		if (!appliedClear) {
+			try {
+				computationLock.lock();
+				if (!appliedClear) { //Have to re-check for synchronization
+					base = getClear().apply(base);
+					appliedClear = true;
+				}
+			}
+			finally {
+				computationLock.unlock();
+			}
+		}
+		return base;
 	}
 	
 	@Override
@@ -118,5 +149,20 @@ public class JSONTiming extends InheritableItem<Timing> implements Timing {
 			computationLock.unlock();
 		}
 		return duration;
+	}
+
+	@Override
+	public Clear getClear() {
+		if (clear != null)
+			return clear;
+		try {
+			computationLock.lock();
+			if (clear == null)
+				clear = WRFRunnerComponentFactory.generateComponent(Clear.class, (JSONObject) parameters.get("clear"), getParent() != null ? getParent().getClear() : null);
+		}
+		finally {
+			computationLock.unlock();
+		}
+		return clear;
 	}
 }

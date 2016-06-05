@@ -3,6 +3,7 @@ package toberumono.wrf;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 import toberumono.json.JSONObject;
 
@@ -10,12 +11,12 @@ public class WRFRunnerComponentFactory<T> {
 	private static final Map<Class<?>, WRFRunnerComponentFactory<?>> factories = new HashMap<>();
 	private final Map<String, BiFunction<JSONObject, T, T>> components;
 	private String defaultComponentType;
-	private T disabledComponentInstance;
+	private Supplier<T> disabledComponentInstanceSupplier;
 	
-	private WRFRunnerComponentFactory(String defaultComponentType, T disabledInstance) {
+	private WRFRunnerComponentFactory(String defaultComponentType, Supplier<T> disabledComponentInstanceSupplier) {
 		components = new HashMap<>();
 		this.defaultComponentType = defaultComponentType;
-		this.disabledComponentInstance = disabledInstance;
+		this.disabledComponentInstanceSupplier = disabledComponentInstanceSupplier;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -25,14 +26,14 @@ public class WRFRunnerComponentFactory<T> {
 		}
 	}
 	
-	public static <T> WRFRunnerComponentFactory<T> getFactory(Class<T> clazz, String defaultComponentType, T disabledComponentInstance) {
+	public static <T> WRFRunnerComponentFactory<T> getFactory(Class<T> clazz, String defaultComponentType, Supplier<T> disabledComponentInstanceSupplier) {
 		synchronized (factories) {
 			if (factories.containsKey(clazz)) {
 				@SuppressWarnings("unchecked") WRFRunnerComponentFactory<T> factory = (WRFRunnerComponentFactory<T>) factories.get(clazz);
 				factory.setDefaultComponentType(defaultComponentType);
 				return factory;
 			}
-			WRFRunnerComponentFactory<T> factory = new WRFRunnerComponentFactory<>(defaultComponentType, disabledComponentInstance);
+			WRFRunnerComponentFactory<T> factory = new WRFRunnerComponentFactory<>(defaultComponentType, disabledComponentInstanceSupplier);
 			factories.put(clazz, factory);
 			return factory;
 		}
@@ -69,7 +70,7 @@ public class WRFRunnerComponentFactory<T> {
 		synchronized (components) {
 			if (parameters.containsKey("enabled") && parameters.get("enabled").value() instanceof Boolean && !((Boolean) parameters.get("enabled").value()))
 				return getDisabledComponentInstance();
-			if (parameters.containsKey("inherit") && parameters.get("inherit").value() instanceof Boolean && !((Boolean) parameters.get("inherit").value()))
+			if (parameters.containsKey("inherit") && parameters.get("inherit").value() instanceof Boolean && ((Boolean) parameters.get("inherit").value()))
 				return parent;
 			return components.get(type != null ? type : defaultComponentType).apply(parameters, parent);
 		}
@@ -86,14 +87,14 @@ public class WRFRunnerComponentFactory<T> {
 		}
 	}
 	
-	public static <T> void setDisabledComponentInstance(Class<T> clazz, T instance) {
+	public static <T> void setDisabledComponentInstance(Class<T> clazz, Supplier<T> disabledComponentInstanceSupplier) {
 		WRFRunnerComponentFactory<T> factory = getFactory(clazz);
-		factory.setDisabledComponentInstance(instance);
+		factory.setDisabledComponentInstanceSupplier(disabledComponentInstanceSupplier);
 	}
 	
-	public void setDisabledComponentInstance(T instance) {
+	public void setDisabledComponentInstanceSupplier(Supplier<T> disabledComponentInstanceSupplier) {
 		synchronized (components) {
-			this.disabledComponentInstance = instance;
+			this.disabledComponentInstanceSupplier = disabledComponentInstanceSupplier;
 		}
 	}
 	
@@ -104,7 +105,7 @@ public class WRFRunnerComponentFactory<T> {
 	
 	public T getDisabledComponentInstance() {
 		synchronized (components) {
-			return disabledComponentInstance;
+			return disabledComponentInstanceSupplier.get();
 		}
 	}
 }

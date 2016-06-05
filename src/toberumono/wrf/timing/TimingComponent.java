@@ -30,7 +30,7 @@ public abstract class TimingComponent<T extends TimingComponent<T>> extends Inhe
 	public final Calendar apply(Calendar base) {
 		if (computed)
 			return doApply(base);
-		synchronized (parameters) {
+		synchronized (log) {
 			if (!computed) {
 				compute();
 				computed = true;
