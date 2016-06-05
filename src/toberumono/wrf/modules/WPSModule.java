@@ -22,7 +22,15 @@ import static toberumono.utils.general.ProcessBuilders.*;
  */
 public class WPSModule extends Module {
 	
-	public WPSModule(JSONObject parameters, Simulation sim) throws IOException {
+	/**
+	 * Initializes a new {@link WPSModule} with the given {@code parameters} for the given {@link Simulation}
+	 * 
+	 * @param parameters
+	 *            the {@link WPSModule WPSModule's} parameters
+	 * @param sim
+	 *            the {@link Simulation} for which the {@link WPSModule} is being initialized
+	 */
+	public WPSModule(JSONObject parameters, Simulation sim) {
 		super(parameters, sim);
 	}
 	

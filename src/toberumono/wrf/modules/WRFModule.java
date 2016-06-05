@@ -18,7 +18,7 @@ import toberumono.wrf.Simulation;
 import static toberumono.utils.general.ProcessBuilders.*;
 
 /**
- * Contains the logic for running WPS.
+ * Contains the logic for running WRF.
  * 
  * @author Toberumono
  */
@@ -26,7 +26,15 @@ public class WRFModule extends Module {
 	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
 	private static final int[] calendarCodes = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
 	
-	public WRFModule(JSONObject parameters, Simulation sim) throws IOException {
+	/**
+	 * Initializes a new {@link WRFModule} with the given {@code parameters} for the given {@link Simulation}
+	 * 
+	 * @param parameters
+	 *            the {@link WRFModule WPSModule's} parameters
+	 * @param sim
+	 *            the {@link Simulation} for which the {@link WRFModule} is being initialized
+	 */
+	public WRFModule(JSONObject parameters, Simulation sim) {
 		super(parameters, sim);
 	}
 	
@@ -67,7 +75,8 @@ public class WRFModule extends Module {
 		tc.put("end_second", esecond);
 		for (int i = 0; i < timeCodes.length; i++)
 			if (tc.containsKey("run_" + timeCodes[i]))
-				((NamelistValueList<NamelistNumber>) tc.get("run_" + timeCodes[i])).set(0, new NamelistNumber(getTiming().getEnd().get(calendarCodes[i]) - getTiming().getStart().get(calendarCodes[i])));
+				((NamelistValueList<NamelistNumber>) tc.get("run_" + timeCodes[i])).set(0,
+						new NamelistNumber(getTiming().getEnd().get(calendarCodes[i]) - getTiming().getStart().get(calendarCodes[i])));
 	}
 	
 	@Override
@@ -75,7 +84,7 @@ public class WRFModule extends Module {
 		Path run = getSim().getActivePath("wrf").resolve("run");
 		ProcessBuilder wrfPB = makePB(run.toFile());
 		runPB(wrfPB, "./real.exe", "2>&1", "|", "tee", "./real.log");
-		String[] wrfCommand = new String[0];
+		String[] wrfCommand;
 		//Calculate which command to use
 		if ((Boolean) getSim().getParallel().get("is-dmpar").value()) {
 			if ((Boolean) getSim().getParallel().get("boot-lam").value())
@@ -99,5 +108,4 @@ public class WRFModule extends Module {
 	public void cleanUp() throws IOException, InterruptedException {
 		Files.walkFileTree(getSim().getActivePath(getName()), new RecursiveEraser());
 	}
-	
 }

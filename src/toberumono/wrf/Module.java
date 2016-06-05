@@ -10,7 +10,6 @@ import toberumono.json.JSONObject;
 import toberumono.namelist.parser.Namelist;
 import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
-import toberumono.wrf.timing.JSONTiming;
 import toberumono.wrf.timing.Timing;
 
 import static toberumono.wrf.SimulationConstants.*;
@@ -24,7 +23,7 @@ public abstract class Module {
 	private Path namelistPath;
 	private Namelist namelist;
 	
-	public Module(JSONObject parameters, Simulation sim) throws IOException {
+	public Module(JSONObject parameters, Simulation sim) {
 		this.sim = sim;
 		this.parameters = parameters;
 		namelistPath = null;
