@@ -17,11 +17,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
-import toberumono.json.JSONBoolean;
-import toberumono.json.JSONObject;
 import toberumono.wrf.Module;
 import toberumono.wrf.Simulation;
 import toberumono.wrf.WRFRunnerComponentFactory;
+import toberumono.wrf.scope.ScopedConfiguration;
 import toberumono.wrf.timing.Timing;
 
 /**
@@ -34,7 +33,7 @@ public class GRIBModule extends Module {
 	private static final int[] calendarOffsetFields = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
 	private String url;
 	private Timing incremented;
-	private JSONObject timestep;
+	private ScopedConfiguration timestep;
 	private Boolean wrap;
 	private final Lock lock;
 	
@@ -46,22 +45,22 @@ public class GRIBModule extends Module {
 	 * @param sim
 	 *            the {@link Simulation} for which the {@link GRIBModule} is being initialized
 	 */
-	public GRIBModule(JSONObject parameters, Simulation sim) {
+	public GRIBModule(ScopedConfiguration parameters, Simulation sim) {
 		super(parameters, sim);
 		url = null;
 		incremented = null;
 		timestep = null;
 		wrap = null;
-		JSONObject grib = (JSONObject) parameters.get("configuration");
-		url = (String) grib.get("url").value();
-		timestep = (JSONObject) grib.get("timestep");
-		wrap = ((JSONBoolean) timestep.get("wrap")).value();
+		ScopedConfiguration grib = (ScopedConfiguration) parameters.get("configuration");
+		url = (String) grib.get("url");
+		timestep = (ScopedConfiguration) grib.get("timestep");
+		wrap = (Boolean) timestep.get("wrap");
 		lock = new ReentrantLock();
 	}
 	
 	@Override
-	protected Timing parseTiming(JSONObject timing) {
-		return super.parseTiming((JSONObject) timing.get("constant"));
+	protected Timing parseTiming(ScopedConfiguration timing) {
+		return super.parseTiming((ScopedConfiguration) timing.get("constant"));
 	}
 	
 	/**
@@ -73,7 +72,7 @@ public class GRIBModule extends Module {
 		try {
 			lock.lock();
 			if (incremented == null)
-				incremented = WRFRunnerComponentFactory.generateComponent(Timing.class, (JSONObject) ((JSONObject) getParameters().get("timing")).get("incremented"), getTiming());
+				incremented = WRFRunnerComponentFactory.generateComponent(Timing.class, (ScopedConfiguration) ((ScopedConfiguration) getParameters().get("timing")).get("incremented"), getTiming());
 		}
 		finally {
 			lock.unlock();
@@ -91,10 +90,10 @@ public class GRIBModule extends Module {
 		Calendar constant = getTiming().getStart(), test = (Calendar) getSim().getGlobalTiming().getStart().clone(), end = getSim().getGlobalTiming().getEnd(),
 				increment = (Calendar) getIncrementedTiming().getStart().clone();
 		
-		steps[0] = ((Number) timestep.get("days").value()).intValue();
-		steps[1] = ((Number) timestep.get("hours").value()).intValue();
-		steps[2] = ((Number) timestep.get("minutes").value()).intValue();
-		steps[3] = ((Number) timestep.get("seconds").value()).intValue();
+		steps[0] = ((Number) timestep.get("days")).intValue();
+		steps[1] = ((Number) timestep.get("hours")).intValue();
+		steps[2] = ((Number) timestep.get("minutes")).intValue();
+		steps[3] = ((Number) timestep.get("seconds")).intValue();
 		
 		for (; !test.after(end); incrementOffsets(offsets, steps, test, increment))
 			downloads.add(downloadGribFile(parseIncrementedURL(url, constant, increment, wrap, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), getSim()));

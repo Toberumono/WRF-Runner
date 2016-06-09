@@ -141,7 +141,7 @@ public class WRFRunner {
 	
 	private void cleanUpOldSimulations(Simulation sim) {
 		try (DirectoryStream<Path> stream = Files.newDirectoryStream(sim.getWorkingPath())) {
-			int maxOutputs = ((Number) sim.getGeneral().get("max-kept-outputs").value()).intValue();
+			int maxOutputs = ((Number) sim.getGeneral().get("max-kept-outputs")).intValue();
 			if (maxOutputs < 1)
 				return;
 			SortedList<Path> sl = new SortedList<>(SortingMethods.PATH_MODIFIED_TIME_ASCENDING);

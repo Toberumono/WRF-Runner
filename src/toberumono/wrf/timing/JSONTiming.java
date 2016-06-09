@@ -3,17 +3,15 @@ package toberumono.wrf.timing;
 import java.util.Calendar;
 import java.util.concurrent.locks.ReentrantLock;
 
-import toberumono.json.JSONObject;
-import toberumono.wrf.InheritableItem;
 import toberumono.wrf.WRFRunnerComponentFactory;
+import toberumono.wrf.scope.ScopedConfiguration;
 import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.offset.Offset;
 import toberumono.wrf.timing.rounding.Rounding;
 
-public class JSONTiming extends InheritableItem<Timing> implements Timing {
+public class JSONTiming extends TimingScope<Timing> implements Timing {
 	private final ReentrantLock computationLock;
-	private final JSONObject parameters;
 	
 	private Calendar base, start, end;
 	private Offset offset;
@@ -22,10 +20,9 @@ public class JSONTiming extends InheritableItem<Timing> implements Timing {
 	private Clear clear;
 	private boolean appliedClear;
 	
-	public JSONTiming(JSONObject parameters, Calendar base) {
-		super(null);
+	public JSONTiming(ScopedConfiguration parameters, Calendar base) {
+		super(parameters, null);
 		computationLock = new ReentrantLock();
-		this.parameters = parameters;
 		start = end = null;
 		offset = null;
 		rounding = null;
@@ -35,10 +32,9 @@ public class JSONTiming extends InheritableItem<Timing> implements Timing {
 		this.base = base;
 	}
 	
-	public JSONTiming(JSONObject parameters, Timing parent) { //TODO implement existence checks
-		super(parent);
+	public JSONTiming(ScopedConfiguration parameters, Timing parent) { //TODO implement existence checks
+		super(parameters, parent);
 		computationLock = new ReentrantLock();
-		this.parameters = parameters;
 		base = start = end = null;
 		offset = null;
 		rounding = null;
@@ -113,7 +109,7 @@ public class JSONTiming extends InheritableItem<Timing> implements Timing {
 		try {
 			computationLock.lock();
 			if (offset == null)
-				offset = WRFRunnerComponentFactory.generateComponent(Offset.class, (JSONObject) parameters.get("offset"), getParent() != null ? getParent().getOffset() : null);
+				offset = WRFRunnerComponentFactory.generateComponent(Offset.class, (ScopedConfiguration) getParameters().get("offset"), getParent() != null ? getParent().getOffset() : null);
 		}
 		finally {
 			computationLock.unlock();
@@ -128,7 +124,7 @@ public class JSONTiming extends InheritableItem<Timing> implements Timing {
 		try {
 			computationLock.lock();
 			if (rounding == null)
-				rounding = WRFRunnerComponentFactory.generateComponent(Rounding.class, (JSONObject) parameters.get("rounding"), getParent() != null ? getParent().getRounding() : null);
+				rounding = WRFRunnerComponentFactory.generateComponent(Rounding.class, (ScopedConfiguration) getParameters().get("rounding"), getParent() != null ? getParent().getRounding() : null);
 		}
 		finally {
 			computationLock.unlock();
@@ -143,7 +139,7 @@ public class JSONTiming extends InheritableItem<Timing> implements Timing {
 		try {
 			computationLock.lock();
 			if (duration == null)
-				duration = WRFRunnerComponentFactory.generateComponent(Duration.class, (JSONObject) parameters.get("duration"), getParent() != null ? getParent().getDuration() : null);
+				duration = WRFRunnerComponentFactory.generateComponent(Duration.class, (ScopedConfiguration) getParameters().get("duration"), getParent() != null ? getParent().getDuration() : null);
 		}
 		finally {
 			computationLock.unlock();
@@ -158,7 +154,7 @@ public class JSONTiming extends InheritableItem<Timing> implements Timing {
 		try {
 			computationLock.lock();
 			if (clear == null)
-				clear = WRFRunnerComponentFactory.generateComponent(Clear.class, (JSONObject) parameters.get("clear"), getParent() != null ? getParent().getClear() : null);
+				clear = WRFRunnerComponentFactory.generateComponent(Clear.class, (ScopedConfiguration) getParameters().get("clear"), getParent() != null ? getParent().getClear() : null);
 		}
 		finally {
 			computationLock.unlock();

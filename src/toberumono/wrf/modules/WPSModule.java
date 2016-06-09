@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import toberumono.json.JSONObject;
 import toberumono.namelist.parser.Namelist;
 import toberumono.namelist.parser.NamelistNumber;
 import toberumono.namelist.parser.NamelistString;
@@ -12,6 +11,7 @@ import toberumono.namelist.parser.NamelistValueList;
 import toberumono.utils.files.RecursiveEraser;
 import toberumono.wrf.Module;
 import toberumono.wrf.Simulation;
+import toberumono.wrf.scope.ScopedConfiguration;
 
 import static toberumono.utils.general.ProcessBuilders.*;
 
@@ -30,7 +30,7 @@ public class WPSModule extends Module {
 	 * @param sim
 	 *            the {@link Simulation} for which the {@link WPSModule} is being initialized
 	 */
-	public WPSModule(JSONObject parameters, Simulation sim) {
+	public WPSModule(ScopedConfiguration parameters, Simulation sim) {
 		super(parameters, sim);
 	}
 	

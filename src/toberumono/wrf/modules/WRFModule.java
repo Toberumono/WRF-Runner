@@ -6,7 +6,6 @@ import java.nio.file.Path;
 import java.util.Calendar;
 import java.util.logging.Level;
 
-import toberumono.json.JSONObject;
 import toberumono.namelist.parser.NamelistNumber;
 import toberumono.namelist.parser.NamelistSection;
 import toberumono.namelist.parser.NamelistValueList;
@@ -14,6 +13,7 @@ import toberumono.utils.files.RecursiveEraser;
 import toberumono.utils.files.TransferFileWalker;
 import toberumono.wrf.Module;
 import toberumono.wrf.Simulation;
+import toberumono.wrf.scope.ScopedConfiguration;
 
 import static toberumono.utils.general.ProcessBuilders.*;
 
@@ -34,7 +34,7 @@ public class WRFModule extends Module {
 	 * @param sim
 	 *            the {@link Simulation} for which the {@link WRFModule} is being initialized
 	 */
-	public WRFModule(JSONObject parameters, Simulation sim) {
+	public WRFModule(ScopedConfiguration parameters, Simulation sim) {
 		super(parameters, sim);
 	}
 	
@@ -86,11 +86,11 @@ public class WRFModule extends Module {
 		runPB(wrfPB, "./real.exe", "2>&1", "|", "tee", "./real.log");
 		String[] wrfCommand;
 		//Calculate which command to use
-		if ((Boolean) getSim().getParallel().get("is-dmpar").value()) {
-			if ((Boolean) getSim().getParallel().get("boot-lam").value())
-				wrfCommand = new String[]{"mpiexec", "-boot", "-np", getSim().getParallel().get("processors").value().toString(), "./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
+		if ((Boolean) getSim().getParallel().get("is-dmpar")) {
+			if ((Boolean) getSim().getParallel().get("boot-lam"))
+				wrfCommand = new String[]{"mpiexec", "-boot", "-np", getSim().getParallel().get("processors").toString(), "./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
 			else
-				wrfCommand = new String[]{"mpiexec", "-np", getSim().getParallel().get("processors").value().toString(), "./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
+				wrfCommand = new String[]{"mpiexec", "-np", getSim().getParallel().get("processors").toString(), "./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
 		}
 		else
 			wrfCommand = new String[]{"./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};

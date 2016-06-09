@@ -4,8 +4,8 @@ import java.util.Calendar;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import toberumono.wrf.InheritableItem;
 import toberumono.wrf.WRFRunnerComponentFactory;
+import toberumono.wrf.scope.AbstractScope;
 import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.offset.Offset;
@@ -17,7 +17,7 @@ import toberumono.wrf.timing.rounding.Rounding;
  * 
  * @author Toberumono
  */
-public class DisabledTiming extends InheritableItem<Timing> implements Timing {
+public class DisabledTiming extends AbstractScope<Timing> implements Timing {
 	private static final Lock lock = new ReentrantLock();
 	private static Timing instance = null;
 	

@@ -6,35 +6,36 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Logger;
 
-import toberumono.json.JSONObject;
 import toberumono.namelist.parser.Namelist;
 import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
+import toberumono.wrf.scope.AbstractScope;
+import toberumono.wrf.scope.ScopedConfiguration;
 import toberumono.wrf.timing.Timing;
 
 import static toberumono.wrf.SimulationConstants.*;
 
-public abstract class Module {
+public abstract class Module extends AbstractScope<Simulation> {
 	protected final Logger logger;
 	private final String name;
-	private final Simulation sim;
-	private final JSONObject parameters, module;
+	private final ScopedConfiguration parameters, module;
 	private Timing timing;
 	private Path namelistPath;
 	private Namelist namelist;
 	
-	public Module(JSONObject parameters, Simulation sim) {
-		this.sim = sim;
+	public Module(ScopedConfiguration parameters, Simulation sim) {
+		super(sim);
 		this.parameters = parameters;
+		this.parameters.setParent(this);
 		namelistPath = null;
 		namelist = null;
 		timing = null;
-		name = (String) parameters.get("name").value();
-		logger = Logger.getLogger(LOGGER_ROOT + ".module::" + getName());
-		module = ((JSONObject) parameters.get("module"));
+		name = (String) parameters.get("name");
+		logger = Logger.getLogger(LOGGER_ROOT + ".module." + getName());
+		module = (ScopedConfiguration) parameters.get("module");
 	}
 	
-	protected Timing parseTiming(JSONObject timing) {
+	protected Timing parseTiming(ScopedConfiguration timing) {
 		return WRFRunnerComponentFactory.generateComponent(Timing.class, timing, getSim().getGlobalTiming());
 	}
 	
@@ -57,7 +58,7 @@ public abstract class Module {
 	
 	public Path getNamelistPath() { //namelistPath holds the location of the namelist file relative to the module's root directory
 		if (namelistPath == null)
-			namelistPath = (module.containsKey(NAMELIST_FIELD_NAME) ? Paths.get((String) module.get(NAMELIST_FIELD_NAME).value()) : null);
+			namelistPath = (module.contains(NAMELIST_FIELD_NAME) ? Paths.get((String) module.get(NAMELIST_FIELD_NAME)) : null);
 		return namelistPath;
 	}
 	
@@ -67,7 +68,7 @@ public abstract class Module {
 		synchronized (name) {
 			if (timing != null)
 				return timing;
-			return timing = parseTiming((JSONObject) parameters.get("timing"));
+			return timing = parseTiming((ScopedConfiguration) parameters.get("timing"));
 		}
 	}
 	
@@ -76,7 +77,7 @@ public abstract class Module {
 	}
 	
 	public Simulation getSim() {
-		return sim;
+		return getParent();
 	}
 	
 	public Namelist getNamelist() throws IOException {
@@ -89,7 +90,7 @@ public abstract class Module {
 		}
 	}
 	
-	public JSONObject getParameters() {
+	public ScopedConfiguration getParameters() {
 		return parameters;
 	}
 	

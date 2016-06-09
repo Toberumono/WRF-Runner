@@ -2,14 +2,14 @@ package toberumono.wrf.timing.duration;
 
 import java.util.Calendar;
 
-import toberumono.json.JSONObject;
+import toberumono.wrf.scope.ScopedConfiguration;
 
 import static toberumono.wrf.SimulationConstants.*;
 
 public class StandardDuration extends Duration {
 	private int[] duration;
 	
-	public StandardDuration(JSONObject parameters, Duration parent) {
+	public StandardDuration(ScopedConfiguration parameters, Duration parent) {
 		super(parameters, parent);
 	}
 	
@@ -25,7 +25,7 @@ public class StandardDuration extends Duration {
 	protected void compute() {
 		duration = new int[TIMING_FIELD_NAMES.size()];
 		for (int i = 0; i < duration.length; i++)
-			if (getParameters().containsKey(TIMING_FIELD_NAMES.get(i))) //TODO implement inheritance via checking for String values equal to "inherit"
-				duration[i] = ((Number) getParameters().get(TIMING_FIELD_NAMES.get(i)).value()).intValue();
+			if (getParameters().contains(TIMING_FIELD_NAMES.get(i))) //TODO implement inheritance via checking for String values equal to "inherit"
+				duration[i] = ((Number) getParameters().get(TIMING_FIELD_NAMES.get(i))).intValue();
 	}
 }

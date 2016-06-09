@@ -31,15 +31,18 @@ import toberumono.json.JSONSystem;
 import toberumono.namelist.parser.Namelist;
 import toberumono.namelist.parser.NamelistNumber;
 import toberumono.utils.files.TransferFileWalker;
+import toberumono.wrf.scope.AbstractScope;
+import toberumono.wrf.scope.Scope;
+import toberumono.wrf.scope.ScopedConfiguration;
 import toberumono.wrf.timing.JSONTiming;
 import toberumono.wrf.timing.NamelistTiming;
 import toberumono.wrf.timing.Timing;
 
-public class Simulation {
+public class Simulation extends AbstractScope<Scope> {
 	
 	private final Logger logger;
-	private final JSONObject configuration, general, timing;
-	private final JSONObject parallel;
+	private final JSONObject configuration;
+	private final ScopedConfiguration general, timing, parallel;
 	private final Path working, resolver;
 	private final Timing globalTiming;
 	private final Map<String, Module> modules;
@@ -49,25 +52,27 @@ public class Simulation {
 	private final NamelistNumber interval_seconds;
 	
 	public Simulation(Calendar base, Path resolver, JSONObject configuration, JSONObject general, JSONObject modules, JSONObject paths, JSONObject timing) throws IOException {
+		super(null);
 		this.resolver = resolver;
 		this.configuration = configuration;
-		this.general = general;
-		this.timing = timing;
+		this.general = ScopedConfiguration.buildFromJSON(general, this);
+		this.timing = ScopedConfiguration.buildFromJSON(timing, this);
 		logger = Logger.getLogger("WRFRunner.Simulation");
 		logger.setLevel(Level.parse(((String) general.get("logging-level").value()).toUpperCase()));
-		parallel = (JSONObject) getGeneral().get("parallel");
+		parallel = (ScopedConfiguration) getGeneral().get("parallel");
 		source = new HashMap<>();
 		active = new HashMap<>();
 		disabledModules = new HashSet<>();
 		this.modules = Collections.unmodifiableMap(parseModules(modules, paths));
-		globalTiming = ((Boolean) getTiming().get("use-computed-times").value()) ? new JSONTiming((JSONObject) timing.get("global"), base)
+		globalTiming = ((Boolean) getTiming().get("use-computed-times")) ? new JSONTiming((ScopedConfiguration) this.timing.get("global"), base)
 				: new NamelistTiming(this.modules.get("wrf").getNamelist().get("time_control"));
-		working = constructWorkingDirectory(getResolver().getFileSystem().getPath(getGeneral().get("working-directory").value().toString()), (Boolean) general.get("always-suffix").value());
+		working = constructWorkingDirectory(getResolver().getFileSystem().getPath(getGeneral().get("working-directory").toString()), (Boolean) general.get("always-suffix").value());
 		for (JSONData<?> mod : (JSONArray) modules.get("execution-order")) {
 			String name = (String) mod.value();
 			active.put(name, paths.containsKey(name) ? getWorkingPath().resolve(source.get(name).getFileName()) : getWorkingPath().resolve(name));
 		}
-		JSONObject timestep = modules.containsKey("grib") && !disabledModules.contains(modules.get("grib")) ? (JSONObject) ((JSONObject) configuration.get("grib")).get("timestep") : null;
+		ScopedConfiguration timestep = this.modules.containsKey("grib") && !disabledModules.contains(modules.get("grib"))
+						? ScopedConfiguration.buildFromJSON((JSONObject) ((JSONObject) configuration.get("grib")).get("timestep")) : null;
 		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
 		doms = null;
 	}
@@ -76,15 +81,15 @@ public class Simulation {
 		return globalTiming;
 	}
 	
-	public JSONObject getTiming() {
+	public ScopedConfiguration getTiming() {
 		return timing;
 	}
 	
-	public JSONObject getGeneral() {
+	public ScopedConfiguration getGeneral() {
 		return general;
 	}
 	
-	public JSONObject getParallel() {
+	public ScopedConfiguration getParallel() {
 		return parallel;
 	}
 	
@@ -143,10 +148,10 @@ public class Simulation {
 			if (disabledModules.contains(module))
 				continue;
 			module.execute();
-			if (((Boolean) general.get("keep-logs").value()))
+			if ((Boolean) general.get("keep-logs"))
 				Files.walkFileTree(getActivePath(module.getName()),
 						new TransferFileWalker(getWorkingPath(), Files::move, p -> p.getFileName().toString().toLowerCase().endsWith(".log"), p -> true, null, null, true));
-			if (((Boolean) general.get("cleanup").value()))
+			if ((Boolean) general.get("cleanup"))
 				module.cleanUp();
 		}
 	}
@@ -174,18 +179,18 @@ public class Simulation {
 		JSONObject parameters = condenseSubsections(name::equals, configuration, "configuration", Integer.MAX_VALUE);
 		parameters.put("name", new JSONString(name));
 		@SuppressWarnings("unchecked") Class<? extends Module> clazz = (Class<? extends Module>) Class.forName(description.get("class").value().toString());
-		Constructor<? extends Module> constructor = clazz.getConstructor(JSONObject.class, Simulation.class);
-		Module m = constructor.newInstance(parameters, this);
+		Constructor<? extends Module> constructor = clazz.getConstructor(ScopedConfiguration.class, Simulation.class);
+		Module m = constructor.newInstance(ScopedConfiguration.buildFromJSON(parameters), this);
 		if (description.containsKey("execute") && !((Boolean) description.get("execute").value()))
 			disabledModules.add(m);
 		return m;
 	}
 	
-	private static int calcIntervalSeconds(JSONObject timestep) {
-		int out = ((Number) timestep.get("seconds").value()).intValue();
-		out += ((Number) timestep.get("minutes").value()).intValue() * 60;
-		out += ((Number) timestep.get("hours").value()).intValue() * 60 * 60;
-		out += ((Number) timestep.get("days").value()).intValue() * 24 * 60 * 60;
+	private static int calcIntervalSeconds(ScopedConfiguration timestep) {
+		int out = ((Number) timestep.get("seconds")).intValue();
+		out += ((Number) timestep.get("minutes")).intValue() * 60;
+		out += ((Number) timestep.get("hours")).intValue() * 60 * 60;
+		out += ((Number) timestep.get("days")).intValue() * 24 * 60 * 60;
 		return out;
 	}
 	

@@ -4,17 +4,14 @@ import java.util.Calendar;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
-import toberumono.json.JSONObject;
-import toberumono.wrf.InheritableItem;
+import toberumono.wrf.scope.ScopedConfiguration;
 
-public abstract class TimingComponent<T extends TimingComponent<T>> extends InheritableItem<T> implements Function<Calendar, Calendar> {
-	private final JSONObject parameters;
+public abstract class TimingComponent<T extends TimingComponent<T>> extends TimingScope<T> implements Function<Calendar, Calendar> {
 	private final Logger log;
 	private boolean computed;
 	
-	public TimingComponent(JSONObject parameters, T parent, Logger log) {
-		super(parent);
-		this.parameters = parameters;
+	public TimingComponent(ScopedConfiguration parameters, T parent, Logger log) {
+		super(parameters, parent);
 		this.log = log;
 	}
 	
@@ -45,9 +42,5 @@ public abstract class TimingComponent<T extends TimingComponent<T>> extends Inhe
 	
 	protected Logger getLogger() {
 		return log;
-	}
-	
-	protected JSONObject getParameters() {
-		return parameters;
 	}
 }

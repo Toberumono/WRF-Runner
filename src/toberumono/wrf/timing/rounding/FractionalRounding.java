@@ -3,8 +3,8 @@ package toberumono.wrf.timing.rounding;
 import java.util.Calendar;
 import java.util.logging.Level;
 
-import toberumono.json.JSONObject;
 import toberumono.utils.general.Numbers;
+import toberumono.wrf.scope.ScopedConfiguration;
 
 import static toberumono.wrf.SimulationConstants.*;
 
@@ -13,7 +13,7 @@ public class FractionalRounding extends Rounding {
 	private double fraction;
 	private String diff;
 	
-	public FractionalRounding(JSONObject parameters, Rounding parent) {
+	public FractionalRounding(ScopedConfiguration parameters, Rounding parent) {
 		super(parameters, parent);
 	}
 
@@ -38,9 +38,9 @@ public class FractionalRounding extends Rounding {
 	
 	@Override
 	protected void compute() { //TODO implement inheritance, existence checks
-		String magnitude = ((String) getParameters().get("magnitude").value()).toLowerCase();
-		diff = ((String) getParameters().get("diff").value()).toLowerCase(); //TODO require diff to be either next, previous, or none
-		double fraction = ((Number) getParameters().get("fraction").value()).doubleValue();
+		String magnitude = ((String) getParameters().get("magnitude")).toLowerCase();
+		diff = ((String) getParameters().get("diff")).toLowerCase(); //TODO require diff to be either next, previous, or none
+		double fraction = ((Number) getParameters().get("fraction")).doubleValue();
 		roundingPoint = TIMING_FIELD_NAMES.indexOf(magnitude);
 		if (roundingPoint == -1)
 			throw new IllegalArgumentException(magnitude + " is not a valid timing field name.");
