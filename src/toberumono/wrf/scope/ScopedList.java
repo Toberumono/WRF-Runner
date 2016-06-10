@@ -258,13 +258,13 @@ public class ScopedList implements Scope, List<Object> {
 	
 	@Override
 	public List<Object> subList(int fromIndex, int toIndex) {
-		return new ScopedSubList(getParent(), backing.subList(fromIndex, toIndex));
+		return new ScopedSubList(backing.subList(fromIndex, toIndex));
 	}
 	
 	class ScopedSubList extends ScopedList {
 		
-		public ScopedSubList(Scope parent, List<Object> backing) {
-			super(parent, backing);
+		public ScopedSubList(List<Object> backing) {
+			super(null, backing);
 		}
 		
 		@Override
