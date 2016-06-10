@@ -146,6 +146,12 @@ public class ScopedConfiguration implements Scope {
 		return parent;
 	}
 
+	/**
+	 * Sets the parent {@link Scope}. This can only be done once and only if {@code null} was passed to the constructor.
+	 * 
+	 * @param parent
+	 *            the parent {@link Scope}
+	 */
 	public synchronized void setParent(Scope parent) {
 		if (this.parent == null)
 			this.parent = parent;

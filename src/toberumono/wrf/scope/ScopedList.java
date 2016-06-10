@@ -64,14 +64,19 @@ public class ScopedList implements Scope, List<Object> {
 	
 	@Override
 	public Object[] toArray() {
-		// TODO Auto-generated method stub
-		return null;
+		Object[] out = backing.toArray();
+		for (int i = 0; i < out.length; i++)
+			out[i] = processOutput(out[i]);
+		return out;
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public <T> T[] toArray(T[] a) {
-		// TODO Auto-generated method stub
-		return null;
+		T[] out = backing.toArray(a);
+		for (int i = 0; i < out.length; i++)
+			out[i] = (T) processOutput(out[i]);
+		return out;
 	}
 	
 	@Override
@@ -258,6 +263,10 @@ public class ScopedList implements Scope, List<Object> {
 			public Scope getParent() {
 				return ScopedList.this.getParent();
 			}
+			
+			public synchronized void setParent(Scope parent) {
+				ScopedList.this.setParent(parent);
+			}
 		};
 	}
 	
@@ -276,11 +285,21 @@ public class ScopedList implements Scope, List<Object> {
 		return parent;
 	}
 	
+	/**
+	 * Sets the parent {@link Scope}. This can only be done once and only if {@code null} was passed to the constructor.
+	 * 
+	 * @param parent
+	 *            the parent {@link Scope}
+	 */
 	public synchronized void setParent(Scope parent) {
-		if (parent == null)
+		if (this.parent == null)
 			this.parent = parent;
 		else
 			throw new UnsupportedOperationException("The parent of a ScopedList object cannot be changed once set.");
+	}
+	
+	public static ScopedList buildFromJSON(JSONArray base) throws InvalidVariableAccessException {
+		return buildFromJSON(base, null);
 	}
 	
 	public static ScopedList buildFromJSON(JSONArray base, Scope parent) {
