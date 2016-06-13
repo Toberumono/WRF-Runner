@@ -58,7 +58,7 @@ public abstract class Module extends AbstractScope<Simulation> {
 	
 	public Path getNamelistPath() { //namelistPath holds the location of the namelist file relative to the module's root directory
 		if (namelistPath == null)
-			namelistPath = (module.contains(NAMELIST_FIELD_NAME) ? Paths.get((String) module.get(NAMELIST_FIELD_NAME)) : null);
+			namelistPath = (module.containsKey(NAMELIST_FIELD_NAME) ? Paths.get((String) module.get(NAMELIST_FIELD_NAME)) : null);
 		return namelistPath;
 	}
 	

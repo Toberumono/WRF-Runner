@@ -25,7 +25,7 @@ public class StandardDuration extends Duration {
 	protected void compute() {
 		duration = new int[TIMING_FIELD_NAMES.size()];
 		for (int i = 0; i < duration.length; i++)
-			if (getParameters().contains(TIMING_FIELD_NAMES.get(i))) //TODO implement inheritance via checking for String values equal to "inherit"
+			if (getParameters().containsKey(TIMING_FIELD_NAMES.get(i))) //TODO implement inheritance via checking for String values equal to "inherit"
 				duration[i] = ((Number) getParameters().get(TIMING_FIELD_NAMES.get(i))).intValue();
 	}
 }

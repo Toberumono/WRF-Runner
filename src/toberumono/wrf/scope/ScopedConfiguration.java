@@ -40,12 +40,12 @@ public class ScopedConfiguration implements Scope {
 	}
 	
 	public Object get(String parameter) {
-		if (!contains(parameter))
+		if (!containsKey(parameter))
 			throw new InvalidVariableAccessException(parameter + " is not a valid parameter name.");
 		return processOutput(parameter, backing.get(parameter));
 	}
 	
-	public boolean contains(String parameter) {
+	public boolean containsKey(String parameter) {
 		return backing.containsKey(parameter);
 	}
 	
@@ -133,7 +133,7 @@ public class ScopedConfiguration implements Scope {
 	
 	@Override
 	public boolean hasValueByName(String name) {
-		return contains(name);
+		return containsKey(name);
 	}
 	
 	@Override

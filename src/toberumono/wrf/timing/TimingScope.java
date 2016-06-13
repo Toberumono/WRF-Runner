@@ -15,7 +15,7 @@ public class TimingScope<T extends Scope> extends AbstractScope<T> {
 	
 	@Override
 	public boolean hasValueByName(String name) {
-		return super.hasValueByName(name) || parameters.contains(name);
+		return super.hasValueByName(name) || parameters.containsKey(name);
 	}
 	
 	@Override
@@ -24,7 +24,7 @@ public class TimingScope<T extends Scope> extends AbstractScope<T> {
 			return super.getValueByName(name);
 		}
 		catch (InvalidVariableAccessException e) {
-			if (getParameters().contains(name))
+			if (getParameters().containsKey(name))
 				return getParameters().get(name);
 			throw e;
 		}

@@ -28,7 +28,7 @@ public class StandardClear extends Clear {
 	@Override
 	protected void compute() {
 		for (int i = 0; i < TIMING_FIELD_NAMES.size(); i++)
-			if (getParameters().contains(TIMING_FIELD_NAMES.get(i)))
+			if (getParameters().containsKey(TIMING_FIELD_NAMES.get(i)))
 				values[i] = ((Number) getParameters().get(TIMING_FIELD_NAMES.get(i))).intValue();
 		String name = (String) getParameters().get("keep");
 		keep = TIMING_FIELD_NAMES.indexOf(name);

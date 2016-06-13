@@ -19,7 +19,7 @@ public class StandardOffset extends Offset {
 	protected void compute() {
 		offsets = new int[TIMING_FIELD_NAMES.size()];
 		for (int i = 0; i < offsets.length; i++)
-			if (getParameters().contains(TIMING_FIELD_NAMES.get(i))) //TODO implement inheritance via checking for String values equal to "inherit"
+			if (getParameters().containsKey(TIMING_FIELD_NAMES.get(i))) //TODO implement inheritance via checking for String values equal to "inherit"
 				offsets[i] = ((Number) getParameters().get(TIMING_FIELD_NAMES.get(i))).intValue();
 	}
 	
@@ -38,7 +38,7 @@ public class StandardOffset extends Offset {
 	@Override
 	public boolean doesWrap() {
 		if (wrap == null) //TODO implement inheritance
-			wrap = getParameters().contains("wrap") ? ((Boolean) getParameters().get("wrap")) : (getParent() != null ? getParent().doesWrap() : true);
+			wrap = getParameters().containsKey("wrap") ? ((Boolean) getParameters().get("wrap")) : (getParent() != null ? getParent().doesWrap() : true);
 		return wrap;
 	}
 }

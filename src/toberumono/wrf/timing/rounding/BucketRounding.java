@@ -39,19 +39,19 @@ public class BucketRounding extends Rounding {
 		Map<Integer, Function<Integer, Integer>> roundingFunctions = new HashMap<>();
 		ScopedConfiguration arguments = (ScopedConfiguration) parameters.get("arguments");
 		String name, arg;
-		RoundingMode globalRM = arguments.contains("rounding-mode") ? (arguments.get("rounding-mode") instanceof String ? RoundingMode.valueOf(((String) arguments.get("rounding-mode")).toUpperCase())
+		RoundingMode globalRM = arguments.containsKey("rounding-mode") ? (arguments.get("rounding-mode") instanceof String ? RoundingMode.valueOf(((String) arguments.get("rounding-mode")).toUpperCase())
 				: RoundingMode.valueOf(((Number) arguments.get("rounding-mode")).intValue())) : RoundingMode.FLOOR;
 		for (int i = 0; i < TIMING_FIELD_NAMES.size(); i++) {
 			if (!keep.contains(name = TIMING_FIELD_NAMES.get(i)))
 				continue;
-			Object value = arguments.contains(name) ? arguments.get(name) : null;
+			Object value = arguments.containsKey(name) ? arguments.get(name) : null;
 			arg = name + "-rounding-mode";
-			final RoundingMode rm = arguments.contains(arg) ? (arguments.get(arg) instanceof String //TODO try to reduce calls to get here
+			final RoundingMode rm = arguments.containsKey(arg) ? (arguments.get(arg) instanceof String //TODO try to reduce calls to get here
 					? RoundingMode.valueOf(((String) arguments.get(arg)).toUpperCase()) : RoundingMode.valueOf(((Number) arguments.get(arg)).intValue())) : globalRM;
 			if (value == null) { //Step-offset
 				//TODO implement existence checks and enforce Integer type requirement
 				final int step = ((Number) arguments.get(name + "-step")).intValue();
-				final int offset = arguments.contains(name + "-offset") ? ((Number) arguments.get(name + "-offset")).intValue() : 0;
+				final int offset = arguments.containsKey(name + "-offset") ? ((Number) arguments.get(name + "-offset")).intValue() : 0;
 				roundingFunctions.put(TIMING_FIELDS.get(i), inp -> Numbers.bucketRounding(inp, rm, step, offset));
 			}
 			else if (value instanceof ScopedList) { //Explicit buckets
@@ -63,9 +63,9 @@ public class BucketRounding extends Rounding {
 			}
 			else if (value instanceof ScopedConfiguration) {
 				ScopedConfiguration temp = (ScopedConfiguration) value;
-				final RoundingMode orm = temp.contains("rounding-mode") ? (temp.get("rounding-mode") instanceof String //TODO try to reduce calls to get here
+				final RoundingMode orm = temp.containsKey("rounding-mode") ? (temp.get("rounding-mode") instanceof String //TODO try to reduce calls to get here
 						? RoundingMode.valueOf(((String) temp.get("rounding-mode")).toUpperCase()) : RoundingMode.valueOf(((Number) temp.get("rounding-mode")).intValue())) : rm;
-				if (temp.contains("buckets")) {
+				if (temp.containsKey("buckets")) {
 					ScopedList bucks = (ScopedList) temp.get("buckets"); //TODO enforce array type requirement
 					int[] buckets = new int[bucks.size()];
 					for (int b = 0; b < buckets.length; b++)
@@ -75,7 +75,7 @@ public class BucketRounding extends Rounding {
 				else {
 					//TODO implement existence checks and enforce Integer type requirement
 					final int step = ((Number) arguments.get("step")).intValue();
-					final int offset = arguments.contains("offset") ? ((Number) arguments.get("offset")).intValue() : 0;
+					final int offset = arguments.containsKey("offset") ? ((Number) arguments.get("offset")).intValue() : 0;
 					roundingFunctions.put(TIMING_FIELDS.get(i), inp -> Numbers.bucketRounding(inp, orm, step, offset));
 				}
 			}

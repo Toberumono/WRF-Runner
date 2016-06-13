@@ -58,7 +58,7 @@ public class WRFRunnerComponentFactory<T> {
 	public T generateComponent(ScopedConfiguration parameters, T parent) {
 		if (parameters == null)
 			return getDisabledComponentInstance();
-		return generateComponent(parameters.contains("type") ? parameters.get("type").toString() : defaultComponentType, parameters, parent);
+		return generateComponent(parameters.containsKey("type") ? parameters.get("type").toString() : defaultComponentType, parameters, parent);
 	}
 	
 	public static <T> T generateComponent(Class<T> clazz, String type, ScopedConfiguration parameters, T parent) {
@@ -68,9 +68,9 @@ public class WRFRunnerComponentFactory<T> {
 	
 	public T generateComponent(String type, ScopedConfiguration parameters, T parent) { //TODO figure out how to implement inheritance of the form "grib.timing.constant"
 		synchronized (components) {
-			if (parameters.contains("enabled") && parameters.get("enabled") instanceof Boolean && !((Boolean) parameters.get("enabled")))
+			if (parameters.containsKey("enabled") && parameters.get("enabled") instanceof Boolean && !((Boolean) parameters.get("enabled")))
 				return getDisabledComponentInstance();
-			if (parameters.contains("inherit") && parameters.get("inherit") instanceof Boolean && ((Boolean) parameters.get("inherit")))
+			if (parameters.containsKey("inherit") && parameters.get("inherit") instanceof Boolean && ((Boolean) parameters.get("inherit")))
 				return parent;
 			return components.get(type != null ? type : defaultComponentType).apply(parameters, parent);
 		}
