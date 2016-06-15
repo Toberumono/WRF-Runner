@@ -20,7 +20,7 @@ import java.util.logging.Level;
 import toberumono.wrf.Module;
 import toberumono.wrf.Simulation;
 import toberumono.wrf.WRFRunnerComponentFactory;
-import toberumono.wrf.scope.ScopedConfiguration;
+import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.Timing;
 
 /**
@@ -33,7 +33,7 @@ public class GRIBModule extends Module {
 	private static final int[] calendarOffsetFields = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
 	private String url;
 	private Timing incremented;
-	private ScopedConfiguration timestep;
+	private ScopedMap timestep;
 	private Boolean wrap;
 	private final Lock lock;
 	
@@ -45,22 +45,22 @@ public class GRIBModule extends Module {
 	 * @param sim
 	 *            the {@link Simulation} for which the {@link GRIBModule} is being initialized
 	 */
-	public GRIBModule(ScopedConfiguration parameters, Simulation sim) {
+	public GRIBModule(ScopedMap parameters, Simulation sim) {
 		super(parameters, sim);
 		url = null;
 		incremented = null;
 		timestep = null;
 		wrap = null;
-		ScopedConfiguration grib = (ScopedConfiguration) parameters.get("configuration");
+		ScopedMap grib = (ScopedMap) parameters.get("configuration");
 		url = (String) grib.get("url");
-		timestep = (ScopedConfiguration) grib.get("timestep");
+		timestep = (ScopedMap) grib.get("timestep");
 		wrap = (Boolean) timestep.get("wrap");
 		lock = new ReentrantLock();
 	}
 	
 	@Override
-	protected Timing parseTiming(ScopedConfiguration timing) {
-		return super.parseTiming((ScopedConfiguration) timing.get("constant"));
+	protected Timing parseTiming(ScopedMap timing) {
+		return super.parseTiming((ScopedMap) timing.get("constant"));
 	}
 	
 	/**
@@ -72,7 +72,7 @@ public class GRIBModule extends Module {
 		try {
 			lock.lock();
 			if (incremented == null)
-				incremented = WRFRunnerComponentFactory.generateComponent(Timing.class, (ScopedConfiguration) ((ScopedConfiguration) getParameters().get("timing")).get("incremented"), getTiming());
+				incremented = WRFRunnerComponentFactory.generateComponent(Timing.class, (ScopedMap) ((ScopedMap) getParameters().get("timing")).get("incremented"), getTiming());
 		}
 		finally {
 			lock.unlock();
