@@ -25,16 +25,16 @@ public class ScopedConfiguration implements Scope {
 	}
 	
 	private Object processOutput(String name, Object e) {
-		return e instanceof ConsCell ? ScopedMathProcessor.processEquation((ConsCell) e, this, name).getCar() : e;
+		return e instanceof ConsCell ? ScopedFormulaProcessor.process((ConsCell) e, this, name).getCar() : e;
 	}
 	
 	private Object processInput(Object e) {
 		if (e instanceof String) {
 			String str = (String) e;
 			if (str.charAt(0) == '=')
-				e = ScopedMathProcessor.getLexer().lex(str.substring(1));
+				return ScopedFormulaProcessor.preProcess(str.substring(1));
 			else if (str.charAt(0) == '\\')
-				e = str.substring(1);
+				return str.substring(1);
 		}
 		return e;
 	}

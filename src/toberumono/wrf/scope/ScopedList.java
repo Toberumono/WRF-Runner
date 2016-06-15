@@ -28,14 +28,14 @@ public class ScopedList implements Scope, List<Object> {
 	}
 	
 	private Object processOutput(Object e) {
-		return e instanceof ConsCell ? ScopedMathProcessor.processEquation((ConsCell) e, this, null).getCar() : e;
+		return e instanceof ConsCell ? ScopedFormulaProcessor.process((ConsCell) e, this, null).getCar() : e;
 	}
 	
 	private Object processInput(Object e) {
 		if (e instanceof String) {
 			String str = (String) e;
 			if (str.charAt(0) == '=')
-				e = ScopedMathProcessor.getLexer().lex(str.substring(1));
+				e = ScopedFormulaProcessor.getLexer().lex(str.substring(1));
 			else if (str.charAt(0) == '\\')
 				e = str.substring(1);
 		}
