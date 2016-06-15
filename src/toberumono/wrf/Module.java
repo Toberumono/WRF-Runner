@@ -4,13 +4,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import toberumono.namelist.parser.Namelist;
 import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
 import toberumono.wrf.scope.AbstractScope;
 import toberumono.wrf.scope.ScopedMap;
+import toberumono.wrf.scope.ScopedList;
 import toberumono.wrf.timing.Timing;
 
 import static toberumono.wrf.SimulationConstants.*;
@@ -22,14 +28,16 @@ public abstract class Module extends AbstractScope<Simulation> {
 	private Timing timing;
 	private Path namelistPath;
 	private Namelist namelist;
+	private List<Module> dependencies;
 	
 	public Module(ScopedMap parameters, Simulation sim) {
 		super(sim);
 		this.parameters = parameters;
-		this.parameters.setParent(this);
+		this.parameters.setParent(getParent());
 		namelistPath = null;
 		namelist = null;
 		timing = null;
+		dependencies = null;
 		name = (String) parameters.get("name");
 		logger = Logger.getLogger(LOGGER_ROOT + ".module." + getName());
 		module = (ScopedMap) parameters.get("module");
@@ -70,6 +78,25 @@ public abstract class Module extends AbstractScope<Simulation> {
 				return timing;
 			return timing = parseTiming((ScopedMap) parameters.get("timing"));
 		}
+	}
+	
+	public List<Module> getDependencies() {
+		if (dependencies != null) //First one is to avoid unnecessary use of synchronization
+			return dependencies;
+		synchronized (name) {
+			if (dependencies != null)
+				return dependencies;
+			if (!module.containsKey("dependencies"))
+				dependencies = new ArrayList<>();
+			else {
+				Object deps = module.get("dependencies");
+				if (deps instanceof String)
+					dependencies = Arrays.asList(getSim().getModule((String) deps));
+				else if (deps instanceof ScopedList)
+					dependencies = ((ScopedList) deps).stream().map(o -> o instanceof String ? (String) o : o.toString()).map(mod -> getSim().getModule(mod)).collect(Collectors.toList());
+			}
+		}
+		return dependencies;
 	}
 	
 	public String getName() {

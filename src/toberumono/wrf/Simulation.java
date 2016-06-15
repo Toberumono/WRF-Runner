@@ -67,10 +67,8 @@ public class Simulation extends AbstractScope<Scope> {
 		globalTiming = ((Boolean) getTiming().get("use-computed-times")) ? new JSONTiming((ScopedMap) this.timing.get("global"), base)
 				: new NamelistTiming(this.modules.get("wrf").getNamelist().get("time_control"));
 		working = constructWorkingDirectory(getResolver().getFileSystem().getPath(getGeneral().get("working-directory").toString()), (Boolean) general.get("always-suffix").value());
-		for (JSONData<?> mod : (JSONArray) modules.get("execution-order")) {
-			String name = (String) mod.value();
-			active.put(name, paths.containsKey(name) ? getWorkingPath().resolve(source.get(name).getFileName()) : getWorkingPath().resolve(name));
-		}
+		for (String name : this.modules.keySet())
+			active.put(name, paths.containsKey(name) ? getWorkingPath().resolve(((Path) source.get(name)).getFileName()) : getWorkingPath().resolve(name));
 		ScopedMap timestep = this.modules.containsKey("grib") && !disabledModules.contains(modules.get("grib"))
 						? ScopedMap.buildFromJSON((JSONObject) ((JSONObject) configuration.get("grib")).get("timestep")) : null;
 		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
@@ -143,24 +141,10 @@ public class Simulation extends AbstractScope<Scope> {
 		}
 	}
 	
-	public void executeModules() throws IOException, InterruptedException {
-		for (Module module : modules.values()) {
-			if (disabledModules.contains(module))
-				continue;
-			module.execute();
-			if ((Boolean) general.get("keep-logs"))
-				Files.walkFileTree(getActivePath(module.getName()),
-						new TransferFileWalker(getWorkingPath(), Files::move, p -> p.getFileName().toString().toLowerCase().endsWith(".log"), p -> true, null, null, true));
-			if ((Boolean) general.get("cleanup"))
-				module.cleanUp();
-		}
-	}
-	
 	private Map<String, Module> parseModules(JSONObject modules, JSONObject paths) {
 		Map<String, Module> out = new LinkedHashMap<>();
-		for (JSONData<?> mod : (JSONArray) modules.get("execution-order")) {
+		for (String name : modules.keySet()) {
 			try {
-				String name = mod.value().toString();
 				if (paths.containsKey(name))
 					source.put(name, getResolver().resolve(paths.get(name).value().toString()));
 				out.put(name, loadModule(name, modules));
@@ -184,6 +168,42 @@ public class Simulation extends AbstractScope<Scope> {
 		if (description.containsKey("execute") && !((Boolean) description.get("execute").value()))
 			disabledModules.add(m);
 		return m;
+	}
+	
+	public void executeModules() throws IOException, InterruptedException {
+		List<Module> remaining = modules.values().stream().filter(mod -> !disabledModules.contains(mod)).collect(Collectors.toList());
+		Set<Module> completed = new HashSet<>();
+		while (remaining.size() > 0) {
+			List<Module> runnable = new ArrayList<>();
+			for (Iterator<Module> iter = remaining.iterator(); iter.hasNext();) {
+				Module current = iter.next();
+				if (completed.containsAll(current.getDependencies())) {
+					runnable.add(current);
+					iter.remove();
+				}
+			}
+			if (runnable.size() == 0)
+				break;
+			List<Future<Module>> running = runnable.stream().map(module -> pool.submit(() -> {
+				module.execute();
+				if ((Boolean) general.get("keep-logs"))
+					Files.walkFileTree(getActivePath(module.getName()),
+							new TransferFileWalker(getWorkingPath(), Files::move, p -> p.getFileName().toString().toLowerCase().endsWith(".log"), p -> true, null, null, true));
+				if ((Boolean) general.get("cleanup"))
+					module.cleanUp();
+				return module;
+			})).collect(Collectors.toList());
+			for (Future<Module> future : running) {
+				try {
+					completed.add(future.get());
+				}
+				catch (ExecutionException e) {
+					if (e.getCause() instanceof IOException)
+						throw (IOException) e.getCause();
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 	
 	private static int calcIntervalSeconds(ScopedMap timestep) {
