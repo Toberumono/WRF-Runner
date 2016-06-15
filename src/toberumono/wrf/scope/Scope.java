@@ -2,7 +2,7 @@ package toberumono.wrf.scope;
 
 public interface Scope {
 	
-	public Scope getParent() throws InvalidVariableAccessException;
+	public Scope getParent();
 	
 	public Object getValueByName(String name) throws InvalidVariableAccessException;
 	

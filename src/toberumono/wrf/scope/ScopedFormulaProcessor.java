@@ -28,9 +28,10 @@ public class ScopedFormulaProcessor {
 	private static final ConsType NULL = new BasicConsType("null");
 	private static final ConsType UNKNOWN = new BasicConsType("unknown");
 	private static final ConsType OPERATOR = new BasicConsType("operator");
+	private static final ConsType ACCESSOR = new BasicConsType("accessor");
 	private static final ConsType KEYWORD = new BasicConsType("keyword");
 	
-	private static Operator addition, subtraction, multiplication, division, modulus, exponent;
+	private static Operator addition, subtraction, multiplication, division, modulus, exponent, accessor;
 	
 	private static BasicLexer lexer = null;
 	
@@ -95,12 +96,23 @@ public class ScopedFormulaProcessor {
 					throw new IllegalArgumentException(t.getClass().getName() + " and " + u.getClass().getName() + " is not a valid argument combination for the ^ operator.");
 				}
 			};
+			accessor = new Operator(1) {
+				@Override
+				public Object apply(Object t, Object u) {
+					if (!(t instanceof Scope))
+						throw new IllegalArgumentException("The first argument to the accessor operator must implement Scope");
+					if (!(u instanceof String))
+						throw new IllegalArgumentException("The second argument to the accessor operator must be a String");
+					return accessScope((String) u, (Scope) t);
+				}
+			};
 			lexer = new BasicLexer(DefaultIgnorePatterns.WHITESPACE);
 			lexer.addRule("string'", new BasicRule(Pattern.compile("'(([^'\\\\]+|\\\\['\\\\tbnrf\"])*)'"), (l, s, m) -> new ConsCell(m.group(1), STRING)));
 			lexer.addRule("string\"", new BasicRule(Pattern.compile("\"(([^\"\\\\]+|\\\\['\\\\tbnrf\"])*)\""), (l, s, m) -> new ConsCell(m.group(1), STRING)));
 			lexer.addRule("inherit", new BasicRule(Pattern.compile("inherit", Pattern.LITERAL), (l, s, m) -> new ConsCell(m.group(), KEYWORD)));
-			lexer.addRule("variable", new BasicRule(Pattern.compile("([a-zA-Z_]\\w*)(\\.\\w+)*"), (l, s, m) -> new ConsCell(new VariableAccess(m.group()), VARIABLE)));
-			lexer.addRule("number", new BasicRule(NumberPatterns.DOUBLE.getPattern(), (l, s, m) -> new ConsCell(Double.parseDouble(m.group()), NUMBER)));
+			lexer.addRule("accessor", new BasicRule(Pattern.compile(".", Pattern.LITERAL), (l, s, m) -> new ConsCell(accessor, ACCESSOR)));
+			lexer.addRule("variable", new BasicRule(Pattern.compile("([a-zA-Z_]\\w*)"), (l, s, m) -> new ConsCell(m.group(), VARIABLE)));
+			lexer.addRule("number", new BasicRule(NumberPatterns.DOUBLE, (l, s, m) -> new ConsCell(Double.parseDouble(m.group()), NUMBER)));
 			lexer.addRule("addition", new BasicRule(Pattern.compile("+", Pattern.LITERAL), (l, s, m) -> new ConsCell(addition, OPERATOR)));
 			lexer.addRule("subtraction", new BasicRule(Pattern.compile("-", Pattern.LITERAL), (l, s, m) -> new ConsCell(subtraction, OPERATOR)));
 			lexer.addRule("multiplication", new BasicRule(Pattern.compile("*", Pattern.LITERAL), (l, s, m) -> new ConsCell(multiplication, OPERATOR)));
@@ -108,6 +120,7 @@ public class ScopedFormulaProcessor {
 			lexer.addRule("modulus", new BasicRule(Pattern.compile("%", Pattern.LITERAL), (l, s, m) -> new ConsCell(modulus, OPERATOR)));
 			lexer.addRule("exponent", new BasicRule(Pattern.compile("^", Pattern.LITERAL), (l, s, m) -> new ConsCell(exponent, OPERATOR)));
 			lexer.addDescender("parentheses", new BasicDescender("(", ")", PARENTHESES));
+			lexer.addDescender("array", new BasicDescender("[", "]", ARRAY));
 			return lexer;
 		}
 		finally {
@@ -115,10 +128,16 @@ public class ScopedFormulaProcessor {
 		}
 	}
 	
-	public static ConsCell processEquation(ConsCell input, Scope scope, String fieldName) throws InvalidVariableAccessException {
+	public static ConsCell preProcess(String input) {
+		return getLexer().lex(input);
+	}
+	
+	public static ConsCell process(ConsCell input, Scope scope, String fieldName) throws InvalidVariableAccessException {
 		ConsCell equation;
 		if (input.getCarType() == OPERATOR) {
-			Object accessed = new VariableAccess(fieldName).accessScope(scope);
+			if (scope.getParent() == null)
+				throw new InvalidVariableAccessException("The current scope does not have a parent");
+			Object accessed = accessScope(fieldName, scope.getParent());
 			equation = new ConsCell(accessed, getTypeForObject(accessed));
 		}
 		else {
@@ -126,6 +145,44 @@ public class ScopedFormulaProcessor {
 		}
 		ConsCell head = equation;
 		for (ConsCell current = input; current != null; current = current.getNext()) {
+			if (current.getCarType() == PARENTHESES) {
+				head = head.append(process((ConsCell) current.getCar(), scope, fieldName));
+			}
+			else if (current.getCarType() == VARIABLE) {
+				Object accessed = accessScope((String) current.getCar(), scope);
+				head = head.append(new ConsCell(accessed, getTypeForObject(accessed)));
+			}
+			else if (current.getCarType() == KEYWORD) {
+				switch ((String) current.getCar()) {
+					case "inherit":
+						if (scope.getParent() == null)
+							throw new InvalidVariableAccessException("The current scope does not have a parent");
+						Object accessed = accessScope(fieldName, scope.getParent());
+						head = head.append(new ConsCell(accessed, getTypeForObject(accessed)));
+						break;
+					default:
+						throw new IllegalArgumentException(current.getCar() + " is not a valid keyword.");
+				}
+			}
+			else if (current.getCarType() == ACCESSOR) {
+				ConsCell next = current.getNext();
+				if (next == null)
+					throw new IllegalArgumentException("The '.' (accessor) operator cannot be a terminal symbol");
+				Object accessed = ((Operator) current.getCar()).apply(head.getCar(), next.getCar());
+				head.setCar(accessed, getTypeForObject(accessed));
+				current = next;
+			}
+			else if (current.getCarType() == ARRAY) {
+				if (!(head.getCar() instanceof List))
+					throw new IllegalArgumentException("An array access operator must be preceeded by an object that implements List");
+				Object accessed = ((List<?>) head.getCar()).get(((Number) process((ConsCell) current.getCar(), scope, fieldName).getCar()).intValue());
+				head.setCar(accessed, getTypeForObject(accessed));
+			}
+			else {
+				head = head.append(current.singular());
+			}
+		}
+		/*for (ConsCell current = input; current != null; current = current.getNext()) {
 			if (current.getCarType() == PARENTHESES)
 				head = head.append(processEquation((ConsCell) current.getCar(), scope, fieldName));
 			else if (current.getCarType() == KEYWORD) {
@@ -144,7 +201,7 @@ public class ScopedFormulaProcessor {
 			}
 			else
 				head = head.append(current.singular());
-		}
+		}*/
 		head = equation;
 		ConsCell previous = null, left = null, right = head.getNext(), next = right == null ? null : right.getNext();
 		while (head != null && head.getCarType() != OPERATOR) {
@@ -184,6 +241,30 @@ public class ScopedFormulaProcessor {
 			}
 		}
 		return equation;
+	}
+	
+	private static Object accessScope(String name, Scope scope) {
+		StringBuilder nme = new StringBuilder(name.length());
+		for (int i = 0; i < name.length(); i++) {
+			if (Character.isUpperCase(name.charAt(i)))
+				nme.append('-').append(Character.toLowerCase(name.charAt(i)));
+			else
+				nme.append(name.charAt(i));
+		}
+		name = nme.toString();
+		switch (name) {
+			case "super":
+			case "parent":
+				scope = scope.getParent();
+				if (scope == null)
+					throw new InvalidVariableAccessException("The current scope does not have a parent");
+				return scope;
+			case "this":
+			case "current":
+				return scope; //Don't change this scope in this case
+			default:
+				return scope.getScopedValueByName(name);
+		}
 	}
 	
 	private static int getMovementDirection(ConsCell prev, ConsCell head, ConsCell next) {
