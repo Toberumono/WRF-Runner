@@ -89,6 +89,8 @@ public class GRIBModule extends Module {
 		List<Future<Boolean>> downloads = new ArrayList<>();
 		Calendar constant = getTiming().getStart(), test = (Calendar) getSim().getGlobalTiming().getStart().clone(), end = getSim().getGlobalTiming().getEnd(),
 				increment = (Calendar) getIncrementedTiming().getStart().clone();
+		for (int i = 0; i < offsets.length; i++)
+			offsets[i] = increment.get(calendarOffsetFields[i]);
 		
 		steps[0] = ((Number) timestep.get("days")).intValue();
 		steps[1] = ((Number) timestep.get("hours")).intValue();
