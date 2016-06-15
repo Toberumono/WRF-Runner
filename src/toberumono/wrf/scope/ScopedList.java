@@ -314,7 +314,7 @@ public class ScopedList implements Scope, List<Object> {
 		ScopedList out = new ScopedList(parent);
 		for (JSONData<?> e : base) {
 			if (e instanceof JSONObject)
-				out.add(ScopedConfiguration.buildFromJSON((JSONObject) e, out));
+				out.add(ScopedMap.buildFromJSON((JSONObject) e, out));
 			else if (e instanceof JSONArray)
 				out.add(buildFromJSON((JSONArray) e, out));
 			else

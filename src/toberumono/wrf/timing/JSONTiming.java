@@ -4,7 +4,7 @@ import java.util.Calendar;
 import java.util.concurrent.locks.ReentrantLock;
 
 import toberumono.wrf.WRFRunnerComponentFactory;
-import toberumono.wrf.scope.ScopedConfiguration;
+import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.offset.Offset;
@@ -20,7 +20,7 @@ public class JSONTiming extends TimingScope<Timing> implements Timing {
 	private Clear clear;
 	private boolean appliedClear;
 	
-	public JSONTiming(ScopedConfiguration parameters, Calendar base) {
+	public JSONTiming(ScopedMap parameters, Calendar base) {
 		super(parameters, null);
 		computationLock = new ReentrantLock();
 		start = end = null;
@@ -32,7 +32,7 @@ public class JSONTiming extends TimingScope<Timing> implements Timing {
 		this.base = base;
 	}
 	
-	public JSONTiming(ScopedConfiguration parameters, Timing parent) { //TODO implement existence checks
+	public JSONTiming(ScopedMap parameters, Timing parent) { //TODO implement existence checks
 		super(parameters, parent);
 		computationLock = new ReentrantLock();
 		base = start = end = null;
@@ -109,7 +109,7 @@ public class JSONTiming extends TimingScope<Timing> implements Timing {
 		try {
 			computationLock.lock();
 			if (offset == null)
-				offset = WRFRunnerComponentFactory.generateComponent(Offset.class, (ScopedConfiguration) getParameters().get("offset"), getParent() != null ? getParent().getOffset() : null);
+				offset = WRFRunnerComponentFactory.generateComponent(Offset.class, (ScopedMap) getParameters().get("offset"), getParent() != null ? getParent().getOffset() : null);
 		}
 		finally {
 			computationLock.unlock();
@@ -124,7 +124,7 @@ public class JSONTiming extends TimingScope<Timing> implements Timing {
 		try {
 			computationLock.lock();
 			if (rounding == null)
-				rounding = WRFRunnerComponentFactory.generateComponent(Rounding.class, (ScopedConfiguration) getParameters().get("rounding"), getParent() != null ? getParent().getRounding() : null);
+				rounding = WRFRunnerComponentFactory.generateComponent(Rounding.class, (ScopedMap) getParameters().get("rounding"), getParent() != null ? getParent().getRounding() : null);
 		}
 		finally {
 			computationLock.unlock();
@@ -139,7 +139,7 @@ public class JSONTiming extends TimingScope<Timing> implements Timing {
 		try {
 			computationLock.lock();
 			if (duration == null)
-				duration = WRFRunnerComponentFactory.generateComponent(Duration.class, (ScopedConfiguration) getParameters().get("duration"), getParent() != null ? getParent().getDuration() : null);
+				duration = WRFRunnerComponentFactory.generateComponent(Duration.class, (ScopedMap) getParameters().get("duration"), getParent() != null ? getParent().getDuration() : null);
 		}
 		finally {
 			computationLock.unlock();
@@ -154,7 +154,7 @@ public class JSONTiming extends TimingScope<Timing> implements Timing {
 		try {
 			computationLock.lock();
 			if (clear == null)
-				clear = WRFRunnerComponentFactory.generateComponent(Clear.class, (ScopedConfiguration) getParameters().get("clear"), getParent() != null ? getParent().getClear() : null);
+				clear = WRFRunnerComponentFactory.generateComponent(Clear.class, (ScopedMap) getParameters().get("clear"), getParent() != null ? getParent().getClear() : null);
 		}
 		finally {
 			computationLock.unlock();

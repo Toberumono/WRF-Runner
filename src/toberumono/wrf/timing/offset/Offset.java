@@ -3,12 +3,12 @@ package toberumono.wrf.timing.offset;
 import java.util.Calendar;
 import java.util.logging.Logger;
 
-import toberumono.wrf.scope.ScopedConfiguration;
+import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.TimingComponent;
 
 public abstract class Offset extends TimingComponent<Offset> {
 	
-	public Offset(ScopedConfiguration parameters, Offset parent) {
+	public Offset(ScopedMap parameters, Offset parent) {
 		super(parameters, parent, Logger.getLogger("Offset"));
 	}
 	

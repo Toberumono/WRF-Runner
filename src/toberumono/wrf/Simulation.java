@@ -33,7 +33,7 @@ import toberumono.namelist.parser.NamelistNumber;
 import toberumono.utils.files.TransferFileWalker;
 import toberumono.wrf.scope.AbstractScope;
 import toberumono.wrf.scope.Scope;
-import toberumono.wrf.scope.ScopedConfiguration;
+import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.JSONTiming;
 import toberumono.wrf.timing.NamelistTiming;
 import toberumono.wrf.timing.Timing;
@@ -42,7 +42,7 @@ public class Simulation extends AbstractScope<Scope> {
 	
 	private final Logger logger;
 	private final JSONObject configuration;
-	private final ScopedConfiguration general, timing, parallel;
+	private final ScopedMap general, timing, parallel;
 	private final Path working, resolver;
 	private final Timing globalTiming;
 	private final Map<String, Module> modules;
@@ -55,24 +55,24 @@ public class Simulation extends AbstractScope<Scope> {
 		super(null);
 		this.resolver = resolver;
 		this.configuration = configuration;
-		this.general = ScopedConfiguration.buildFromJSON(general, this);
-		this.timing = ScopedConfiguration.buildFromJSON(timing, this);
+		this.general = ScopedMap.buildFromJSON(general, this);
+		this.timing = ScopedMap.buildFromJSON(timing, this);
 		logger = Logger.getLogger("WRFRunner.Simulation");
 		logger.setLevel(Level.parse(((String) general.get("logging-level").value()).toUpperCase()));
-		parallel = (ScopedConfiguration) getGeneral().get("parallel");
 		source = new HashMap<>();
 		active = new HashMap<>();
+		parallel = (ScopedMap) getGeneral().get("parallel");
 		disabledModules = new HashSet<>();
 		this.modules = Collections.unmodifiableMap(parseModules(modules, paths));
-		globalTiming = ((Boolean) getTiming().get("use-computed-times")) ? new JSONTiming((ScopedConfiguration) this.timing.get("global"), base)
+		globalTiming = ((Boolean) getTiming().get("use-computed-times")) ? new JSONTiming((ScopedMap) this.timing.get("global"), base)
 				: new NamelistTiming(this.modules.get("wrf").getNamelist().get("time_control"));
 		working = constructWorkingDirectory(getResolver().getFileSystem().getPath(getGeneral().get("working-directory").toString()), (Boolean) general.get("always-suffix").value());
 		for (JSONData<?> mod : (JSONArray) modules.get("execution-order")) {
 			String name = (String) mod.value();
 			active.put(name, paths.containsKey(name) ? getWorkingPath().resolve(source.get(name).getFileName()) : getWorkingPath().resolve(name));
 		}
-		ScopedConfiguration timestep = this.modules.containsKey("grib") && !disabledModules.contains(modules.get("grib"))
-						? ScopedConfiguration.buildFromJSON((JSONObject) ((JSONObject) configuration.get("grib")).get("timestep")) : null;
+		ScopedMap timestep = this.modules.containsKey("grib") && !disabledModules.contains(modules.get("grib"))
+						? ScopedMap.buildFromJSON((JSONObject) ((JSONObject) configuration.get("grib")).get("timestep")) : null;
 		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
 		doms = null;
 	}
@@ -81,15 +81,15 @@ public class Simulation extends AbstractScope<Scope> {
 		return globalTiming;
 	}
 	
-	public ScopedConfiguration getTiming() {
+	public ScopedMap getTiming() {
 		return timing;
 	}
 	
-	public ScopedConfiguration getGeneral() {
+	public ScopedMap getGeneral() {
 		return general;
 	}
 	
-	public ScopedConfiguration getParallel() {
+	public ScopedMap getParallel() {
 		return parallel;
 	}
 	
@@ -179,14 +179,14 @@ public class Simulation extends AbstractScope<Scope> {
 		JSONObject parameters = condenseSubsections(name::equals, configuration, "configuration", Integer.MAX_VALUE);
 		parameters.put("name", new JSONString(name));
 		@SuppressWarnings("unchecked") Class<? extends Module> clazz = (Class<? extends Module>) Class.forName(description.get("class").value().toString());
-		Constructor<? extends Module> constructor = clazz.getConstructor(ScopedConfiguration.class, Simulation.class);
-		Module m = constructor.newInstance(ScopedConfiguration.buildFromJSON(parameters), this);
+		Constructor<? extends Module> constructor = clazz.getConstructor(ScopedMap.class, Simulation.class);
+		Module m = constructor.newInstance(ScopedMap.buildFromJSON(parameters), this);
 		if (description.containsKey("execute") && !((Boolean) description.get("execute").value()))
 			disabledModules.add(m);
 		return m;
 	}
 	
-	private static int calcIntervalSeconds(ScopedConfiguration timestep) {
+	private static int calcIntervalSeconds(ScopedMap timestep) {
 		int out = ((Number) timestep.get("seconds")).intValue();
 		out += ((Number) timestep.get("minutes")).intValue() * 60;
 		out += ((Number) timestep.get("hours")).intValue() * 60 * 60;

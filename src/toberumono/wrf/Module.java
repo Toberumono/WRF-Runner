@@ -10,7 +10,7 @@ import toberumono.namelist.parser.Namelist;
 import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
 import toberumono.wrf.scope.AbstractScope;
-import toberumono.wrf.scope.ScopedConfiguration;
+import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.Timing;
 
 import static toberumono.wrf.SimulationConstants.*;
@@ -18,12 +18,12 @@ import static toberumono.wrf.SimulationConstants.*;
 public abstract class Module extends AbstractScope<Simulation> {
 	protected final Logger logger;
 	private final String name;
-	private final ScopedConfiguration parameters, module;
+	private final ScopedMap parameters, module;
 	private Timing timing;
 	private Path namelistPath;
 	private Namelist namelist;
 	
-	public Module(ScopedConfiguration parameters, Simulation sim) {
+	public Module(ScopedMap parameters, Simulation sim) {
 		super(sim);
 		this.parameters = parameters;
 		this.parameters.setParent(this);
@@ -32,10 +32,10 @@ public abstract class Module extends AbstractScope<Simulation> {
 		timing = null;
 		name = (String) parameters.get("name");
 		logger = Logger.getLogger(LOGGER_ROOT + ".module." + getName());
-		module = (ScopedConfiguration) parameters.get("module");
+		module = (ScopedMap) parameters.get("module");
 	}
 	
-	protected Timing parseTiming(ScopedConfiguration timing) {
+	protected Timing parseTiming(ScopedMap timing) {
 		return WRFRunnerComponentFactory.generateComponent(Timing.class, timing, getSim().getGlobalTiming());
 	}
 	
@@ -68,7 +68,7 @@ public abstract class Module extends AbstractScope<Simulation> {
 		synchronized (name) {
 			if (timing != null)
 				return timing;
-			return timing = parseTiming((ScopedConfiguration) parameters.get("timing"));
+			return timing = parseTiming((ScopedMap) parameters.get("timing"));
 		}
 	}
 	
@@ -90,7 +90,7 @@ public abstract class Module extends AbstractScope<Simulation> {
 		}
 	}
 	
-	public ScopedConfiguration getParameters() {
+	public ScopedMap getParameters() {
 		return parameters;
 	}
 	

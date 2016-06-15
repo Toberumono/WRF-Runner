@@ -11,7 +11,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import toberumono.utils.general.Numbers;
-import toberumono.wrf.scope.ScopedConfiguration;
+import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.scope.ScopedList;
 
 import static toberumono.wrf.SimulationConstants.*;
@@ -19,17 +19,17 @@ import static toberumono.wrf.SimulationConstants.*;
 public class BucketRounding extends Rounding {
 	private Map<Integer, Function<Integer, Integer>> roundingActions;
 	
-	public BucketRounding(ScopedConfiguration parameters, Rounding parent) {
+	public BucketRounding(ScopedMap parameters, Rounding parent) {
 		super(parameters, parent);
 	}
 	
-	private static final Map<Integer, Function<Integer, Integer>> parseRoundingParameters(ScopedConfiguration parameters) { //TODO implement input scrubbing and error messages
+	private static final Map<Integer, Function<Integer, Integer>> parseRoundingParameters(ScopedMap parameters) { //TODO implement input scrubbing and error messages
 		Object enabled = parameters.get("enabled");
 		Collection<String> keep = TIMING_FIELD_NAMES;
 		if (enabled instanceof ScopedList)
 			keep = ((ScopedList) enabled).stream().filter(e -> e instanceof String && TIMING_FIELD_NAMES.contains(e)).map(e -> (String) e).collect(Collectors.toSet());
-		else if (enabled instanceof ScopedConfiguration) {
-			keep = ((ScopedConfiguration) enabled).entries().stream().filter(e -> TIMING_FIELD_NAMES.contains(e.getKey()) && (!(e.getValue() instanceof Boolean) || (Boolean) e.getValue()))
+		else if (enabled instanceof ScopedMap) {
+			keep = ((ScopedMap) enabled).entrySet().stream().filter(e -> TIMING_FIELD_NAMES.contains(e.getKey()) && (!(e.getValue() instanceof Boolean) || (Boolean) e.getValue()))
 					.map(e -> e.getKey()).collect(Collectors.toSet());
 		}
 		else if (enabled instanceof String) {
@@ -37,7 +37,7 @@ public class BucketRounding extends Rounding {
 			keep.add((String) enabled);
 		}
 		Map<Integer, Function<Integer, Integer>> roundingFunctions = new HashMap<>();
-		ScopedConfiguration arguments = (ScopedConfiguration) parameters.get("arguments");
+		ScopedMap arguments = (ScopedMap) parameters.get("arguments");
 		String name, arg;
 		RoundingMode globalRM = arguments.containsKey("rounding-mode") ? (arguments.get("rounding-mode") instanceof String ? RoundingMode.valueOf(((String) arguments.get("rounding-mode")).toUpperCase())
 				: RoundingMode.valueOf(((Number) arguments.get("rounding-mode")).intValue())) : RoundingMode.FLOOR;
@@ -61,8 +61,8 @@ public class BucketRounding extends Rounding {
 					buckets[b] = ((Number) temp.get(b)).intValue(); //TODO enforce Integer type requirement
 				roundingFunctions.put(TIMING_FIELDS.get(i), inp -> Numbers.bucketRounding(inp, rm, buckets));
 			}
-			else if (value instanceof ScopedConfiguration) {
-				ScopedConfiguration temp = (ScopedConfiguration) value;
+			else if (value instanceof ScopedMap) {
+				ScopedMap temp = (ScopedMap) value;
 				final RoundingMode orm = temp.containsKey("rounding-mode") ? (temp.get("rounding-mode") instanceof String //TODO try to reduce calls to get here
 						? RoundingMode.valueOf(((String) temp.get("rounding-mode")).toUpperCase()) : RoundingMode.valueOf(((Number) temp.get("rounding-mode")).intValue())) : rm;
 				if (temp.containsKey("buckets")) {

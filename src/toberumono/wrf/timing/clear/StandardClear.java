@@ -3,7 +3,7 @@ package toberumono.wrf.timing.clear;
 import java.util.Arrays;
 import java.util.Calendar;
 
-import toberumono.wrf.scope.ScopedConfiguration;
+import toberumono.wrf.scope.ScopedMap;
 
 import static toberumono.wrf.SimulationConstants.*;
 
@@ -11,7 +11,7 @@ public class StandardClear extends Clear {
 	private final int[] values;
 	private int keep;
 	
-	public StandardClear(ScopedConfiguration parameters, Clear parent) {
+	public StandardClear(ScopedMap parameters, Clear parent) {
 		super(parameters, parent);
 		values = new int[TIMING_FIELD_NAMES.size()];
 		Arrays.fill(values, -1);

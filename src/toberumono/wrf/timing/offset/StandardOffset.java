@@ -2,7 +2,7 @@ package toberumono.wrf.timing.offset;
 
 import java.util.Calendar;
 
-import toberumono.wrf.scope.ScopedConfiguration;
+import toberumono.wrf.scope.ScopedMap;
 
 import static toberumono.wrf.SimulationConstants.*;
 
@@ -10,7 +10,7 @@ public class StandardOffset extends Offset {
 	private int[] offsets;
 	private Boolean wrap;
 	
-	public StandardOffset(ScopedConfiguration parameters, Offset parent) {
+	public StandardOffset(ScopedMap parameters, Offset parent) {
 		super(parameters, parent);
 		wrap = null;
 	}

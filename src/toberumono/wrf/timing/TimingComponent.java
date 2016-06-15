@@ -4,13 +4,13 @@ import java.util.Calendar;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
-import toberumono.wrf.scope.ScopedConfiguration;
+import toberumono.wrf.scope.ScopedMap;
 
 public abstract class TimingComponent<T extends TimingComponent<T>> extends TimingScope<T> implements Function<Calendar, Calendar> {
 	private final Logger log;
 	private boolean computed;
 	
-	public TimingComponent(ScopedConfiguration parameters, T parent, Logger log) {
+	public TimingComponent(ScopedMap parameters, T parent, Logger log) {
 		super(parameters, parent);
 		this.log = log;
 	}

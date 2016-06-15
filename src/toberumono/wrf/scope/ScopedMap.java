@@ -1,11 +1,13 @@
 package toberumono.wrf.scope;
 
+import java.util.AbstractCollection;
 import java.util.AbstractSet;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 
 import toberumono.json.JSONArray;
 import toberumono.json.JSONData;
@@ -13,15 +15,19 @@ import toberumono.json.JSONObject;
 import toberumono.structures.collections.iterators.WrappedIterator;
 import toberumono.structures.sexpressions.ConsCell;
 
-public class ScopedConfiguration implements Scope {
+public class ScopedMap implements Scope, Map<String, Object> {
+	private final Function<Entry<String, Object>, Object> valuesConverter = e -> processOutput(e.getKey(), e.getValue());
+	
 	private final Map<String, Object> backing;
 	private Scope parent;
 	private EntrySet entries;
+	private Collection<Object> values;
 	
-	public ScopedConfiguration(Scope parent) {
+	public ScopedMap(Scope parent) {
 		this.parent = parent;
 		backing = new HashMap<>();
 		entries = null;
+		values = null;
 	}
 	
 	private Object processOutput(String name, Object e) {
@@ -39,33 +45,42 @@ public class ScopedConfiguration implements Scope {
 		return e;
 	}
 	
-	public Object get(String parameter) {
-		if (!containsKey(parameter))
-			throw new InvalidVariableAccessException(parameter + " is not a valid parameter name.");
-		return processOutput(parameter, backing.get(parameter));
+	@Override
+	public boolean containsKey(Object key) {
+		return backing.containsKey(key);
 	}
 	
-	public boolean containsKey(String parameter) {
-		return backing.containsKey(parameter);
+	@Override
+	public Object get(Object key) {
+		if (!(key instanceof String))
+			return null;
+		return processOutput((String) key, backing.get(key));
 	}
 	
-	public Object put(String parameter, Object value) {
-		return processOutput(parameter, backing.get(backing.put(parameter, processInput(value))));
+	@Override
+	public Object put(String key, Object value) {
+		return processOutput(key, backing.put(key, processInput(value)));
 	}
 	
-	public Object remove(String parameter) {
-		return processOutput(parameter, backing.remove(parameter));
+	@Override
+	public Object remove(Object key) {
+		if (!(key instanceof String))
+			return null;
+		return processOutput((String) key, backing.remove(key));
 	}
 	
+	@Override
 	public void clear() {
 		backing.clear();
 	}
 	
-	public Set<String> parameters() {
+	@Override
+	public Set<String> keySet() {
 		return backing.keySet();
 	}
 	
-	public Set<Entry<String, Object>> entries() {
+	@Override
+	public Set<Entry<String, Object>> entrySet() {
 		return entries == null ? entries = new EntrySet(backing.entrySet()) : entries;
 	}
 	
@@ -106,7 +121,7 @@ public class ScopedConfiguration implements Scope {
 		
 		@Override
 		public final void clear() {
-			ScopedConfiguration.this.clear();
+			ScopedMap.this.clear();
 		}
 		
 		@Override
@@ -138,14 +153,17 @@ public class ScopedConfiguration implements Scope {
 	
 	@Override
 	public Object getValueByName(String name) throws InvalidVariableAccessException {
-		return get(name);
+		Object out = get(name);
+		if (out == null)
+			throw new InvalidVariableAccessException(name + " is not a valid parameter name.");
+		return out;
 	}
-
+	
 	@Override
 	public Scope getParent() {
 		return parent;
 	}
-
+	
 	/**
 	 * Sets the parent {@link Scope}. This can only be done once and only if {@code null} was passed to the constructor.
 	 * 
@@ -159,12 +177,12 @@ public class ScopedConfiguration implements Scope {
 			throw new UnsupportedOperationException("The parent of a ScopedConfiguration object cannot be changed once set.");
 	}
 	
-	public static ScopedConfiguration buildFromJSON(JSONObject base) throws InvalidVariableAccessException {
+	public static ScopedMap buildFromJSON(JSONObject base) throws InvalidVariableAccessException {
 		return buildFromJSON(base, null);
 	}
 	
-	public static ScopedConfiguration buildFromJSON(JSONObject base, Scope parent) throws InvalidVariableAccessException {
-		ScopedConfiguration out = new ScopedConfiguration(parent);
+	public static ScopedMap buildFromJSON(JSONObject base, Scope parent) throws InvalidVariableAccessException {
+		ScopedMap out = new ScopedMap(parent);
 		for (Entry<String, JSONData<?>> entry : base.entrySet()) {
 			if (entry.getValue() instanceof JSONObject)
 				out.put(entry.getKey(), buildFromJSON((JSONObject) entry.getValue(), out));
@@ -174,5 +192,61 @@ public class ScopedConfiguration implements Scope {
 				out.put(entry.getKey(), entry.getValue().value());
 		}
 		return out;
+	}
+	
+	@Override
+	public int size() {
+		return backing.size();
+	}
+	
+	@Override
+	public boolean isEmpty() {
+		return backing.isEmpty();
+	}
+	
+	@Override
+	public boolean containsValue(Object value) {
+		if (value == null)
+			return false;
+		if (backing.values().contains(processInput(value)))
+			return true;
+		for (Entry<String, Object> val : backing.entrySet())
+			if (val.getValue().equals(value))
+				return true;
+		return false;
+	}
+	
+	@Override
+	public void putAll(Map<? extends String, ? extends Object> m) {
+		for (Entry<? extends String, ? extends Object> e : m.entrySet())
+			put(e.getKey(), e.getValue());
+	}
+	
+	class ValuesCollection extends AbstractCollection<Object> {
+		
+		@Override
+		public final int size() {
+			return ScopedMap.this.size();
+		}
+		
+		@Override
+		public final void clear() {
+			ScopedMap.this.clear();
+		}
+		
+		@Override
+		public final Iterator<Object> iterator() {
+			return new WrappedIterator<>(entrySet().iterator(), valuesConverter);
+		}
+		
+		@Override
+		public final boolean contains(Object o) {
+			return containsValue(o);
+		}
+	}
+	
+	@Override
+	public Collection<Object> values() {
+		return values == null ? values = new ValuesCollection() : values;
 	}
 }

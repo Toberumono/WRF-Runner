@@ -5,11 +5,11 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import toberumono.wrf.scope.ScopedConfiguration;
+import toberumono.wrf.scope.ScopedMap;
 
 public class WRFRunnerComponentFactory<T> {
 	private static final Map<Class<?>, WRFRunnerComponentFactory<?>> factories = new HashMap<>();
-	private final Map<String, BiFunction<ScopedConfiguration, T, T>> components;
+	private final Map<String, BiFunction<ScopedMap, T, T>> components;
 	private String defaultComponentType;
 	private Supplier<T> disabledComponentInstanceSupplier;
 	
@@ -39,34 +39,34 @@ public class WRFRunnerComponentFactory<T> {
 		}
 	}
 	
-	public static <T> void addComponentConstructor(Class<T> clazz, String type, BiFunction<ScopedConfiguration, T, T> constructor) {
+	public static <T> void addComponentConstructor(Class<T> clazz, String type, BiFunction<ScopedMap, T, T> constructor) {
 		WRFRunnerComponentFactory<T> factory = getFactory(clazz);
 		factory.addComponentConstructor(type, constructor);
 	}
 	
-	public void addComponentConstructor(String type, BiFunction<ScopedConfiguration, T, T> constructor) {
+	public void addComponentConstructor(String type, BiFunction<ScopedMap, T, T> constructor) {
 		synchronized (components) {
 			components.put(type, constructor);
 		}
 	}
 	
-	public static <T> T generateComponent(Class<T> clazz, ScopedConfiguration parameters, T parent) {
+	public static <T> T generateComponent(Class<T> clazz, ScopedMap parameters, T parent) {
 		WRFRunnerComponentFactory<T> factory = getFactory(clazz);
 		return factory.generateComponent(parameters, parent);
 	}
 	
-	public T generateComponent(ScopedConfiguration parameters, T parent) {
+	public T generateComponent(ScopedMap parameters, T parent) {
 		if (parameters == null)
 			return getDisabledComponentInstance();
 		return generateComponent(parameters.containsKey("type") ? parameters.get("type").toString() : defaultComponentType, parameters, parent);
 	}
 	
-	public static <T> T generateComponent(Class<T> clazz, String type, ScopedConfiguration parameters, T parent) {
+	public static <T> T generateComponent(Class<T> clazz, String type, ScopedMap parameters, T parent) {
 		WRFRunnerComponentFactory<T> factory = getFactory(clazz);
 		return factory.generateComponent(type, parameters, parent);
 	}
 	
-	public T generateComponent(String type, ScopedConfiguration parameters, T parent) { //TODO figure out how to implement inheritance of the form "grib.timing.constant"
+	public T generateComponent(String type, ScopedMap parameters, T parent) { //TODO figure out how to implement inheritance of the form "grib.timing.constant"
 		synchronized (components) {
 			if (parameters.containsKey("enabled") && parameters.get("enabled") instanceof Boolean && !((Boolean) parameters.get("enabled")))
 				return getDisabledComponentInstance();

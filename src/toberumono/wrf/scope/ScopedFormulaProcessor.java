@@ -16,7 +16,7 @@ import toberumono.structures.sexpressions.BasicConsType;
 import toberumono.structures.sexpressions.ConsCell;
 import toberumono.structures.sexpressions.ConsType;
 
-public class ScopedMathProcessor {
+public class ScopedFormulaProcessor {
 	private static final Lock lock = new ReentrantLock();
 	private static final ConsType PARENTHESES = new BasicConsType("parentheses");
 	private static final ConsType VARIABLE = new BasicConsType("variable");
