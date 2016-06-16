@@ -5,13 +5,14 @@ import java.util.Calendar;
 import toberumono.namelist.parser.NamelistSection;
 import toberumono.wrf.WRFRunnerComponentFactory;
 import toberumono.wrf.scope.AbstractScope;
+import toberumono.wrf.scope.Scope;
 import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.duration.NamelistDuration;
 import toberumono.wrf.timing.offset.Offset;
 import toberumono.wrf.timing.rounding.Rounding;
 
-public class NamelistTiming extends AbstractScope<Timing> implements Timing {
+public class NamelistTiming extends AbstractScope<Scope> implements Timing {
 	private final Calendar base;
 	private final Calendar start, end;
 	private final Offset offset;
@@ -19,8 +20,8 @@ public class NamelistTiming extends AbstractScope<Timing> implements Timing {
 	private final Duration duration;
 	private final Clear clear;
 	
-	public NamelistTiming(NamelistSection timeControl) { //No need for lazy computation - everything is either Disabled or independent
-		super(null);
+	public NamelistTiming(NamelistSection timeControl, Scope parent) { //No need for lazy computation - everything is either Disabled or independent
+		super(parent);
 		this.base = Calendar.getInstance();
 		timecontrolParser(getBase(), timeControl, "start");
 		offset = WRFRunnerComponentFactory.getDisabledComponentInstance(Offset.class);

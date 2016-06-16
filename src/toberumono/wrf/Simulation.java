@@ -41,8 +41,8 @@ import toberumono.wrf.scope.InvalidVariableAccessException;
 import toberumono.wrf.scope.NamedScopeValue;
 import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedMap;
-import toberumono.wrf.timing.JSONTiming;
 import toberumono.wrf.timing.NamelistTiming;
+import toberumono.wrf.timing.RootTiming;
 import toberumono.wrf.timing.Timing;
 
 import static toberumono.wrf.SimulationConstants.TIMING_FIELD_NAME;
@@ -74,8 +74,8 @@ public class Simulation extends AbstractScope<Scope> {
 		active = new ScopedMap(this);
 		disabledModules = new HashSet<>();
 		this.modules = Collections.unmodifiableMap(parseModules(modules, paths));
-		globalTiming = ((Boolean) getTiming().get("use-computed-times")) ? new JSONTiming((ScopedMap) this.timing.get("global"), base)
-				: new NamelistTiming(this.modules.get("wrf").getNamelist().get("time_control"));
+		globalTiming = ((Boolean) getTiming().get("use-computed-times")) ? new RootTiming((ScopedMap) getTiming().get("global"), base, this)
+				: new NamelistTiming(getModule("wrf").getNamelist().get("time_control"), this);
 		working = constructWorkingDirectory(getResolver().getFileSystem().getPath(getGeneral().get("working-directory").toString()), (Boolean) general.get("always-suffix").value());
 		for (String name : this.modules.keySet())
 			active.put(name, paths.containsKey(name) ? getWorkingPath().resolve(((Path) source.get(name)).getFileName()) : getWorkingPath().resolve(name));

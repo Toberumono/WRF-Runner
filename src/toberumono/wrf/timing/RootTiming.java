@@ -1,16 +1,19 @@
 package toberumono.wrf.timing;
 
 import java.util.Calendar;
+import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 import toberumono.wrf.WRFRunnerComponentFactory;
+import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.offset.Offset;
 import toberumono.wrf.timing.rounding.Rounding;
 
-public class JSONTiming extends TimingScope<Timing> implements Timing {
+public class RootTiming extends TimingScope<Scope> implements Timing {
+
 	private final ReentrantLock computationLock;
 	
 	private Calendar base, start, end;
@@ -18,24 +21,30 @@ public class JSONTiming extends TimingScope<Timing> implements Timing {
 	private Rounding rounding;
 	private Duration duration;
 	private Clear clear;
+	private boolean appliedClear;
 	
-	public JSONTiming(ScopedMap parameters, Timing parent) { //TODO implement existence checks
-		super(parameters, parent);
+	public RootTiming(ScopedMap parameters, Calendar base, Scope parent) {
+		super(parameters, null);
+		Objects.requireNonNull(base, "The base Calendar cannot be null");
 		computationLock = new ReentrantLock();
-		base = start = end = null;
+		start = end = null;
 		offset = null;
 		rounding = null;
 		duration = null;
 		clear = null;
+		appliedClear = false;
+		this.base = base;
 	}
 	
 	@Override
 	public Calendar getBase() {
-		if (base == null) {
+		if (!appliedClear) { //Base cannot be null, so we just have to check if we've applied clear
 			try {
 				computationLock.lock();
-				if (base == null) //Have to re-check for synchronization
-					base = getClear().apply(getParent().getBase());
+				if (!appliedClear) { //Have to re-check for synchronization
+					base = getClear().apply(base);
+					appliedClear = true;
+				}
 			}
 			finally {
 				computationLock.unlock();
@@ -81,7 +90,7 @@ public class JSONTiming extends TimingScope<Timing> implements Timing {
 		try {
 			computationLock.lock();
 			if (offset == null)
-				offset = WRFRunnerComponentFactory.generateComponent(Offset.class, (ScopedMap) getParameters().get("offset"), getParent() != null ? getParent().getOffset() : null);
+				offset = WRFRunnerComponentFactory.generateComponent(Offset.class, (ScopedMap) getParameters().get("offset"), null);
 		}
 		finally {
 			computationLock.unlock();
@@ -96,7 +105,7 @@ public class JSONTiming extends TimingScope<Timing> implements Timing {
 		try {
 			computationLock.lock();
 			if (rounding == null)
-				rounding = WRFRunnerComponentFactory.generateComponent(Rounding.class, (ScopedMap) getParameters().get("rounding"), getParent() != null ? getParent().getRounding() : null);
+				rounding = WRFRunnerComponentFactory.generateComponent(Rounding.class, (ScopedMap) getParameters().get("rounding"), null);
 		}
 		finally {
 			computationLock.unlock();
@@ -111,7 +120,7 @@ public class JSONTiming extends TimingScope<Timing> implements Timing {
 		try {
 			computationLock.lock();
 			if (duration == null)
-				duration = WRFRunnerComponentFactory.generateComponent(Duration.class, (ScopedMap) getParameters().get("duration"), getParent() != null ? getParent().getDuration() : null);
+				duration = WRFRunnerComponentFactory.generateComponent(Duration.class, (ScopedMap) getParameters().get("duration"), null);
 		}
 		finally {
 			computationLock.unlock();
@@ -126,7 +135,7 @@ public class JSONTiming extends TimingScope<Timing> implements Timing {
 		try {
 			computationLock.lock();
 			if (clear == null)
-				clear = WRFRunnerComponentFactory.generateComponent(Clear.class, (ScopedMap) getParameters().get("clear"), getParent() != null ? getParent().getClear() : null);
+				clear = WRFRunnerComponentFactory.generateComponent(Clear.class, (ScopedMap) getParameters().get("clear"), null);
 		}
 		finally {
 			computationLock.unlock();
