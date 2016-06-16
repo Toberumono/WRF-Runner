@@ -79,6 +79,11 @@ public class BucketRounding extends Rounding {
 					roundingFunctions.put(TIMING_FIELDS.get(i), inp -> Numbers.bucketRounding(inp, orm, step, offset));
 				}
 			}
+			else if (value instanceof Number) {
+				final int step = ((Number) value).intValue();
+				final int offset = arguments.containsKey(name + "-offset") ? ((Number) arguments.get(name + "-offset")).intValue() : 0;
+				roundingFunctions.put(TIMING_FIELDS.get(i), inp -> Numbers.bucketRounding(inp, rm, step, offset));
+			}
 		}
 		return roundingFunctions;
 	}
