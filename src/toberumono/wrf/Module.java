@@ -15,6 +15,7 @@ import toberumono.namelist.parser.Namelist;
 import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
 import toberumono.wrf.scope.AbstractScope;
+import toberumono.wrf.scope.NamedScopeValue;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.scope.ScopedList;
 import toberumono.wrf.timing.Timing;
@@ -70,6 +71,7 @@ public abstract class Module extends AbstractScope<Simulation> {
 		return namelistPath;
 	}
 	
+	@NamedScopeValue("timing")
 	public Timing getTiming() {
 		if (timing != null) //First one is to avoid unnecessary use of synchronization
 			return timing;
@@ -116,7 +118,8 @@ public abstract class Module extends AbstractScope<Simulation> {
 			return namelist = ingestNamelist();
 		}
 	}
-	
+
+	@NamedScopeValue("parameters")
 	public ScopedMap getParameters() {
 		return parameters;
 	}

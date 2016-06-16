@@ -2,6 +2,7 @@ package toberumono.wrf.timing;
 
 import toberumono.wrf.scope.AbstractScope;
 import toberumono.wrf.scope.InvalidVariableAccessException;
+import toberumono.wrf.scope.NamedScopeValue;
 import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedMap;
 
@@ -30,7 +31,8 @@ public class TimingScope<T extends Scope> extends AbstractScope<T> {
 		}
 	}
 	
-	protected ScopedMap getParameters() {
+	@NamedScopeValue("parameters")
+	public ScopedMap getParameters() {
 		return parameters;
 	}
 }

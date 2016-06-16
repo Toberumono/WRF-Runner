@@ -5,6 +5,8 @@ import java.util.Calendar;
 import toberumono.wrf.Simulation;
 import toberumono.wrf.scope.NamedScopeValue;
 import toberumono.wrf.scope.Scope;
+import toberumono.wrf.scope.ScopeUtils;
+import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.offset.Offset;
@@ -20,20 +22,44 @@ public interface Timing extends Scope {
 	/**
 	 * @return the {@link Calendar} from which {@link #getStart() start} and {@link #getEnd() end} are derived
 	 */
-	@NamedScopeValue("base")
 	public Calendar getBase();
+	
+	/**
+	 * @return a {@link ScopedMap} generated from the {@link Calendar} returned by {@link #getBase()} via
+	 *         {@link ScopeUtils#makeScopeFromCalendar(Calendar, Scope)}
+	 */
+	@NamedScopeValue("base")
+	public default ScopedMap getScopedBase() {
+		return ScopeUtils.makeScopeFromCalendar(getBase(), this);
+	}
 	
 	/**
 	 * @return the {@link Calendar} denoting the time that the {@link Simulation} will start
 	 */
-	@NamedScopeValue("start")
 	public Calendar getStart();
+	
+	/**
+	 * @return a {@link ScopedMap} generated from the {@link Calendar} returned by {@link #getStart()} via
+	 *         {@link ScopeUtils#makeScopeFromCalendar(Calendar, Scope)}
+	 */
+	@NamedScopeValue("start")
+	public default ScopedMap getScopedStart() {
+		return ScopeUtils.makeScopeFromCalendar(getStart(), this);
+	}
 	
 	/**
 	 * @return the {@link Calendar} denoting the time that the {@link Simulation} will end
 	 */
-	@NamedScopeValue("end")
 	public Calendar getEnd();
+	
+	/**
+	 * @return a {@link ScopedMap} generated from the {@link Calendar} returned by {@link #getEnd()} via
+	 *         {@link ScopeUtils#makeScopeFromCalendar(Calendar, Scope)}
+	 */
+	@NamedScopeValue("end")
+	public default ScopedMap getScopedEnd() {
+		return ScopeUtils.makeScopeFromCalendar(getEnd(), this);
+	}
 	
 	/**
 	 * @return the {@link Offset} added to the rounded {@link #getBase() base} to derive {@link #getStart() start}
@@ -44,7 +70,7 @@ public interface Timing extends Scope {
 	/**
 	 * @return the {@link Rounding} applied to {@link #getBase() base} to derive {@link #getStart() start}
 	 */
-	@NamedScopeValue("timing")
+	@NamedScopeValue("rounding")
 	public Rounding getRounding();
 	
 	/**
