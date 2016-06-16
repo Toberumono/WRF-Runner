@@ -161,6 +161,8 @@ public class Simulation extends AbstractScope<Scope> {
 			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
 		JSONObject description = (JSONObject) modules.get(name);
 		JSONObject parameters = condenseSubsections(name::equals, configuration, "configuration", Integer.MAX_VALUE);
+		if (!parameters.containsKey(TIMING_FIELD_NAME))
+			parameters.put(TIMING_FIELD_NAME, makeGenericInteriter());
 		parameters.put("name", new JSONString(name));
 		@SuppressWarnings("unchecked") Class<? extends Module> clazz = (Class<? extends Module>) Class.forName(description.get("class").value().toString());
 		Constructor<? extends Module> constructor = clazz.getConstructor(ScopedMap.class, Simulation.class);
@@ -226,6 +228,11 @@ public class Simulation extends AbstractScope<Scope> {
 				cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), cal.get(Calendar.SECOND));
 	}
 	
+	public static final JSONObject makeGenericInteriter() {
+		JSONObject out = new JSONObject();
+		out.put("inherit", new JSONBoolean(true));
+		return out;
+	}
 	private static JSONObject condenseSubsections(Predicate<String> lookingFor, JSONObject root, String rootName, int maxDepth) {
 		JSONObject out = condenseSubsections(new JSONObject(), lookingFor, root, rootName, maxDepth - 1);
 		out.clearModified();
