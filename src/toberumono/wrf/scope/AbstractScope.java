@@ -14,11 +14,25 @@ public class AbstractScope<T extends Scope> implements Scope {
 	public AbstractScope(T parent) {
 		this.parent = parent;
 		namedItems = new HashMap<>();
+		for (Field f : getClass().getFields()) {
+			NamedScopeValue nsv = f.getAnnotation(NamedScopeValue.class);
+			if (nsv != null) {
+				f.setAccessible(true);
+				namedItems.put(nsv.value(), () -> f.get(this));
+			}
+		}
 		for (Field f : getClass().getDeclaredFields()) {
 			NamedScopeValue nsv = f.getAnnotation(NamedScopeValue.class);
 			if (nsv != null) {
 				f.setAccessible(true);
 				namedItems.put(nsv.value(), () -> f.get(this));
+			}
+		}
+		for (Method m : getClass().getMethods()) {
+			NamedScopeValue nsv = m.getAnnotation(NamedScopeValue.class);
+			if (nsv != null) {
+				m.setAccessible(true);
+				namedItems.put(nsv.value(), () -> m.invoke(this));
 			}
 		}
 		for (Method m : getClass().getDeclaredMethods()) {
