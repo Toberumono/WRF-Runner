@@ -39,7 +39,7 @@ public class FractionalRounding extends Rounding {
 	@Override
 	protected void compute() { //TODO implement inheritance, existence checks
 		String magnitude = ((String) getParameters().get("magnitude")).toLowerCase();
-		diff = ((String) getParameters().get("diff")).toLowerCase(); //TODO require diff to be either next, previous, or none
+		diff = getParameters().containsKey("diff") ? ((String) getParameters().get("diff")).toLowerCase() : "none"; //TODO require diff to be either next, previous, or none
 		double fraction = ((Number) getParameters().get("fraction")).doubleValue();
 		roundingPoint = TIMING_FIELD_NAMES.indexOf(magnitude);
 		if (roundingPoint == -1)

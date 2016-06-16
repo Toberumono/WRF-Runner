@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import toberumono.wrf.Module;
 import toberumono.wrf.Simulation;
 import toberumono.wrf.WRFRunnerComponentFactory;
+import toberumono.wrf.scope.NamedScopeValue;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.Timing;
 
@@ -28,12 +29,12 @@ import toberumono.wrf.timing.Timing;
  * 
  * @author Toberumono
  */
-public class GRIBModule extends Module {
+public class GRIBModule extends Module { //TODO add an intermediate scope for timing
 	private static final ExecutorService pool = Executors.newWorkStealingPool(12);
 	private static final int[] calendarOffsetFields = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
 	private String url;
 	private Timing incremented;
-	private ScopedMap timestep;
+	private ScopedMap timestep, intermediate;
 	private Boolean wrap;
 	private final Lock lock;
 	
@@ -50,6 +51,7 @@ public class GRIBModule extends Module {
 		url = null;
 		incremented = null;
 		timestep = null;
+		intermediate = null;
 		wrap = null;
 		ScopedMap grib = (ScopedMap) parameters.get("configuration");
 		url = (String) grib.get("url");
@@ -58,9 +60,27 @@ public class GRIBModule extends Module {
 		lock = new ReentrantLock();
 	}
 	
+	@NamedScopeValue("timing")
+	private ScopedMap intermediateScope() {
+		if (intermediate != null)
+			return intermediate;
+		try {
+			lock.lock();
+			if (intermediate == null) {
+				intermediate = new ScopedMap(this);
+				intermediate.put("constant", getTiming());
+				intermediate.put("incremented", getIncrementedTiming());
+			}
+		}
+		finally {
+			lock.unlock();
+		}
+		return intermediate;
+	}
+	
 	@Override
 	protected Timing parseTiming(ScopedMap timing) {
-		return super.parseTiming((ScopedMap) timing.get("constant"));
+		return super.parseTiming(timing.containsKey("constant") ? (ScopedMap) timing.get("constant") : timing);
 	}
 	
 	/**
@@ -72,7 +92,8 @@ public class GRIBModule extends Module {
 		try {
 			lock.lock();
 			if (incremented == null)
-				incremented = WRFRunnerComponentFactory.generateComponent(Timing.class, (ScopedMap) ((ScopedMap) getParameters().get("timing")).get("incremented"), getTiming());
+				incremented = WRFRunnerComponentFactory.generateComponent(Timing.class, ((ScopedMap) getParameters().get("timing")).containsKey("incremented")
+						? (ScopedMap) ((ScopedMap) getParameters().get("timing")).get("incremented") : ((ScopedMap) getParameters().get("timing")), getTiming());
 		}
 		finally {
 			lock.unlock();
