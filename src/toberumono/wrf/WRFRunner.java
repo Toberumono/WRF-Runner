@@ -39,7 +39,7 @@ import toberumono.wrf.timing.rounding.FractionalRounding;
 import toberumono.wrf.timing.rounding.FunctionRounding;
 import toberumono.wrf.timing.rounding.Rounding;
 
-import static toberumono.wrf.SimulationConstants.TIMING_FIELD_NAMES;
+import static toberumono.wrf.SimulationConstants.*;
 
 /**
  * A "script" for automatically running WRF and WPS installations.<br>
@@ -103,14 +103,6 @@ public class WRFRunner {
 	 */
 	public WRFRunner() throws IOException {
 		log = Logger.getLogger("WRFRunner");
-		log.setLevel(Level.INFO);
-	}
-	
-	public WRFRunner(JSONObject config) {
-		log = Logger.getLogger("WRFRunner");
-		log.setLevel(Level.INFO);
-		JSONObject general = (JSONObject) config.get("general"), paths = (JSONObject) config.get("paths"), modules = (JSONObject) config.get("modules");
-		
 	}
 	
 	/**
@@ -130,8 +122,6 @@ public class WRFRunner {
 	 *             if an I/O error occurs
 	 */
 	public Simulation createSimulation(Path configurationFile) throws IOException {
-		Logger simLogger = log.getLogger("WRFRunner.Simulation");
-		simLogger.setLevel(Level.WARNING);
 		return Simulation.initSimulation(upgradeConfiguration(configurationFile, (JSONObject) JSONSystem.loadJSON(configurationFile)), configurationFile.toAbsolutePath().normalize().getParent());
 	}
 	

@@ -132,6 +132,10 @@ public class ScopedFormulaProcessor {
 		return getLexer().lex(input);
 	}
 	
+	public static ConsCell process(String input, Scope scope, String fieldName) throws InvalidVariableAccessException {
+		return process(preProcess(input), scope, fieldName);
+	}
+	
 	public static ConsCell process(ConsCell input, Scope scope, String fieldName) throws InvalidVariableAccessException {
 		ConsCell equation;
 		if (input.getCarType() == OPERATOR) {

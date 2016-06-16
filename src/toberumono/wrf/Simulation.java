@@ -45,7 +45,7 @@ import toberumono.wrf.timing.NamelistTiming;
 import toberumono.wrf.timing.RootTiming;
 import toberumono.wrf.timing.Timing;
 
-import static toberumono.wrf.SimulationConstants.TIMING_FIELD_NAME;
+import static toberumono.wrf.SimulationConstants.*;
 
 public class Simulation extends AbstractScope<Scope> {
 	private static final ExecutorService pool = Executors.newWorkStealingPool();
@@ -67,7 +67,7 @@ public class Simulation extends AbstractScope<Scope> {
 		this.configuration = configuration;
 		this.general = ScopedMap.buildFromJSON(general, this);
 		this.timing = ScopedMap.buildFromJSON(timing, this);
-		logger = Logger.getLogger("WRFRunner.Simulation");
+		logger = Logger.getLogger(LOGGER_ROOT);
 		logger.setLevel(Level.parse(((String) general.get("logging-level").value()).toUpperCase()));
 		parallel = (ScopedMap) getGeneral().get("parallel");
 		source = new ScopedMap(this);
