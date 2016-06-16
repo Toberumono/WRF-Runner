@@ -8,37 +8,47 @@ import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import toberumono.json.JSONArray;
 import toberumono.json.JSONBoolean;
 import toberumono.json.JSONData;
 import toberumono.json.JSONObject;
 import toberumono.json.JSONString;
-import toberumono.json.JSONSystem;
 import toberumono.namelist.parser.Namelist;
 import toberumono.namelist.parser.NamelistNumber;
 import toberumono.utils.files.TransferFileWalker;
 import toberumono.wrf.scope.AbstractScope;
+import toberumono.wrf.scope.InvalidVariableAccessException;
+import toberumono.wrf.scope.NamedScopeValue;
 import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.JSONTiming;
 import toberumono.wrf.timing.NamelistTiming;
 import toberumono.wrf.timing.Timing;
 
+import static toberumono.wrf.SimulationConstants.TIMING_FIELD_NAME;
+
 public class Simulation extends AbstractScope<Scope> {
+	private static final ExecutorService pool = Executors.newWorkStealingPool();
 	
 	private final Logger logger;
 	private final JSONObject configuration;
@@ -47,7 +57,7 @@ public class Simulation extends AbstractScope<Scope> {
 	private final Timing globalTiming;
 	private final Map<String, Module> modules;
 	private final Set<Module> disabledModules;
-	private final Map<String, Path> source, active;
+	private final ScopedMap source, active;
 	private Integer doms;
 	private final NamelistNumber interval_seconds;
 	
@@ -59,9 +69,9 @@ public class Simulation extends AbstractScope<Scope> {
 		this.timing = ScopedMap.buildFromJSON(timing, this);
 		logger = Logger.getLogger("WRFRunner.Simulation");
 		logger.setLevel(Level.parse(((String) general.get("logging-level").value()).toUpperCase()));
-		source = new HashMap<>();
-		active = new HashMap<>();
 		parallel = (ScopedMap) getGeneral().get("parallel");
+		source = new ScopedMap(this);
+		active = new ScopedMap(this);
 		disabledModules = new HashSet<>();
 		this.modules = Collections.unmodifiableMap(parseModules(modules, paths));
 		globalTiming = ((Boolean) getTiming().get("use-computed-times")) ? new JSONTiming((ScopedMap) this.timing.get("global"), base)
@@ -74,29 +84,33 @@ public class Simulation extends AbstractScope<Scope> {
 		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
 		doms = null;
 	}
-	
+
+	@NamedScopeValue("timing")
 	public Timing getGlobalTiming() {
 		return globalTiming;
 	}
-	
+
+	@NamedScopeValue("timing-map")
 	public ScopedMap getTiming() {
 		return timing;
 	}
 	
+	@NamedScopeValue("general")
 	public ScopedMap getGeneral() {
 		return general;
 	}
 	
+	@NamedScopeValue("parallel")
 	public ScopedMap getParallel() {
 		return parallel;
 	}
 	
 	public Path getSourcePath(String module) {
-		return source.get(module);
+		return (Path) source.get(module);
 	}
 	
 	public Path getActivePath(String module) {
-		return active.get(module);
+		return (Path) active.get(module);
 	}
 	
 	public Path getResolver() {
@@ -105,6 +119,10 @@ public class Simulation extends AbstractScope<Scope> {
 	
 	public Path getWorkingPath() {
 		return working;
+	}
+	
+	public Module getModule(String name) {
+		return modules.get(name);
 	}
 	
 	public Integer getDoms() throws IOException {
@@ -162,7 +180,7 @@ public class Simulation extends AbstractScope<Scope> {
 		JSONObject description = (JSONObject) modules.get(name);
 		JSONObject parameters = condenseSubsections(name::equals, configuration, "configuration", Integer.MAX_VALUE);
 		if (!parameters.containsKey(TIMING_FIELD_NAME))
-			parameters.put(TIMING_FIELD_NAME, makeGenericInteriter());
+			parameters.put(TIMING_FIELD_NAME, makeGenericInheriter());
 		parameters.put("name", new JSONString(name));
 		@SuppressWarnings("unchecked") Class<? extends Module> clazz = (Class<? extends Module>) Class.forName(description.get("class").value().toString());
 		Constructor<? extends Module> constructor = clazz.getConstructor(ScopedMap.class, Simulation.class);
@@ -228,11 +246,45 @@ public class Simulation extends AbstractScope<Scope> {
 				cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), cal.get(Calendar.SECOND));
 	}
 	
-	public static final JSONObject makeGenericInteriter() {
+	public static final JSONObject makeGenericInheriter() {
 		JSONObject out = new JSONObject();
 		out.put("inherit", new JSONBoolean(true));
 		return out;
 	}
+	
+	@Override
+	public boolean hasValueByName(String name) {
+		if (getModule(name) != null)
+			return true;
+		switch(name) {
+			case "sim":
+			case "simulation":
+			case "source-paths":
+			case "active-paths":
+				return true;
+			default:
+				return super.hasValueByName(name);
+		}
+	}
+	
+	@Override
+	public Object getValueByName(String name) throws InvalidVariableAccessException {
+		Object out = getModule(name);
+		if (out != null)
+			return out;
+		switch(name) {
+			case "sim":
+			case "simulation":
+				return this;
+			case "source-paths":
+				return source;
+			case "active-paths":
+				return active;
+			default:
+				return super.getValueByName(name);
+		}
+	}
+	
 	private static JSONObject condenseSubsections(Predicate<String> lookingFor, JSONObject root, String rootName, int maxDepth) {
 		JSONObject out = condenseSubsections(new JSONObject(), lookingFor, root, rootName, maxDepth - 1);
 		out.clearModified();
@@ -249,20 +301,14 @@ public class Simulation extends AbstractScope<Scope> {
 		return condensed;
 	}
 	
-	public static Simulation initSimulation(Path configurationPath, boolean updateFile) throws IOException {
+	public static Simulation initSimulation(JSONObject configuration, Path resolver) throws IOException {
 		Calendar base = Calendar.getInstance();
-		JSONObject configuration = (JSONObject) JSONSystem.loadJSON(configurationPath);
 		//Extract configuration file sections
 		JSONObject general = (JSONObject) configuration.get("general");
 		JSONObject module = (JSONObject) configuration.get("module");
 		JSONObject path = (JSONObject) configuration.get("path");
 		JSONObject timing = (JSONObject) configuration.get("timing");
 		
-		if (updateFile) {
-			JSONSystem.transferField("use-computed-times", new JSONBoolean(true), timing);
-			JSONSystem.transferField("logging-level", new JSONString("INFO"), general);
-		}
-		
-		return new Simulation(base, configurationPath.toAbsolutePath().normalize().getParent(), configuration, general, module, path, timing);
+		return new Simulation(base, resolver, configuration, general, module, path, timing);
 	}
 }
