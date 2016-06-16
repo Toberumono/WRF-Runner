@@ -284,7 +284,8 @@ public class WRFRunner {
 			if (!timing.containsKey("global")) {
 				JSONObject rounding = (JSONObject) timing.remove("rounding");
 				JSONObject global = new JSONObject();
-				global.put("duration", timing.remove("duration")); //Duration has remained unchanged
+				if (timing.containsKey("duration"))
+					global.put("duration", timing.remove("duration")); //Duration has remained unchanged
 				global.put("offset", timing.remove("offset")); //Offset has remained unchanged
 				JSONObject clear = new JSONObject();
 				
