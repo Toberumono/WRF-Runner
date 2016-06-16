@@ -6,6 +6,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -103,6 +105,10 @@ public class WRFRunner {
 	 */
 	public WRFRunner() throws IOException {
 		log = Logger.getLogger("WRFRunner");
+		Handler systemOut = new ConsoleHandler();
+		systemOut.setLevel(Level.ALL);
+		log.addHandler(systemOut);
+		log.setUseParentHandlers(false);
 	}
 	
 	/**
