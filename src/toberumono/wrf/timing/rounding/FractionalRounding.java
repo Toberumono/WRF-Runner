@@ -4,6 +4,7 @@ import java.util.Calendar;
 import java.util.logging.Level;
 
 import toberumono.utils.general.Numbers;
+import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedMap;
 
 import static toberumono.wrf.SimulationConstants.*;
@@ -13,7 +14,7 @@ public class FractionalRounding extends Rounding {
 	private double fraction;
 	private String diff;
 	
-	public FractionalRounding(ScopedMap parameters, Rounding parent) {
+	public FractionalRounding(ScopedMap parameters, Scope parent) {
 		super(parameters, parent);
 	}
 

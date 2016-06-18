@@ -3,6 +3,7 @@ package toberumono.wrf.timing.rounding;
 import java.util.Calendar;
 
 import toberumono.structures.sexpressions.ConsCell;
+import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedMap;
 
 import static toberumono.wrf.SimulationConstants.*;
@@ -11,7 +12,7 @@ import static toberumono.wrf.scope.ScopedFormulaProcessor.*;
 public class FunctionRounding extends Rounding {
 	private ConsCell[] functions;
 	
-	public FunctionRounding(ScopedMap parameters, Rounding parent) {
+	public FunctionRounding(ScopedMap parameters, Scope parent) {
 		super(parameters, parent);
 		functions = null;
 	}

@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import toberumono.utils.general.Numbers;
 import toberumono.wrf.scope.ScopedMap;
+import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedList;
 
 import static toberumono.wrf.SimulationConstants.*;
@@ -19,7 +20,7 @@ import static toberumono.wrf.SimulationConstants.*;
 public class BucketRounding extends Rounding {
 	private Map<Integer, Function<Integer, Integer>> roundingActions;
 	
-	public BucketRounding(ScopedMap parameters, Rounding parent) {
+	public BucketRounding(ScopedMap parameters, Scope parent) {
 		super(parameters, parent);
 	}
 	

@@ -3,6 +3,7 @@ package toberumono.wrf.timing.duration;
 import java.util.Calendar;
 
 import toberumono.namelist.parser.NamelistSection;
+import toberumono.wrf.scope.Scope;
 
 import static toberumono.wrf.SimulationConstants.*;
 
@@ -10,8 +11,8 @@ public class NamelistDuration extends Duration {
 	private int[] duration;
 	private final NamelistSection timeControl;
 	
-	public NamelistDuration(NamelistSection timeControl) {
-		super(null, null);
+	public NamelistDuration(NamelistSection timeControl, Scope parent) {
+		super(null, parent);
 		this.timeControl = timeControl;
 	}
 	

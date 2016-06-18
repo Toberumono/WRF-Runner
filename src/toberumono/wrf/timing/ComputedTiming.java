@@ -107,7 +107,7 @@ public class ComputedTiming extends TimingScope<Scope> implements Timing {
 			computationLock.lock();
 			if (offset == null)
 				offset = WRFRunnerComponentFactory.generateComponent(Offset.class, (ScopedMap) getParameters().get("offset"),
-						(getParent() instanceof Timing) ? ((Timing) getParent()).getOffset() : null);
+						(getParent() instanceof Timing) ? ((Timing) getParent()).getOffset() : getParent());
 		}
 		finally {
 			computationLock.unlock();
@@ -123,7 +123,7 @@ public class ComputedTiming extends TimingScope<Scope> implements Timing {
 			computationLock.lock();
 			if (rounding == null)
 				rounding = WRFRunnerComponentFactory.generateComponent(Rounding.class, (ScopedMap) getParameters().get("rounding"),
-						(getParent() instanceof Timing) ? ((Timing) getParent()).getRounding() : null);
+						(getParent() instanceof Timing) ? ((Timing) getParent()).getRounding() : getParent());
 		}
 		finally {
 			computationLock.unlock();
@@ -139,7 +139,7 @@ public class ComputedTiming extends TimingScope<Scope> implements Timing {
 			computationLock.lock();
 			if (duration == null)
 				duration = WRFRunnerComponentFactory.generateComponent(Duration.class, (ScopedMap) getParameters().get("duration"),
-						(getParent() instanceof Timing) ? ((Timing) getParent()).getDuration() : null);
+						(getParent() instanceof Timing) ? ((Timing) getParent()).getDuration() : getParent());
 		}
 		finally {
 			computationLock.unlock();
@@ -154,7 +154,8 @@ public class ComputedTiming extends TimingScope<Scope> implements Timing {
 		try {
 			computationLock.lock();
 			if (clear == null)
-				clear = WRFRunnerComponentFactory.generateComponent(Clear.class, (ScopedMap) getParameters().get("clear"), (getParent() instanceof Timing) ? ((Timing) getParent()).getClear() : null);
+				clear = WRFRunnerComponentFactory.generateComponent(Clear.class, (ScopedMap) getParameters().get("clear"),
+						(getParent() instanceof Timing) ? ((Timing) getParent()).getClear() : getParent());
 		}
 		finally {
 			computationLock.unlock();

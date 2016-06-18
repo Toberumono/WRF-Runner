@@ -26,7 +26,7 @@ public class NamelistTiming extends AbstractScope<Scope> implements Timing {
 		timecontrolParser(getBase(), timeControl, "start");
 		offset = WRFRunnerComponentFactory.getDisabledComponentInstance(Offset.class);
 		rounding = WRFRunnerComponentFactory.getDisabledComponentInstance(Rounding.class);
-		duration = new NamelistDuration(timeControl);
+		duration = new NamelistDuration(timeControl, this);
 		clear = WRFRunnerComponentFactory.getDisabledComponentInstance(Clear.class);
 		start = getOffset().apply(getRounding().apply(getBase()));
 		end = getDuration().apply(getStart());

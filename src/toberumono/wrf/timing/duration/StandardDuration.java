@@ -2,6 +2,7 @@ package toberumono.wrf.timing.duration;
 
 import java.util.Calendar;
 
+import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedMap;
 
 import static toberumono.wrf.SimulationConstants.*;
@@ -9,7 +10,7 @@ import static toberumono.wrf.SimulationConstants.*;
 public class StandardDuration extends Duration {
 	private int[] duration;
 	
-	public StandardDuration(ScopedMap parameters, Duration parent) {
+	public StandardDuration(ScopedMap parameters, Scope parent) {
 		super(parameters, parent);
 	}
 	
