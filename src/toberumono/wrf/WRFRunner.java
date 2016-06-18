@@ -24,7 +24,7 @@ import toberumono.structures.collections.lists.SortedList;
 import toberumono.structures.versioning.VersionNumber;
 import toberumono.utils.files.RecursiveEraser;
 import toberumono.wrf.timing.DisabledTiming;
-import toberumono.wrf.timing.JSONTiming;
+import toberumono.wrf.timing.ComputedTiming;
 import toberumono.wrf.timing.Timing;
 import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.clear.DisabledClear;
@@ -92,8 +92,8 @@ public class WRFRunner {
 		WRFRunnerComponentFactory<Clear> clearFactory = WRFRunnerComponentFactory.getFactory(Clear.class, "standard", DisabledClear::getDisabledClearInstance);
 		clearFactory.addComponentConstructor("standard", StandardClear::new);
 		clearFactory.addComponentConstructor("disabled", (p, s) -> clearFactory.getDisabledComponentInstance());
-		WRFRunnerComponentFactory<Timing> timingFactory = WRFRunnerComponentFactory.getFactory(Timing.class, "json", DisabledTiming::getDisabledTimingInstance);
-		timingFactory.addComponentConstructor("json", JSONTiming::new);
+		WRFRunnerComponentFactory<Timing> timingFactory = WRFRunnerComponentFactory.getFactory(Timing.class, "computed", DisabledTiming::getDisabledTimingInstance);
+		timingFactory.addComponentConstructor("computed", ComputedTiming::new);
 		timingFactory.addComponentConstructor("disabled", (p, s) -> timingFactory.getDisabledComponentInstance());
 	}
 	
