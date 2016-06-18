@@ -7,10 +7,27 @@ import java.util.logging.Logger;
 import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedMap;
 
+/**
+ * Provides a simple common mechanism by which lazy evaluation can implemented for components of {@link Timing}.
+ * 
+ * @author Toberumono
+ * @param <T>
+ *            the parent {@link Scope Scope's} type
+ */
 public abstract class TimingComponent<T extends Scope> extends TimingScope<T> implements Function<Calendar, Calendar> {
 	private final Logger log;
 	private boolean computed;
 	
+	/**
+	 * Constructs a new {@link TimingComponent}.
+	 * 
+	 * @param parameters
+	 *            the parameters that define the component
+	 * @param parent
+	 *            the component's parent {@link Scope}
+	 * @param log
+	 *            the {@link Logger} that the component should use
+	 */
 	public TimingComponent(ScopedMap parameters, T parent, Logger log) {
 		super(parameters, parent);
 		this.log = log;

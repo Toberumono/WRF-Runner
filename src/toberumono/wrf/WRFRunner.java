@@ -327,6 +327,17 @@ public class WRFRunner {
 		return out;
 	}
 	
+	/**
+	 * Simple method to depluralize sections of the configuration file. Primarily a helper method for
+	 * {@link #upgradeConfiguration(JSONObject)}.
+	 * 
+	 * @param configuration
+	 *            a {@link JSONObject} containing the configuration information
+	 * @param createCopy
+	 *            whether a duplicate of {@code configuration} should be made before applying the changes (if {@code true},
+	 *            this method will have no side effects)
+	 * @return a {@link JSONObject} with the relevant sections depluralized
+	 */
 	public JSONObject depluralize(JSONObject configuration, boolean createCopy) {
 		JSONObject out = createCopy ? configuration.deepCopy() : configuration;
 		JSONSystem.renameField(out, new JSONObject(), "paths", "path");

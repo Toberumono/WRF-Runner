@@ -2,6 +2,7 @@ package toberumono.wrf.timing;
 
 import java.util.Calendar;
 
+import toberumono.namelist.parser.Namelist;
 import toberumono.namelist.parser.NamelistSection;
 import toberumono.wrf.WRFRunnerComponentFactory;
 import toberumono.wrf.scope.AbstractScope;
@@ -12,6 +13,12 @@ import toberumono.wrf.timing.duration.NamelistDuration;
 import toberumono.wrf.timing.offset.Offset;
 import toberumono.wrf.timing.rounding.Rounding;
 
+/**
+ * Implementation of {@link Timing} that uses static data from a {@link Namelist} file instead of computing the timing data
+ * at runtime.
+ * 
+ * @author Toberumono
+ */
 public class NamelistTiming extends AbstractScope<Scope> implements Timing {
 	private final Calendar base;
 	private final Calendar start, end;
@@ -20,6 +27,15 @@ public class NamelistTiming extends AbstractScope<Scope> implements Timing {
 	private final Duration duration;
 	private final Clear clear;
 	
+	/**
+	 * Constructs a {@link NamelistTiming} instance using the given time_control section.
+	 * 
+	 * @param timeControl
+	 *            the time_control section of a {@link Namelist} file as a {@link NamelistSection}
+	 * @param parent
+	 *            the parent {@link Scope} (this is not used within the class - it is exclusively for consistency with the
+	 *            tree structure
+	 */
 	public NamelistTiming(NamelistSection timeControl, Scope parent) { //No need for lazy computation - everything is either Disabled or independent
 		super(parent);
 		this.base = Calendar.getInstance();
@@ -71,7 +87,7 @@ public class NamelistTiming extends AbstractScope<Scope> implements Timing {
 	public Duration getDuration() {
 		return duration;
 	}
-
+	
 	@Override
 	public Clear getClear() {
 		return clear;
