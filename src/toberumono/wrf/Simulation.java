@@ -178,15 +178,16 @@ public class Simulation extends AbstractScope<Scope> {
 	
 	private Module loadModule(String name, JSONObject modules)
 			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
-		JSONObject description = (JSONObject) modules.get(name);
+		ScopedMap description = ScopedMap.buildFromJSON((JSONObject) modules.get(name), this); //We use this so that computed fields can be accessed here
 		JSONObject parameters = condenseSubsections(name::equals, configuration, "configuration", Integer.MAX_VALUE);
 		if (!parameters.containsKey(TIMING_FIELD_NAME))
 			parameters.put(TIMING_FIELD_NAME, makeGenericInheriter());
 		parameters.put("name", new JSONString(name));
-		@SuppressWarnings("unchecked") Class<? extends Module> clazz = (Class<? extends Module>) Class.forName(description.get("class").value().toString());
+		ModuleScopedMap moduleParameters = ModuleScopedMap.buildFromJSON(parameters);
+		@SuppressWarnings("unchecked") Class<? extends Module> clazz = (Class<? extends Module>) Class.forName(description.get("class").toString());
 		Constructor<? extends Module> constructor = clazz.getConstructor(ModuleScopedMap.class, Simulation.class);
-		Module m = constructor.newInstance(ModuleScopedMap.buildFromJSON(parameters), this);
-		if (description.containsKey("execute") && !((Boolean) description.get("execute").value()))
+		Module m = constructor.newInstance(moduleParameters, this);
+		if (description.containsKey("execute") && !((Boolean) description.get("execute")))
 			disabledModules.add(m);
 		return m;
 	}

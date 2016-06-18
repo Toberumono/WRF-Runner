@@ -19,12 +19,12 @@ public class ModuleScopedMap extends ScopedMap {
 		return getParent();
 	}
 	
-	public static ScopedMap buildFromJSON(JSONObject base) throws InvalidVariableAccessException {
+	public static ModuleScopedMap buildFromJSON(JSONObject base) throws InvalidVariableAccessException {
 		return buildFromJSON(base, null);
 	}
 	
-	public static ScopedMap buildFromJSON(JSONObject base, Scope parent) throws InvalidVariableAccessException {
-		ScopedMap out = new ModuleScopedMap(parent);
+	public static ModuleScopedMap buildFromJSON(JSONObject base, Scope parent) throws InvalidVariableAccessException {
+		ModuleScopedMap out = new ModuleScopedMap(parent);
 		for (Entry<String, JSONData<?>> entry : base.entrySet()) {
 			if (entry.getValue() instanceof JSONObject)
 				out.put(entry.getKey(), ScopedMap.buildFromJSON((JSONObject) entry.getValue(), out));
