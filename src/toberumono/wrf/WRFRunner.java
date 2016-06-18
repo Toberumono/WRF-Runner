@@ -128,7 +128,7 @@ public class WRFRunner {
 	 *             if an I/O error occurs
 	 */
 	public Simulation createSimulation(Path configurationFile) throws IOException {
-		return Simulation.initSimulation(upgradeConfiguration(configurationFile, (JSONObject) JSONSystem.loadJSON(configurationFile)), configurationFile.toAbsolutePath().normalize().getParent());
+		return Simulation.initSimulation(upgradeConfiguration((JSONObject) JSONSystem.loadJSON(configurationFile)), configurationFile.toAbsolutePath().normalize().getParent());
 	}
 	
 	/**
@@ -167,23 +167,15 @@ public class WRFRunner {
 		}
 	}
 	
-	private VersionNumber getVersionNumber(JSONObject configuration) {
-		return new VersionNumber((String) configuration.get("version").value());
-	}
-	
-	private VersionNumber updateVersionNumber(JSONObject configuration, String newVersion) {
-		configuration.put("version", newVersion);
-		return new VersionNumber((String) configuration.get("version").value());
-	}
-	
-	public JSONObject upgradeConfiguration(Path configurationFile, JSONObject configuration) {
+	public JSONObject upgradeConfiguration(JSONObject configuration) {
 		JSONObject out = configuration.deepCopy();
+		JSONObject general = (JSONObject) out.get("general"), timing = (JSONObject) out.get("timing");
 		VersionNumber version = out.containsKey("version") ? getVersionNumber(out) : updateVersionNumber(out, "1.0.0");
 		
 		if (version.compareTo(new VersionNumber("1.3.0")) < 0) {
 			if (out.containsKey("paths")) {
 				JSONObject paths = (JSONObject) out.get("paths");
-				if (paths.containsKey("wrf")) {
+				if (paths.containsKey("wrf")) { //As of this version, we use the root of the WRF directory
 					String wrf = (String) paths.get("wrf").value();
 					if (wrf.endsWith("/run"))
 						paths.put("wrf", wrf.substring(0, wrf.length() - 4)); //-4 because we want to get rid of the potential trailing '/'
@@ -193,61 +185,63 @@ public class WRFRunner {
 		}
 		
 		if (version.compareTo(new VersionNumber("1.4.0")) < 0) {
-			JSONSystem.renameField((JSONObject) out.get("general"), new JSONNumber<>(15), "max-outputs");
+			JSONSystem.renameField(general, new JSONNumber<>(15), "max-outputs"); //This is renamed to max-kept-outputs in the 1.5.5 section, so this step is just for posterity
 			version = updateVersionNumber(out, "1.4.0");
 		}
 		
 		if (version.compareTo(new VersionNumber("1.5.0")) < 0) {
-			if (out.containsKey("commands"))
+			if (out.containsKey("commands")) //As of this version, commands are automatically determined
 				out.remove("commands");
 			version = updateVersionNumber(out, "1.5.0");
 		}
 		
 		if (version.compareTo(new VersionNumber("1.5.5")) < 0) {
-			JSONSystem.renameField((JSONObject) out.get("general"), new JSONNumber<>(15), "max-outputs", "max-kept-outputs");
+			JSONSystem.renameField(general, new JSONNumber<>(15), "max-outputs", "max-kept-outputs");
 			version = updateVersionNumber(out, "1.5.5");
 		}
 		
 		if (version.compareTo(new VersionNumber("1.5.6")) < 0) {
-			JSONSystem.transferField("use-computed-times", ((JSONObject) out.get("timing")).containsKey("rounding")
-					? ((JSONObject) ((JSONObject) out.get("timing")).get("rounding")).get("enabled") : new JSONBoolean(true), (JSONObject) out.get("timing"));
+			JSONSystem.transferField("use-computed-times", timing.containsKey("rounding") ? ((JSONObject) timing.get("rounding")).get("enabled") : new JSONBoolean(true), timing);
 			version = updateVersionNumber(out, "1.5.6");
 		}
 		
 		if (version.compareTo(new VersionNumber("1.6.1")) < 0) {
-			JSONSystem.transferField("keep-logs", new JSONBoolean(false), (JSONObject) out.get("general"));
+			JSONSystem.transferField("keep-logs", new JSONBoolean(false), general);
 			version = updateVersionNumber(out, "1.6.1");
 		}
 		
 		if (version.compareTo(new VersionNumber("1.7.0")) < 0) {
-			JSONSystem.transferField("always-suffix", new JSONBoolean(false), (JSONObject) ((JSONObject) out.get("general")).get("parallel"), (JSONObject) out.get("general"));
+			JSONSystem.transferField("always-suffix", new JSONBoolean(false), (JSONObject) general.get("parallel"), general);
 			version = updateVersionNumber(out, "1.7.0");
 		}
 		
 		if (version.compareTo(new VersionNumber("2.0.0")) < 0) {
-			if (out.containsKey("general"))
-				((JSONObject) out.get("general")).remove("wait-for-wrf");
+			general.remove("wait-for-wrf");
 			version = updateVersionNumber(out, "2.0.0");
 		}
 		
 		if (version.compareTo(new VersionNumber("2.1.5")) < 0) {
-			String workingPath = configurationFile.toAbsolutePath().getParent().resolve("Working").normalize().toString();
-			JSONString working = new JSONString(workingPath.startsWith("=") || workingPath.startsWith("\\") ? '\\' + workingPath : workingPath);
 			if (out.containsKey("paths")) {
-				JSONSystem.renameField((JSONObject) out.get("paths"), working, "working", "working-directory");
-				JSONSystem.transferField("working-directory", working, (JSONObject) out.get("paths"), (JSONObject) out.get("general"));
-			}
-			else {
-				JSONSystem.transferField("working-directory", working, (JSONObject) out.get("general"));
+				JSONObject paths = (JSONObject) out.get("paths");
+				String working = null;
+				if (paths.containsKey("working"))
+					working = (String) paths.remove("working").value();
+				if (paths.containsKey("working-directory")) //working-directory is the more recent name, so it has priority
+					working = (String) paths.remove("working-directory").value();
+				if (working != null) {
+					if (working.charAt(0) == '=' || working.charAt(0) == '\\') //If so, it might not work with formulae
+						log.log(Level.WARNING, "The working-directory path starts with an '" + working.charAt(0) + "'.  This may cause issues when the value is read later."); //TODO add more information?
+					JSONSystem.transferField("working-directory", new JSONString(working), general); //We use this because it will also ensure that existing values aren't overwritten
+				}
 			}
 			if (((JSONObject) out.get("general")).containsKey("features"))
-				JSONSystem.transferField("cleanup", new JSONBoolean(true), (JSONObject) ((JSONObject) out.get("general")).get("features"), (JSONObject) out.get("general"));
+				JSONSystem.transferField("cleanup", new JSONBoolean(true), (JSONObject) general.get("features"), general);
 			version = updateVersionNumber(out, "2.1.5");
 		}
 		
 		if (version.compareTo(new VersionNumber("2.1.9")) < 0) {
-			if (((JSONObject) out.get("timing")).containsKey("rounding"))
-				JSONSystem.transferField("fraction", new JSONNumber<>(1.0), (JSONObject) ((JSONObject) out.get("timing")).get("rounding"));
+			if (timing.containsKey("rounding"))
+				JSONSystem.transferField("fraction", new JSONNumber<>(1.0), (JSONObject) timing.get("rounding"));
 			version = updateVersionNumber(out, "2.1.9");
 		}
 		
@@ -258,7 +252,7 @@ public class WRFRunner {
 		
 		depluralize(out, false);
 		if (version.compareTo(new VersionNumber("4.0.0")) < 0) {
-			JSONObject general = (JSONObject) out.get("general"), modules = (JSONObject) out.get("module"), timing = (JSONObject) out.get("timing");
+			JSONObject modules = (JSONObject) out.get("module");
 			JSONSystem.transferField("logging-level", new JSONString("INFO"), general);
 			//Build the module section
 			if (general.containsKey("features")) {
@@ -271,10 +265,9 @@ public class WRFRunner {
 				}
 			}
 			else {
-				for (int i = 0; i < DEFAULT_MODULE_NAMES.length; i++) {
+				for (int i = 0; i < DEFAULT_MODULE_NAMES.length; i++)
 					if (!modules.containsKey(DEFAULT_MODULE_NAMES[i]))
 						modules.put(DEFAULT_MODULE_NAMES[i], buildModuleSubsection(true, DEFAULT_MODULE_CLASSES[i], DEFAULT_MODULE_NAMELISTS[i], DEFAULT_MODULE_DEPENDENCIES[i]));
-				}
 			}
 			//Build the timing->global subsection
 			if (!timing.containsKey("global")) {
@@ -309,8 +302,18 @@ public class WRFRunner {
 				JSONSystem.transferField("wrap-timestep", new JSONBoolean(true), (JSONObject) out.get("grib"), (JSONObject) ((JSONObject) out.get("grib")).get("timestep"));
 			if (((JSONObject) ((JSONObject) out.get("grib")).get("timestep")).containsKey("wrap-timestep"))
 				JSONSystem.renameField((JSONObject) ((JSONObject) out.get("grib")).get("timestep"), new JSONBoolean(true), "wrap-timestep", "wrap");
+			version = updateVersionNumber(out, "4.0.0");
 		}
 		return out;
+	}
+	
+	private VersionNumber getVersionNumber(JSONObject configuration) {
+		return new VersionNumber((String) configuration.get("version").value());
+	}
+	
+	private VersionNumber updateVersionNumber(JSONObject configuration, String newVersion) {
+		configuration.put("version", newVersion);
+		return new VersionNumber((String) configuration.get("version").value());
 	}
 	
 	private static final JSONObject buildModuleSubsection(Boolean enabled, String moduleClass, String namelist, String... dependencies) {
