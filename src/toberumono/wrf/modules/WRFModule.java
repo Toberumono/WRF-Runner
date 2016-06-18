@@ -13,7 +13,7 @@ import toberumono.utils.files.RecursiveEraser;
 import toberumono.utils.files.TransferFileWalker;
 import toberumono.wrf.Module;
 import toberumono.wrf.Simulation;
-import toberumono.wrf.scope.ScopedMap;
+import toberumono.wrf.scope.ModuleScopedMap;
 
 import static toberumono.utils.general.ProcessBuilders.*;
 
@@ -35,7 +35,7 @@ public class WRFModule extends Module {
 	 * @param sim
 	 *            the {@link Simulation} for which the {@link WRFModule} is being initialized
 	 */
-	public WRFModule(ScopedMap parameters, Simulation sim) {
+	public WRFModule(ModuleScopedMap parameters, Simulation sim) {
 		super(parameters, sim);
 	}
 	

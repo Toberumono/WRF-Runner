@@ -38,6 +38,7 @@ import toberumono.namelist.parser.NamelistNumber;
 import toberumono.utils.files.TransferFileWalker;
 import toberumono.wrf.scope.AbstractScope;
 import toberumono.wrf.scope.InvalidVariableAccessException;
+import toberumono.wrf.scope.ModuleScopedMap;
 import toberumono.wrf.scope.NamedScopeValue;
 import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedMap;
@@ -183,8 +184,8 @@ public class Simulation extends AbstractScope<Scope> {
 			parameters.put(TIMING_FIELD_NAME, makeGenericInheriter());
 		parameters.put("name", new JSONString(name));
 		@SuppressWarnings("unchecked") Class<? extends Module> clazz = (Class<? extends Module>) Class.forName(description.get("class").value().toString());
-		Constructor<? extends Module> constructor = clazz.getConstructor(ScopedMap.class, Simulation.class);
-		Module m = constructor.newInstance(ScopedMap.buildFromJSON(parameters), this);
+		Constructor<? extends Module> constructor = clazz.getConstructor(ModuleScopedMap.class, Simulation.class);
+		Module m = constructor.newInstance(ModuleScopedMap.buildFromJSON(parameters), this);
 		if (description.containsKey("execute") && !((Boolean) description.get("execute").value()))
 			disabledModules.add(m);
 		return m;

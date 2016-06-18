@@ -14,6 +14,7 @@ import toberumono.namelist.parser.Namelist;
 import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
 import toberumono.wrf.scope.AbstractScope;
+import toberumono.wrf.scope.ModuleScopedMap;
 import toberumono.wrf.scope.NamedScopeValue;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.scope.ScopedList;
@@ -30,10 +31,10 @@ public abstract class Module extends AbstractScope<Simulation> {
 	private Namelist namelist;
 	private List<Module> dependencies;
 	
-	public Module(ScopedMap parameters, Simulation sim) {
+	public Module(ModuleScopedMap parameters, Simulation sim) {
 		super(sim);
 		this.parameters = parameters;
-		this.parameters.setParent(getParent());
+		this.parameters.setParent(this);
 		namelistPath = null;
 		namelist = null;
 		timing = null;

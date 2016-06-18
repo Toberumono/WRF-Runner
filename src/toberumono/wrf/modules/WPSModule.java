@@ -11,7 +11,7 @@ import toberumono.namelist.parser.NamelistValueList;
 import toberumono.utils.files.RecursiveEraser;
 import toberumono.wrf.Module;
 import toberumono.wrf.Simulation;
-import toberumono.wrf.scope.ScopedMap;
+import toberumono.wrf.scope.ModuleScopedMap;
 
 import static toberumono.utils.general.ProcessBuilders.*;
 
@@ -30,7 +30,7 @@ public class WPSModule extends Module {
 	 * @param sim
 	 *            the {@link Simulation} for which the {@link WPSModule} is being initialized
 	 */
-	public WPSModule(ScopedMap parameters, Simulation sim) {
+	public WPSModule(ModuleScopedMap parameters, Simulation sim) {
 		super(parameters, sim);
 	}
 	

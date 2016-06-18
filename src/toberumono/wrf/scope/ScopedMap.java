@@ -31,7 +31,7 @@ public class ScopedMap implements Scope, Map<String, Object> {
 	}
 	
 	private Object processOutput(String name, Object e) {
-		return e instanceof ConsCell ? ScopedFormulaProcessor.process((ConsCell) e, this, name).getCar() : e;
+		return e instanceof ConsCell ? ScopedFormulaProcessor.process((ConsCell) e, getFormulaScope(), name).getCar() : e;
 	}
 	
 	private Object processInput(Object e) {
@@ -43,6 +43,15 @@ public class ScopedMap implements Scope, Map<String, Object> {
 				return str.substring(1);
 		}
 		return e;
+	}
+	
+	/**
+	 * This method is used to allow subclasses to change what {@link Scope} the {@link ScopedMap} uses in its computations.
+	 * 
+	 * @return the {@link Scope} that the {@link ScopedMap} is to use in its computations
+	 */
+	protected Scope getFormulaScope() {
+		return this;
 	}
 	
 	@Override

@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import toberumono.wrf.Module;
 import toberumono.wrf.Simulation;
 import toberumono.wrf.WRFRunnerComponentFactory;
+import toberumono.wrf.scope.ModuleScopedMap;
 import toberumono.wrf.scope.NamedScopeValue;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.Timing;
@@ -46,7 +47,7 @@ public class GRIBModule extends Module { //TODO add an intermediate scope for ti
 	 * @param sim
 	 *            the {@link Simulation} for which the {@link GRIBModule} is being initialized
 	 */
-	public GRIBModule(ScopedMap parameters, Simulation sim) {
+	public GRIBModule(ModuleScopedMap parameters, Simulation sim) {
 		super(parameters, sim);
 		url = null;
 		incremented = null;
