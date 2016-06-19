@@ -53,14 +53,14 @@ public class BucketRounding extends Rounding {
 				//TODO implement existence checks and enforce Integer type requirement
 				final int step = ((Number) arguments.get(name + "-step")).intValue();
 				final int offset = arguments.containsKey(name + "-offset") ? ((Number) arguments.get(name + "-offset")).intValue() : 0;
-				roundingFunctions.put(TIMING_FIELDS.get(i), inp -> Numbers.bucketRounding(inp, rm, step, offset));
+				roundingFunctions.put(TIMING_FIELD_IDS.get(i), inp -> Numbers.bucketRounding(inp, rm, step, offset));
 			}
 			else if (value instanceof ScopedList) { //Explicit buckets
 				ScopedList temp = (ScopedList) value;
 				int[] buckets = new int[temp.size()];
 				for (int b = 0; b < buckets.length; b++)
 					buckets[b] = ((Number) temp.get(b)).intValue(); //TODO enforce Integer type requirement
-				roundingFunctions.put(TIMING_FIELDS.get(i), inp -> Numbers.bucketRounding(inp, rm, buckets));
+				roundingFunctions.put(TIMING_FIELD_IDS.get(i), inp -> Numbers.bucketRounding(inp, rm, buckets));
 			}
 			else if (value instanceof ScopedMap) {
 				ScopedMap temp = (ScopedMap) value;
@@ -71,19 +71,19 @@ public class BucketRounding extends Rounding {
 					int[] buckets = new int[bucks.size()];
 					for (int b = 0; b < buckets.length; b++)
 						buckets[b] = ((Number) bucks.get(b)).intValue(); //TODO enforce Integer type requirement
-					roundingFunctions.put(TIMING_FIELDS.get(i), inp -> Numbers.bucketRounding(inp, rm, buckets));
+					roundingFunctions.put(TIMING_FIELD_IDS.get(i), inp -> Numbers.bucketRounding(inp, rm, buckets));
 				}
 				else {
 					//TODO implement existence checks and enforce Integer type requirement
 					final int step = ((Number) arguments.get("step")).intValue();
 					final int offset = arguments.containsKey("offset") ? ((Number) arguments.get("offset")).intValue() : 0;
-					roundingFunctions.put(TIMING_FIELDS.get(i), inp -> Numbers.bucketRounding(inp, orm, step, offset));
+					roundingFunctions.put(TIMING_FIELD_IDS.get(i), inp -> Numbers.bucketRounding(inp, orm, step, offset));
 				}
 			}
 			else if (value instanceof Number) {
 				final int step = ((Number) value).intValue();
 				final int offset = arguments.containsKey(name + "-offset") ? ((Number) arguments.get(name + "-offset")).intValue() : 0;
-				roundingFunctions.put(TIMING_FIELDS.get(i), inp -> Numbers.bucketRounding(inp, rm, step, offset));
+				roundingFunctions.put(TIMING_FIELD_IDS.get(i), inp -> Numbers.bucketRounding(inp, rm, step, offset));
 			}
 		}
 		return roundingFunctions;

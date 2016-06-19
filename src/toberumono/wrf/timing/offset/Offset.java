@@ -7,12 +7,12 @@ import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.TimingComponent;
 
-import static toberumono.wrf.SimulationConstants.LOGGER_ROOT;
+import static toberumono.wrf.SimulationConstants.SIMULATION_LOGGER_ROOT;
 
 public abstract class Offset extends TimingComponent<Scope> {
 	
 	public Offset(ScopedMap parameters, Scope parent) {
-		super(parameters, parent, Logger.getLogger(LOGGER_ROOT + ".Offset"));
+		super(parameters, parent, Logger.getLogger(SIMULATION_LOGGER_ROOT + ".Offset"));
 	}
 	
 	/**

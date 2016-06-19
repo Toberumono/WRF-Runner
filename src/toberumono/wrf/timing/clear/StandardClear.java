@@ -22,7 +22,7 @@ public class StandardClear extends Clear {
 	protected Calendar doApply(Calendar base) {
 		Calendar out = (Calendar) base.clone();
 		for (int i = 0; i < keep; i++)
-			out.set(TIMING_FIELDS.get(i), values[i] == -1 ? out.getActualMinimum(TIMING_FIELDS.get(i)) : values[i]);
+			out.set(TIMING_FIELD_IDS.get(i), values[i] == -1 ? out.getActualMinimum(TIMING_FIELD_IDS.get(i)) : values[i]);
 		return out;
 	}
 	

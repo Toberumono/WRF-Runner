@@ -18,7 +18,7 @@ public class StandardDuration extends Duration {
 	protected Calendar doApply(Calendar base) {
 		Calendar out = (Calendar) base.clone();
 		for (int i = 0; i < duration.length; i++)
-			out.add(TIMING_FIELDS.get(i), duration[i]);
+			out.add(TIMING_FIELD_IDS.get(i), duration[i]);
 		return out;
 	}
 

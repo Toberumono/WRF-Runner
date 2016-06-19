@@ -24,16 +24,16 @@ public class FractionalRounding extends Rounding {
 		//First, we handle the diff on the field that the user is rounding on
 		int rp = roundingPoint;
 		if (diff.equals("next"))
-			out.add(TIMING_FIELDS.get(rp), 1);
+			out.add(TIMING_FIELD_IDS.get(rp), 1);
 		else if (diff.equals("previous"))
-			out.add(TIMING_FIELDS.get(rp), -1);
+			out.add(TIMING_FIELD_IDS.get(rp), -1);
 		if (fraction < 1.0) { //If they want to keep some portion of the field before this, then fraction will be less than 1.0.
 			--rp;
-			int offset = 1 - out.getActualMinimum(TIMING_FIELDS.get(rp));
-			out.set(TIMING_FIELDS.get(rp), (int) Numbers.semifloor(out.getActualMaximum(TIMING_FIELDS.get(rp)) + offset, fraction, out.get(TIMING_FIELDS.get(rp))));
+			int offset = 1 - out.getActualMinimum(TIMING_FIELD_IDS.get(rp));
+			out.set(TIMING_FIELD_IDS.get(rp), (int) Numbers.semifloor(out.getActualMaximum(TIMING_FIELD_IDS.get(rp)) + offset, fraction, out.get(TIMING_FIELD_IDS.get(rp))));
 		}
 		for (int i = 0; i < rp; i++) //The logic here is that if we are rounding to something, then we want to set everything before it to 0.
-			out.set(TIMING_FIELDS.get(i), out.getActualMinimum(TIMING_FIELDS.get(i)));
+			out.set(TIMING_FIELD_IDS.get(i), out.getActualMinimum(TIMING_FIELD_IDS.get(i)));
 		return out;
 	}
 	

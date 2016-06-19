@@ -40,12 +40,12 @@ public abstract class Module extends AbstractScope<Simulation> {
 		timing = null;
 		dependencies = null;
 		name = (String) parameters.get("name");
-		logger = Logger.getLogger(LOGGER_ROOT + ".module." + getName());
+		logger = Logger.getLogger(SIMULATION_LOGGER_ROOT + ".module." + getName());
 		module = (ScopedMap) parameters.get("module");
 	}
 	
 	protected Timing parseTiming(ScopedMap timing) {
-		return WRFRunnerComponentFactory.generateComponent(Timing.class, timing, getSim().getGlobalTiming());
+		return WRFRunnerComponentFactory.generateComponent(Timing.class, timing, getSim().getTiming());
 	}
 	
 	protected Namelist ingestNamelist() throws IOException {

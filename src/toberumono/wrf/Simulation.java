@@ -68,14 +68,14 @@ public class Simulation extends AbstractScope<Scope> {
 		this.configuration = configuration;
 		this.general = ScopedMap.buildFromJSON(general, this);
 		this.timing = ScopedMap.buildFromJSON(timing, this);
-		logger = Logger.getLogger(LOGGER_ROOT);
+		logger = Logger.getLogger(SIMULATION_LOGGER_ROOT);
 		logger.setLevel(Level.parse(((String) general.get("logging-level").value()).toUpperCase()));
 		parallel = (ScopedMap) getGeneral().get("parallel");
 		source = new ScopedMap(this);
 		active = new ScopedMap(this);
 		disabledModules = new HashSet<>();
 		this.modules = Collections.unmodifiableMap(parseModules(modules, paths));
-		globalTiming = ((Boolean) getTiming().get("use-computed-times")) ? new ComputedTiming((ScopedMap) getTiming().get("global"), base, this)
+		globalTiming = ((Boolean) getTimingMap().get("use-computed-times")) ? new ComputedTiming((ScopedMap) getTimingMap().get("global"), base, this)
 				: new NamelistTiming(getModule("wrf").getNamelist().get("time_control"), this);
 		working = constructWorkingDirectory(getResolver().getFileSystem().getPath(getGeneral().get("working-directory").toString()), (Boolean) general.get("always-suffix").value());
 		for (String name : this.modules.keySet())
@@ -87,12 +87,12 @@ public class Simulation extends AbstractScope<Scope> {
 	}
 
 	@NamedScopeValue("timing")
-	public Timing getGlobalTiming() {
+	public Timing getTiming() {
 		return globalTiming;
 	}
 
 	@NamedScopeValue("timing-map")
-	public ScopedMap getTiming() {
+	public ScopedMap getTimingMap() {
 		return timing;
 	}
 	
@@ -139,7 +139,7 @@ public class Simulation extends AbstractScope<Scope> {
 	public Path constructWorkingDirectory(Path workingRoot, boolean always_suffix) throws IOException {
 		Path active = Files.createDirectories(workingRoot).resolve("active"), root;
 		try (FileChannel channel = FileChannel.open(active, StandardOpenOption.CREATE, StandardOpenOption.WRITE); FileLock lock = channel.lock()) {
-			String name = makeWPSDateString(getGlobalTiming().getStart()).replaceAll(":", "_"); //Having colons in the path messes up WRF, so... Underscores.
+			String name = makeWPSDateString(getTiming().getStart()).replaceAll(":", "_"); //Having colons in the path messes up WRF, so... Underscores.
 			try (Stream<Path> children = Files.list(workingRoot)) {
 				int count = children.filter(p -> p.getFileName().toString().startsWith(name)).toArray().length;
 				root = Files.createDirectories(workingRoot.resolve(always_suffix || count > 0 ? name + "+" + (count + 1) : name));

@@ -29,10 +29,10 @@ public class StandardOffset extends Offset {
 		Calendar out = (Calendar) base.clone();
 		if (doesWrap())
 			for (int i = 0; i < offsets.length; i++)
-				out.add(TIMING_FIELDS.get(i), offsets[i]);
+				out.add(TIMING_FIELD_IDS.get(i), offsets[i]);
 		else
 			for (int i = 0; i < offsets.length; i++)
-				out.set(TIMING_FIELDS.get(i), out.get(TIMING_FIELDS.get(i)) + offsets[i]);
+				out.set(TIMING_FIELD_IDS.get(i), out.get(TIMING_FIELD_IDS.get(i)) + offsets[i]);
 		return out;
 	}
 	

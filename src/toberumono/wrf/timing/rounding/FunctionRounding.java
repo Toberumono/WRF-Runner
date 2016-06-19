@@ -22,9 +22,9 @@ public class FunctionRounding extends Rounding {
 		Calendar out = (Calendar) base.clone();
 		ScopedMap manufacturedScope = new ScopedMap(this);
 		for (int i = 0; i < functions.length; i++)
-			manufacturedScope.put(TIMING_FIELD_NAMES.get(i), out.get(TIMING_FIELDS.get(i)));
+			manufacturedScope.put(TIMING_FIELD_NAMES.get(i), out.get(TIMING_FIELD_IDS.get(i)));
 		for (int i = 0; i < functions.length; i++)
-			out.set(TIMING_FIELDS.get(i), ((Number) process(functions[i], manufacturedScope, TIMING_FIELD_NAMES.get(i)).getCar()).intValue());
+			out.set(TIMING_FIELD_IDS.get(i), ((Number) process(functions[i], manufacturedScope, TIMING_FIELD_NAMES.get(i)).getCar()).intValue());
 		return out;
 	}
 	

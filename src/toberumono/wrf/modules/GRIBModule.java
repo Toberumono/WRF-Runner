@@ -30,7 +30,7 @@ import toberumono.wrf.timing.Timing;
  * 
  * @author Toberumono
  */
-public class GRIBModule extends Module { //TODO add an intermediate scope for timing
+public class GRIBModule extends Module {
 	private static final ExecutorService pool = Executors.newWorkStealingPool(12);
 	private static final int[] calendarOffsetFields = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
 	private String url;
@@ -109,7 +109,7 @@ public class GRIBModule extends Module { //TODO add an intermediate scope for ti
 	public void execute() throws IOException, InterruptedException {
 		int[] offsets = new int[4], steps = new int[4];
 		List<Future<Boolean>> downloads = new ArrayList<>();
-		Calendar constant = getTiming().getStart(), test = (Calendar) getSim().getGlobalTiming().getStart().clone(), end = getSim().getGlobalTiming().getEnd(),
+		Calendar constant = getTiming().getStart(), test = (Calendar) getSim().getTiming().getStart().clone(), end = getSim().getTiming().getEnd(),
 				increment = (Calendar) getIncrementedTiming().getStart().clone();
 		for (int i = 0; i < offsets.length; i++)
 			offsets[i] = increment.get(calendarOffsetFields[i]);
@@ -143,9 +143,8 @@ public class GRIBModule extends Module { //TODO add an intermediate scope for ti
 	
 	/**
 	 * Takes a URL with both the normal Java date/time markers (see
-	 * <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html#dt">Date/Time syntax</a>) and offset
-	 * markers. The offset markers are <i>almost identical</i> in syntax to the standard Java date/time markers, but they use
-	 * 'i' instead of 't'.<br>
+	 * <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html#dt">Date/Time syntax</a>) and offset markers. The offset markers are
+	 * <i>almost identical</i> in syntax to the standard Java date/time markers, but they use 'i' instead of 't'.<br>
 	 * Differences:
 	 * <ul>
 	 * <li>%ii --&gt; minutes without padding</li>
@@ -159,8 +158,7 @@ public class GRIBModule extends Module { //TODO add an intermediate scope for ti
 	 * @param increment
 	 *            the {@link Calendar} containing the incremented time - this changes across URLs
 	 * @param wrapTimestep
-	 *            whether the increment {@link Calendar} or the offsets should be used (if false, the time fields will not
-	 *            wrap)
+	 *            whether the increment {@link Calendar} or the offsets should be used (if false, the time fields will not wrap)
 	 * @param years
 	 *            the year offset from <tt>start</tt>
 	 * @param months
