@@ -12,6 +12,11 @@ import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.offset.Offset;
 import toberumono.wrf.timing.rounding.Rounding;
 
+/**
+ * An implementation of {@link Timing} wherein every value is computed.
+ * 
+ * @author Toberumono
+ */
 public class ComputedTiming extends TimingScope implements Timing {
 	private final ReentrantLock computationLock;
 	
@@ -22,10 +27,33 @@ public class ComputedTiming extends TimingScope implements Timing {
 	private Clear clear;
 	private boolean appliedClear;
 	
+	/**
+	 * Constructs a {@link ComputedTiming} instance without an explicitly defined base {@link Calendar}. This is the general use constructor.
+	 * 
+	 * @param parameters
+	 *            the parameters that define the {@link ComputedTiming} instance as a {@link ScopedMap}
+	 * @param parent
+	 *            the {@link ComputedTiming} instance's parent {@link Scope}
+	 */
+	public ComputedTiming(ScopedMap parameters, Scope parent) {
+		this(parameters, null, parent);
+	}
+	
+	/**
+	 * Constructs a {@link ComputedTiming} instance with an (optionally) explicitly defined base {@link Calendar}. This is generally only used by
+	 * {@link Simulation} during the initialization process.
+	 * 
+	 * @param parameters
+	 *            the parameters that define the {@link ComputedTiming} instance as a {@link ScopedMap}
+	 * @param base
+	 *            the base {@link Calendar} for the {@link ComputedTiming} instance
+	 * @param parent
+	 *            the {@link ComputedTiming} instance's parent {@link Scope}
+	 */
 	public ComputedTiming(ScopedMap parameters, Calendar base, Scope parent) {
 		super(parameters, parent);
 		if (!(parent instanceof Timing))
-			Objects.requireNonNull(base, "The base Calendar cannot be null");
+			Objects.requireNonNull(base, "The base Calendar cannot be null if the parent is not an instance of Timing");
 		computationLock = new ReentrantLock();
 		start = end = null;
 		offset = null;
@@ -34,10 +62,6 @@ public class ComputedTiming extends TimingScope implements Timing {
 		clear = null;
 		appliedClear = false;
 		this.base = base;
-	}
-	
-	public ComputedTiming(ScopedMap parameters, Scope parent) {
-		this(parameters, null, parent);
 	}
 	
 	@Override
