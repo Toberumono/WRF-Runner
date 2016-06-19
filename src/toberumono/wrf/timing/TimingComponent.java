@@ -11,10 +11,8 @@ import toberumono.wrf.scope.ScopedMap;
  * Provides a simple common mechanism by which lazy evaluation can implemented for components of {@link Timing}.
  * 
  * @author Toberumono
- * @param <T>
- *            the parent {@link Scope Scope's} type
  */
-public abstract class TimingComponent<T extends Scope> extends TimingScope<T> implements Function<Calendar, Calendar> {
+public abstract class TimingComponent extends TimingScope implements Function<Calendar, Calendar> {
 	private final Logger log;
 	private boolean computed;
 	
@@ -28,7 +26,7 @@ public abstract class TimingComponent<T extends Scope> extends TimingScope<T> im
 	 * @param log
 	 *            the {@link Logger} that the component should use
 	 */
-	public TimingComponent(ScopedMap parameters, T parent, Logger log) {
+	public TimingComponent(ScopedMap parameters, Scope parent, Logger log) {
 		super(parameters, parent);
 		this.log = log;
 	}

@@ -12,7 +12,7 @@ import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.offset.Offset;
 import toberumono.wrf.timing.rounding.Rounding;
 
-public class ComputedTiming extends TimingScope<Scope> implements Timing {
+public class ComputedTiming extends TimingScope implements Timing {
 	private final ReentrantLock computationLock;
 	
 	private Calendar base, start, end;

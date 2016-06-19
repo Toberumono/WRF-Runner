@@ -8,7 +8,7 @@ import toberumono.wrf.timing.TimingComponent;
 
 import static toberumono.wrf.SimulationConstants.SIMULATION_LOGGER_ROOT;
 
-public abstract class Duration extends TimingComponent<Scope> {
+public abstract class Duration extends TimingComponent {
 	
 	public Duration(ScopedMap parameters, Scope parent) {
 		super(parameters, parent, Logger.getLogger(SIMULATION_LOGGER_ROOT + ".Duration"));

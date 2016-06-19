@@ -6,10 +6,10 @@ import toberumono.wrf.scope.NamedScopeValue;
 import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedMap;
 
-public class TimingScope<T extends Scope> extends AbstractScope<T> {
+public class TimingScope extends AbstractScope<Scope> {
 	private final ScopedMap parameters;
 
-	public TimingScope(ScopedMap parameters, T parent) {
+	public TimingScope(ScopedMap parameters, Scope parent) {
 		super(parent);
 		this.parameters = parameters;
 	}

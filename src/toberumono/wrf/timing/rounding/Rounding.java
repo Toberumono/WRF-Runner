@@ -8,8 +8,8 @@ import toberumono.wrf.timing.TimingComponent;
 
 import static toberumono.wrf.SimulationConstants.SIMULATION_LOGGER_ROOT;
 
-public abstract class Rounding extends TimingComponent<Scope> {
 
+public abstract class Rounding extends TimingComponent {
 	public Rounding(ScopedMap parameters, Scope parent) {
 		super(parameters, parent, Logger.getLogger(SIMULATION_LOGGER_ROOT + ".Rounding"));
 	}
