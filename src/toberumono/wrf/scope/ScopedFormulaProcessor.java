@@ -133,22 +133,12 @@ public class ScopedFormulaProcessor {
 			lexer.addRule("string\"", new BasicRule(Pattern.compile("\"(([^\"\\\\]+|\\\\['\\\\tbnrf\"])*)\""), (l, s, m) -> new ConsCell(m.group(1), STRING)));
 			lexer.addRule("inherit", new BasicRule(Pattern.compile("inherit", Pattern.LITERAL), (l, s, m) -> new ConsCell(m.group(), KEYWORD)));
 			lexer.addRule("compare", new BasicRule(Pattern.compile("compare", Pattern.LITERAL), (l, s, m) -> new ConsCell(compare, OPERATOR)));
+			lexer.addRule("boolean", new BasicRule(Pattern.compile("(true|false)"), (l, s, m) -> new ConsCell(m.group().equals("true"), BOOLEAN)));
 			lexer.addRule("accessor", new BasicRule(Pattern.compile(".", Pattern.LITERAL), (l, s, m) -> new ConsCell(accessor, ACCESSOR)));
 			lexer.addRule("variable", new BasicRule(Pattern.compile("([a-zA-Z_]\\w*)"), (l, s, m) -> new ConsCell(m.group(), VARIABLE)));
 			lexer.addRule("integer", new BasicRule(NumberPatterns.SIGNLESS_INTEGER, (l, s, m) -> new ConsCell(Integer.parseInt(m.group()), NUMBER)));
 			lexer.addRule("double", new BasicRule(NumberPatterns.SIGNLESS_DOUBLE, (l, s, m) -> new ConsCell(Double.parseDouble(m.group()), NUMBER)));
-			lexer.addRule("addition", new BasicRule(Pattern.compile("+", Pattern.LITERAL), (l, s, m) -> new ConsCell(addition, OPERATOR)));
-			lexer.addRule("subtraction", new BasicRule(Pattern.compile("-", Pattern.LITERAL), (l, s, m) -> new ConsCell(subtraction, OPERATOR)));
-			lexer.addRule("multiplication", new BasicRule(Pattern.compile("*", Pattern.LITERAL), (l, s, m) -> new ConsCell(multiplication, OPERATOR)));
-			lexer.addRule("division", new BasicRule(Pattern.compile("/", Pattern.LITERAL), (l, s, m) -> new ConsCell(division, OPERATOR)));
-			lexer.addRule("modulus", new BasicRule(Pattern.compile("%", Pattern.LITERAL), (l, s, m) -> new ConsCell(modulus, OPERATOR)));
-			lexer.addRule("exponent", new BasicRule(Pattern.compile("**", Pattern.LITERAL), (l, s, m) -> new ConsCell(exponent, OPERATOR)));
-			lexer.addRule("<", new BasicRule(Pattern.compile("<", Pattern.LITERAL), (l, s, m) -> new ConsCell(lt, OPERATOR)));
-			lexer.addRule("<=", new BasicRule(Pattern.compile("<=", Pattern.LITERAL), (l, s, m) -> new ConsCell(lteq, OPERATOR)));
-			lexer.addRule(">", new BasicRule(Pattern.compile(">", Pattern.LITERAL), (l, s, m) -> new ConsCell(gt, OPERATOR)));
-			lexer.addRule(">=", new BasicRule(Pattern.compile(">=", Pattern.LITERAL), (l, s, m) -> new ConsCell(gteq, OPERATOR)));
-			lexer.addRule("==", new BasicRule(Pattern.compile("==", Pattern.LITERAL), (l, s, m) -> new ConsCell(eq, OPERATOR)));
-			lexer.addRule("!=", new BasicRule(Pattern.compile("!=", Pattern.LITERAL), (l, s, m) -> new ConsCell(neq, OPERATOR)));
+			addOperators(addition, subtraction, multiplication, division, modulus, exponent, lt, lteq, gt, gteq, eq, neq);
 			lexer.addDescender("parentheses", new BasicDescender("(", ")", (l, s, m) -> s.pushLanguage(l.getLanguage()), (l, s, m) -> { //We have to reset the language here
 				s.popLanguage();
 				return new ConsCell(m, PARENTHESES);
@@ -208,6 +198,13 @@ public class ScopedFormulaProcessor {
 		}
 	}
 	
+	/*
+	 * This should ONLY be called from within getLexer()
+	 */
+	private static void addOperators(Operator... operators) {
+		for (Operator operator : operators)
+			lexer.addRule(operator.getSymbol(), new BasicRule(Pattern.compile(operator.getSymbol(), Pattern.LITERAL), (l, s, m) -> new ConsCell(operator, OPERATOR)));
+	}
 	public static ConsCell preProcess(String input) {
 		return getLexer().lex(input);
 	}
