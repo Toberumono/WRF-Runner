@@ -41,7 +41,7 @@ public class ScopedFormulaProcessor {
 	private static final ConsType KEYWORD = new BasicConsType("keyword");
 	
 	private static Operator addition, subtraction, multiplication, division, modulus, exponent, accessor;
-	private static Operator array, ternary, colon, compare, lt, lteq, gt, gteq, eq, neq;
+	private static Operator array, ternary, colon, compare, lt, lteq, gt, gteq, eq, neq, bitwiseAnd, bitwiseOr, bitwiseXor;
 	
 	private static BasicLexer lexer = null;
 	
@@ -102,6 +102,9 @@ public class ScopedFormulaProcessor {
 					return t == null ? t != u : !t.equals(u);
 				}
 			};
+			bitwiseAnd = new BitwiseOperator(10, "&", BigInteger::and, Boolean::logicalAnd);
+			bitwiseOr = new BitwiseOperator(11, "|", BigInteger::or, Boolean::logicalOr);
+			bitwiseXor = new BitwiseOperator(12, "^", BigInteger::xor, Boolean::logicalXor);
 			ternary = new Operator(1, "ternary") { //Although ternary is technically evaluated after all other operators, this will work because of how the arguments to ternary are evaluated
 				@Override
 				public Object apply(Object t, Object u) {
@@ -138,7 +141,7 @@ public class ScopedFormulaProcessor {
 			lexer.addRule("variable", new BasicRule(Pattern.compile("([a-zA-Z_]\\w*)"), (l, s, m) -> new ConsCell(m.group(), VARIABLE)));
 			lexer.addRule("integer", new BasicRule(NumberPatterns.SIGNLESS_INTEGER, (l, s, m) -> new ConsCell(Integer.parseInt(m.group()), NUMBER)));
 			lexer.addRule("double", new BasicRule(NumberPatterns.SIGNLESS_DOUBLE, (l, s, m) -> new ConsCell(Double.parseDouble(m.group()), NUMBER)));
-			addOperators(addition, subtraction, multiplication, division, modulus, exponent, lt, lteq, gt, gteq, eq, neq);
+			addOperators(addition, subtraction, multiplication, division, modulus, exponent, lt, lteq, gt, gteq, eq, neq, bitwiseAnd, bitwiseOr, bitwiseXor);
 			lexer.addDescender("parentheses", new BasicDescender("(", ")", (l, s, m) -> s.pushLanguage(l.getLanguage()), (l, s, m) -> { //We have to reset the language here
 				s.popLanguage();
 				return new ConsCell(m, PARENTHESES);
@@ -450,5 +453,29 @@ class RelationalOperator extends Operator {
 		if (t instanceof Number && u instanceof Number)
 			return sign.apply(ScopedFormulaProcessor.compareNumbers((Number) t, (Number) u));
 		throw makeInvalidArgumentCombinationException(t, u);
+	}
+}
+
+class BitwiseOperator extends Operator {
+	private final BinaryOperator<BigInteger> intOperation;
+	private final BinaryOperator<Boolean> booleanOperation;
+	
+	public BitwiseOperator(int precedence, String symbol, BinaryOperator<BigInteger> intOperation, BinaryOperator<Boolean> booleanOperation) {
+		super(precedence, symbol);
+		this.intOperation = intOperation;
+		this.booleanOperation = booleanOperation;
+	}
+	
+	@Override
+	public Object apply(Object t, Object u) {
+		if (t instanceof Character)
+			t = Integer.valueOf((Character) t);
+		if (u instanceof Character)
+			u = Integer.valueOf((Character) u);
+		if (t instanceof Number && u instanceof Number && ScopedFormulaProcessor.isMathematicalInteger((Number) t) && ScopedFormulaProcessor.isMathematicalInteger((Number) u))
+			return intOperation.apply(BigInteger.valueOf(((Number) t).longValue()), BigInteger.valueOf(((Number) u).longValue())); //TODO should we convert the value back to autoboxable types?
+		if (!(t instanceof Boolean) || !(u instanceof Boolean))
+			throw makeInvalidArgumentCombinationException(t, u);
+		return booleanOperation.apply((Boolean) t, (Boolean) u);
 	}
 }
