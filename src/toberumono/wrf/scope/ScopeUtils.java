@@ -26,7 +26,7 @@ public class ScopeUtils {
 	public static ScopedMap makeScopeFromCalendar(Calendar base, Scope parent) {
 		ScopedMap out = new ScopedMap(parent);
 		for (int i = 0; i < TIMING_FIELD_NAMES.size(); i++)
-			out.put(TIMING_FIELD_NAMES.get(i), base.get(TIMING_FIELDS.get(i)));
+			out.put(TIMING_FIELD_NAMES.get(i), base.get(TIMING_FIELD_IDS.get(i)));
 		return out;
 	}
 }

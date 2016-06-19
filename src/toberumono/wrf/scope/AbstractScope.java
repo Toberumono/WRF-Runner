@@ -29,34 +29,35 @@ public class AbstractScope<T extends Scope> implements Scope {
 	public AbstractScope(T parent) {
 		this.parent = parent;
 		namedItems = new HashMap<>();
-		for (Field f : getClass().getFields()) {
-			NamedScopeValue nsv = f.getAnnotation(NamedScopeValue.class);
-			if (nsv != null) {
-				f.setAccessible(true);
-				namedItems.put(nsv.value(), () -> f.get(this));
-			}
+		for (Field f : getClass().getFields())
+			addFieldIfNamed(f);
+		for (Field f : getClass().getDeclaredFields()) //Second pass is to allow names declared in the current type to override those declared in its supertypes
+			addFieldIfNamed(f);
+		for (Method m : getClass().getMethods())
+			addMethodIfNamed(m);
+		for (Method m : getClass().getDeclaredMethods()) //Second pass is to allow names declared in the current type to override those declared in its supertypes
+			addMethodIfNamed(m);
+	}
+	
+	private void addFieldIfNamed(Field f) {
+		NamedScopeValue nsv = f.getAnnotation(NamedScopeValue.class);
+		if (nsv != null) {
+			f.setAccessible(true);
+			addNamedValue(nsv, () -> f.get(this));
 		}
-		for (Field f : getClass().getDeclaredFields()) {
-			NamedScopeValue nsv = f.getAnnotation(NamedScopeValue.class);
-			if (nsv != null) {
-				f.setAccessible(true);
-				namedItems.put(nsv.value(), () -> f.get(this));
-			}
+	}
+	
+	private void addMethodIfNamed(Method m) {
+		NamedScopeValue nsv = m.getAnnotation(NamedScopeValue.class);
+		if (nsv != null) {
+			m.setAccessible(true);
+			addNamedValue(nsv, () -> m.invoke(this));
 		}
-		for (Method m : getClass().getMethods()) {
-			NamedScopeValue nsv = m.getAnnotation(NamedScopeValue.class);
-			if (nsv != null) {
-				m.setAccessible(true);
-				namedItems.put(nsv.value(), () -> m.invoke(this));
-			}
-		}
-		for (Method m : getClass().getDeclaredMethods()) {
-			NamedScopeValue nsv = m.getAnnotation(NamedScopeValue.class);
-			if (nsv != null) {
-				m.setAccessible(true);
-				namedItems.put(nsv.value(), () -> m.invoke(this));
-			}
-		}
+	}
+	
+	private void addNamedValue(NamedScopeValue nsv, ExceptedSupplier<Object> supplier) {
+		for (String name : nsv.value())
+			namedItems.put(name, supplier);
 	}
 	
 	@Override
