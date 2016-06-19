@@ -121,12 +121,12 @@ public class ScopedList implements Scope, List<Object> {
 		return oldSize != size();
 	}
 	
-	/**
-	 * This operation is not supported.
-	 */
 	@Override
-	public boolean retainAll(Collection<?> c) throws UnsupportedOperationException {
-		throw new UnsupportedOperationException();
+	public boolean retainAll(Collection<?> c) {
+		Collection<Object> processed = new ArrayList<>();
+		for (Object o : c)
+			processed.add(processInput(o));
+		return backing.retainAll(processed);
 	}
 	
 	@Override
