@@ -57,7 +57,6 @@ public class GRIBModule extends Module {
 		ScopedMap grib = (ScopedMap) parameters.get("configuration");
 		url = (String) grib.get("url");
 		timestep = (ScopedMap) grib.get("timestep");
-		wrap = (Boolean) timestep.get("wrap");
 		lock = new ReentrantLock();
 	}
 	
@@ -105,6 +104,15 @@ public class GRIBModule extends Module {
 	@Override
 	public void updateNamelist() throws IOException, InterruptedException {/* This module has no Namelist */}
 	
+	private boolean shouldWrap() {
+		if (wrap == null) //First time is so that we can avoid unnecessary synchronization
+			synchronized (timestep) {
+				if (wrap == null)
+					wrap = (Boolean) timestep.get("wrap");
+			}
+		return wrap;
+	}
+	
 	@Override
 	public void execute() throws IOException, InterruptedException {
 		int[] offsets = new int[4], steps = new int[4];
@@ -120,7 +128,7 @@ public class GRIBModule extends Module {
 		steps[3] = ((Number) timestep.get("seconds")).intValue();
 		
 		for (; !test.after(end); incrementOffsets(offsets, steps, test, increment))
-			downloads.add(downloadGribFile(parseIncrementedURL(url, constant, increment, wrap, 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), getSim()));
+			downloads.add(downloadGribFile(parseIncrementedURL(url, constant, increment, shouldWrap(), 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), getSim()));
 		
 		IOException exc = null;
 		boolean failed = false;
