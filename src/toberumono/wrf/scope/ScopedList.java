@@ -280,7 +280,7 @@ public class ScopedList implements Scope, List<Object> {
 	
 	@Override
 	public boolean hasValueByName(String name) {
-		return 0 < Integer.parseInt(name) && Integer.parseInt(name) < size();
+		return 0 <= Integer.parseInt(name) && Integer.parseInt(name) < size();
 	}
 	
 	@Override
