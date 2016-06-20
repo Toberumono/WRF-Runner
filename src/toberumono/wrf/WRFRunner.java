@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import toberumono.json.JSONArray;
 import toberumono.json.JSONBoolean;
+import toberumono.json.JSONData;
 import toberumono.json.JSONNumber;
 import toberumono.json.JSONObject;
 import toberumono.json.JSONString;
@@ -305,7 +306,44 @@ public class WRFRunner {
 				JSONSystem.renameField((JSONObject) ((JSONObject) out.get("grib")).get("timestep"), new JSONBoolean(true), "wrap-timestep", "wrap");
 			version = updateVersionNumber(out, "4.0.0");
 		}
+		
+		if (version.compareTo(new VersionNumber("5.0.0")) < 0) {
+			//Rename all uses of type = json in Timing subsections to type = computed
+			JSONObject temp;
+			for (JSONData<?> val : timing.values()) { //All timing subsections except for grib are single-depth.  Therefore, this will take care of most of the appropriate renaming
+				if (val instanceof JSONObject) {
+					temp = (JSONObject) val;
+					if (temp.containsKey("type") && temp.get("type").value().equals("json"))
+						temp.put("type", "computed");
+				}
+			}
+			if (timing.get("grib") instanceof JSONObject) {
+				for (JSONData<?> val : ((JSONObject) timing.get("grib")).values()) { //This takes care of the remaining type renames.
+					if (val instanceof JSONObject) {
+						temp = (JSONObject) val;
+						if (temp.containsKey("type") && temp.get("type").value().equals("json"))
+							temp.put("type", "computed");
+					}
+				}
+			}
+			//Rename rounding to round
+			recursiveRenameField(timing, "rounding", "round"); //Rounding should only be renamed within timing
+			version = updateVersionNumber(out, "5.0.0");
+		}
 		return out;
+	}
+	
+	private static void recursiveRenameField(JSONData<?> root, String oldName, String newName) {
+		if (root instanceof JSONArray)
+			for (JSONData<?> e : (JSONArray) root)
+				recursiveRenameField(e, oldName, newName);
+		else if (root instanceof JSONObject) {
+			JSONObject obj = (JSONObject) root;
+			if (obj.containsKey(oldName))
+				obj.put(newName, obj.remove(oldName));
+			for (JSONData<?> v : obj.values())
+				recursiveRenameField(v, oldName, newName);
+		}
 	}
 	
 	private VersionNumber getVersionNumber(JSONObject configuration) {
