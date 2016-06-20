@@ -71,7 +71,7 @@ public class WRFRunnerComponentFactory<T> {
 	
 	public T generateComponent(String type, ScopedMap parameters, Scope parent) {
 		synchronized (components) {
-			if (parameters.containsKey("enabled") && parameters.get("enabled") instanceof Boolean && !((Boolean) parameters.get("enabled")))
+			if (type.equals("disabled") || (parameters.containsKey("enabled") && parameters.get("enabled") instanceof Boolean && !((Boolean) parameters.get("enabled"))))
 				return getDisabledComponentInstance();
 			if (parameters == null || (parameters.containsKey("inherit") && parameters.get("inherit") instanceof Boolean && ((Boolean) parameters.get("inherit"))))
 				return rootType.isInstance(parent) ? rootType.cast(parent) : null; //TODO possibly throw an exception about an invalid type hierarchy instead of null

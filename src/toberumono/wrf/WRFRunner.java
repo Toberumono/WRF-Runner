@@ -83,8 +83,6 @@ public class WRFRunner {
 	public static void initFactories() {
 		WRFRunnerComponentFactory<Offset> offsetFactory = WRFRunnerComponentFactory.getFactory(Offset.class, "standard", DisabledOffset::getDisabledOffsetInstance);
 		offsetFactory.addComponentConstructor("standard", StandardOffset::new);
-		offsetFactory.addComponentConstructor("disabled", (p, s) -> offsetFactory.getDisabledComponentInstance());
-		roundingFactory.addComponentConstructor("disabled", (p, s) -> roundingFactory.getDisabledComponentInstance());
 		offsetFactory.addComponentConstructor("list", ListOffset::new);
 		WRFRunnerComponentFactory<Round> roundFactory = WRFRunnerComponentFactory.getFactory(Round.class, "bucket", DisabledRound::getDisabledRoundInstance);
 		roundFactory.addComponentConstructor("bucket", BucketRound::new);
@@ -93,15 +91,12 @@ public class WRFRunner {
 		roundFactory.addComponentConstructor("list", ListRound::new);
 		WRFRunnerComponentFactory<Duration> durationFactory = WRFRunnerComponentFactory.getFactory(Duration.class, "standard", DisabledDuration::getDisabledDurationInstance);
 		durationFactory.addComponentConstructor("standard", StandardDuration::new);
-		durationFactory.addComponentConstructor("disabled", (p, s) -> durationFactory.getDisabledComponentInstance());
 		durationFactory.addComponentConstructor("list", ListDuration::new);
 		WRFRunnerComponentFactory<Clear> clearFactory = WRFRunnerComponentFactory.getFactory(Clear.class, "standard", DisabledClear::getDisabledClearInstance);
 		clearFactory.addComponentConstructor("standard", StandardClear::new);
-		clearFactory.addComponentConstructor("disabled", (p, s) -> clearFactory.getDisabledComponentInstance());
 		clearFactory.addComponentConstructor("list", ListClear::new);
 		WRFRunnerComponentFactory<Timing> timingFactory = WRFRunnerComponentFactory.getFactory(Timing.class, "computed", DisabledTiming::getDisabledTimingInstance);
 		timingFactory.addComponentConstructor("computed", ComputedTiming::new);
-		timingFactory.addComponentConstructor("disabled", (p, s) -> timingFactory.getDisabledComponentInstance());
 	}
 	
 	/**
