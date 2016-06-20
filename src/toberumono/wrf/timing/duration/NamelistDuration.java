@@ -7,7 +7,7 @@ import toberumono.wrf.scope.Scope;
 
 import static toberumono.wrf.SimulationConstants.*;
 
-public class NamelistDuration extends Duration {
+public class NamelistDuration extends AbstractDuration {
 	private int[] duration;
 	private final NamelistSection timeControl;
 	
@@ -18,10 +18,9 @@ public class NamelistDuration extends Duration {
 	
 	@Override
 	protected Calendar doApply(Calendar base) {
-		Calendar out = (Calendar) base.clone();
 		for (int i = 0; i < duration.length; i++)
-			out.add(TIMING_FIELD_IDS.get(i), duration[i]);
-		return out;
+			base.add(TIMING_FIELD_IDS.get(i), duration[i]);
+		return base;
 	}
 
 	@Override

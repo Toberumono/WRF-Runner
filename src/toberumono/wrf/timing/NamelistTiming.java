@@ -11,7 +11,7 @@ import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.duration.NamelistDuration;
 import toberumono.wrf.timing.offset.Offset;
-import toberumono.wrf.timing.rounding.Rounding;
+import toberumono.wrf.timing.round.Round;
 
 /**
  * Implementation of {@link Timing} that uses static data from a {@link Namelist} file instead of computing the timing data
@@ -23,7 +23,7 @@ public class NamelistTiming extends AbstractScope<Scope> implements Timing {
 	private final Calendar base;
 	private final Calendar start, end;
 	private final Offset offset;
-	private final Rounding rounding;
+	private final Round round;
 	private final Duration duration;
 	private final Clear clear;
 	
@@ -41,10 +41,10 @@ public class NamelistTiming extends AbstractScope<Scope> implements Timing {
 		this.base = Calendar.getInstance();
 		timecontrolParser(getBase(), timeControl, "start");
 		offset = WRFRunnerComponentFactory.getDisabledComponentInstance(Offset.class);
-		rounding = WRFRunnerComponentFactory.getDisabledComponentInstance(Rounding.class);
+		round = WRFRunnerComponentFactory.getDisabledComponentInstance(Round.class);
 		duration = new NamelistDuration(timeControl, this);
 		clear = WRFRunnerComponentFactory.getDisabledComponentInstance(Clear.class);
-		start = getOffset().apply(getRounding().apply(getBase()));
+		start = getOffset().apply(getRound().apply(getBase()));
 		end = getDuration().apply(getStart());
 	}
 	
@@ -79,8 +79,8 @@ public class NamelistTiming extends AbstractScope<Scope> implements Timing {
 	}
 	
 	@Override
-	public Rounding getRounding() {
-		return rounding;
+	public Round getRound() {
+		return round;
 	}
 	
 	@Override

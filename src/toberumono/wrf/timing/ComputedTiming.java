@@ -1,16 +1,23 @@
 package toberumono.wrf.timing;
 
 import java.util.Calendar;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
+import toberumono.wrf.Simulation;
 import toberumono.wrf.WRFRunnerComponentFactory;
 import toberumono.wrf.scope.Scope;
+import toberumono.wrf.scope.ScopedList;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.clear.Clear;
+import toberumono.wrf.timing.clear.ListClear;
 import toberumono.wrf.timing.duration.Duration;
+import toberumono.wrf.timing.duration.ListDuration;
+import toberumono.wrf.timing.offset.ListOffset;
 import toberumono.wrf.timing.offset.Offset;
-import toberumono.wrf.timing.rounding.Rounding;
+import toberumono.wrf.timing.round.ListRound;
+import toberumono.wrf.timing.round.Round;
 
 /**
  * An implementation of {@link Timing} wherein every value is computed.
@@ -22,7 +29,7 @@ public class ComputedTiming extends TimingScope implements Timing {
 	
 	private Calendar base, start, end;
 	private Offset offset;
-	private Rounding rounding;
+	private Round round;
 	private Duration duration;
 	private Clear clear;
 	private boolean appliedClear;
@@ -57,7 +64,7 @@ public class ComputedTiming extends TimingScope implements Timing {
 		computationLock = new ReentrantLock();
 		start = end = null;
 		offset = null;
-		rounding = null;
+		round = null;
 		duration = null;
 		clear = null;
 		appliedClear = false;
@@ -100,7 +107,7 @@ public class ComputedTiming extends TimingScope implements Timing {
 		try {
 			computationLock.lock();
 			if (start == null)
-				start = getOffset().apply(getRounding().apply(getBase()));
+				start = getOffset().apply(getRound().apply(getBase()));
 		}
 		finally {
 			computationLock.unlock();
@@ -129,9 +136,13 @@ public class ComputedTiming extends TimingScope implements Timing {
 			return offset;
 		try {
 			computationLock.lock();
-			if (offset == null)
-				offset = WRFRunnerComponentFactory.generateComponent(Offset.class, (ScopedMap) getParameters().get("offset"),
-						(getParent() instanceof Timing) ? ((Timing) getParent()).getOffset() : getParent());
+			if (offset == null) {
+				if (getParameters().get("offset") instanceof ScopedList)
+					offset = new ListOffset((ScopedList) getParameters().get("offset"), (getParent() instanceof Timing) ? ((Timing) getParent()).getOffset() : this);
+				else
+					offset = WRFRunnerComponentFactory.generateComponent(Offset.class, (ScopedMap) getParameters().get("offset"),
+							(getParent() instanceof Timing) ? ((Timing) getParent()).getOffset() : this);
+			}
 		}
 		finally {
 			computationLock.unlock();
@@ -140,19 +151,23 @@ public class ComputedTiming extends TimingScope implements Timing {
 	}
 	
 	@Override
-	public Rounding getRounding() {
-		if (rounding != null)
-			return rounding;
+	public Round getRound() {
+		if (round != null)
+			return round;
 		try {
 			computationLock.lock();
-			if (rounding == null)
-				rounding = WRFRunnerComponentFactory.generateComponent(Rounding.class, (ScopedMap) getParameters().get("rounding"),
-						(getParent() instanceof Timing) ? ((Timing) getParent()).getRounding() : getParent());
+			if (round == null) {
+				if (getParameters().get("round") instanceof ScopedList)
+					round = new ListRound((ScopedList) getParameters().get("round"), (getParent() instanceof Timing) ? ((Timing) getParent()).getRound() : this);
+				else
+					round = WRFRunnerComponentFactory.generateComponent(Round.class, (ScopedMap) getParameters().get("round"),
+							(getParent() instanceof Timing) ? ((Timing) getParent()).getRound() : this);
+			}
 		}
 		finally {
 			computationLock.unlock();
 		}
-		return rounding;
+		return round;
 	}
 	
 	@Override
@@ -161,9 +176,13 @@ public class ComputedTiming extends TimingScope implements Timing {
 			return duration;
 		try {
 			computationLock.lock();
-			if (duration == null)
-				duration = WRFRunnerComponentFactory.generateComponent(Duration.class, (ScopedMap) getParameters().get("duration"),
-						(getParent() instanceof Timing) ? ((Timing) getParent()).getDuration() : getParent());
+			if (duration == null) {
+				if (getParameters().get("duration") instanceof ScopedList)
+					duration = new ListDuration((ScopedList) getParameters().get("duration"), (getParent() instanceof Timing) ? ((Timing) getParent()).getDuration() : this);
+				else
+					duration = WRFRunnerComponentFactory.generateComponent(Duration.class, (ScopedMap) getParameters().get("duration"),
+							(getParent() instanceof Timing) ? ((Timing) getParent()).getDuration() : this);
+			}
 		}
 		finally {
 			computationLock.unlock();
@@ -177,9 +196,13 @@ public class ComputedTiming extends TimingScope implements Timing {
 			return clear;
 		try {
 			computationLock.lock();
-			if (clear == null)
-				clear = WRFRunnerComponentFactory.generateComponent(Clear.class, (ScopedMap) getParameters().get("clear"),
-						(getParent() instanceof Timing) ? ((Timing) getParent()).getClear() : getParent());
+			if (clear == null) {
+				if (getParameters().get("clear") instanceof ScopedList)
+					clear = new ListClear((ScopedList) getParameters().get("clear"), (getParent() instanceof Timing) ? ((Timing) getParent()).getClear() : this);
+				else
+					clear = WRFRunnerComponentFactory.generateComponent(Clear.class, (ScopedMap) getParameters().get("clear"),
+							(getParent() instanceof Timing) ? ((Timing) getParent()).getClear() : this);
+			}
 		}
 		finally {
 			computationLock.unlock();

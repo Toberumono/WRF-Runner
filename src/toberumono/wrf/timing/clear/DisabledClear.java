@@ -4,7 +4,7 @@ import java.util.Calendar;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class DisabledClear extends Clear {
+public class DisabledClear extends AbstractClear {
 	private static final Lock lock = new ReentrantLock();
 	private static Clear instance = null;
 	
@@ -28,7 +28,7 @@ public class DisabledClear extends Clear {
 	
 	@Override
 	protected Calendar doApply(Calendar base) {
-		return (Calendar) base.clone();
+		return base;
 	}
 
 	@Override

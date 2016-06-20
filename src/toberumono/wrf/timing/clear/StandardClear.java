@@ -8,7 +8,7 @@ import toberumono.wrf.scope.ScopedMap;
 
 import static toberumono.wrf.SimulationConstants.*;
 
-public class StandardClear extends Clear {
+public class StandardClear extends AbstractClear {
 	private final int[] values;
 	private int keep;
 	
@@ -20,10 +20,9 @@ public class StandardClear extends Clear {
 	
 	@Override
 	protected Calendar doApply(Calendar base) {
-		Calendar out = (Calendar) base.clone();
 		for (int i = 0; i < keep; i++)
-			out.set(TIMING_FIELD_IDS.get(i), values[i] == -1 ? out.getActualMinimum(TIMING_FIELD_IDS.get(i)) : values[i]);
-		return out;
+			base.set(TIMING_FIELD_IDS.get(i), values[i] == -1 ? base.getActualMinimum(TIMING_FIELD_IDS.get(i)) : values[i]);
+		return base;
 	}
 	
 	@Override

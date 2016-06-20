@@ -7,7 +7,7 @@ import toberumono.wrf.scope.ScopedMap;
 
 import static toberumono.wrf.SimulationConstants.*;
 
-public class StandardDuration extends Duration {
+public class StandardDuration extends AbstractDuration {
 	private int[] duration;
 	
 	public StandardDuration(ScopedMap parameters, Scope parent) {
@@ -16,10 +16,9 @@ public class StandardDuration extends Duration {
 	
 	@Override
 	protected Calendar doApply(Calendar base) {
-		Calendar out = (Calendar) base.clone();
 		for (int i = 0; i < duration.length; i++)
-			out.add(TIMING_FIELD_IDS.get(i), duration[i]);
-		return out;
+			base.add(TIMING_FIELD_IDS.get(i), duration[i]);
+		return base;
 	}
 
 	@Override

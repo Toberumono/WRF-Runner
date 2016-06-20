@@ -1,4 +1,4 @@
-package toberumono.wrf.timing.rounding;
+package toberumono.wrf.timing.round;
 
 import java.math.RoundingMode;
 import java.util.Calendar;
@@ -17,10 +17,10 @@ import toberumono.wrf.scope.ScopedList;
 
 import static toberumono.wrf.SimulationConstants.*;
 
-public class BucketRounding extends Rounding {
+public class BucketRound extends AbstractRound {
 	private Map<Integer, Function<Integer, Integer>> roundingActions;
 	
-	public BucketRounding(ScopedMap parameters, Scope parent) {
+	public BucketRound(ScopedMap parameters, Scope parent) {
 		super(parameters, parent);
 	}
 	

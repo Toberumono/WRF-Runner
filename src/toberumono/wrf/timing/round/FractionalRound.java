@@ -1,4 +1,4 @@
-package toberumono.wrf.timing.rounding;
+package toberumono.wrf.timing.round;
 
 import java.util.Calendar;
 import java.util.logging.Level;
@@ -9,32 +9,31 @@ import toberumono.wrf.scope.ScopedMap;
 
 import static toberumono.wrf.SimulationConstants.*;
 
-public class FractionalRounding extends Rounding {
+public class FractionalRound extends AbstractRound {
 	private int roundingPoint;
 	private double fraction;
 	private String diff;
 	
-	public FractionalRounding(ScopedMap parameters, Scope parent) {
+	public FractionalRound(ScopedMap parameters, Scope parent) {
 		super(parameters, parent);
 	}
 
 	@Override
 	protected Calendar doApply(Calendar base) {
-		Calendar out = (Calendar) base.clone();
 		//First, we handle the diff on the field that the user is rounding on
 		int rp = roundingPoint;
 		if (diff.equals("next"))
-			out.add(TIMING_FIELD_IDS.get(rp), 1);
+			base.add(TIMING_FIELD_IDS.get(rp), 1);
 		else if (diff.equals("previous"))
-			out.add(TIMING_FIELD_IDS.get(rp), -1);
+			base.add(TIMING_FIELD_IDS.get(rp), -1);
 		if (fraction < 1.0) { //If they want to keep some portion of the field before this, then fraction will be less than 1.0.
 			--rp;
-			int offset = 1 - out.getActualMinimum(TIMING_FIELD_IDS.get(rp));
-			out.set(TIMING_FIELD_IDS.get(rp), (int) Numbers.semifloor(out.getActualMaximum(TIMING_FIELD_IDS.get(rp)) + offset, fraction, out.get(TIMING_FIELD_IDS.get(rp))));
+			int offset = 1 - base.getActualMinimum(TIMING_FIELD_IDS.get(rp));
+			base.set(TIMING_FIELD_IDS.get(rp), (int) Numbers.semifloor(base.getActualMaximum(TIMING_FIELD_IDS.get(rp)) + offset, fraction, base.get(TIMING_FIELD_IDS.get(rp))));
 		}
 		for (int i = 0; i < rp; i++) //The logic here is that if we are rounding to something, then we want to set everything before it to 0.
-			out.set(TIMING_FIELD_IDS.get(i), out.getActualMinimum(TIMING_FIELD_IDS.get(i)));
-		return out;
+			base.set(TIMING_FIELD_IDS.get(i), base.getActualMinimum(TIMING_FIELD_IDS.get(i)));
+		return base;
 	}
 	
 	@Override

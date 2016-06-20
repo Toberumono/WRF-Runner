@@ -9,7 +9,7 @@ import toberumono.wrf.scope.AbstractScope;
 import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.offset.Offset;
-import toberumono.wrf.timing.rounding.Rounding;
+import toberumono.wrf.timing.round.Round;
 
 /**
  * This is a dummy class used solely for compatibility with {@link WRFRunnerComponentFactory}. It should not be constructed
@@ -61,7 +61,7 @@ public class DisabledTiming extends AbstractScope<Timing> implements Timing {
 	}
 	
 	@Override
-	public Rounding getRounding() {
+	public Round getRound() {
 		return null;
 	}
 	

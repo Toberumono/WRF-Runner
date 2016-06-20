@@ -79,6 +79,10 @@ public class WRFRunnerComponentFactory<T> {
 		}
 	}
 	
+	public static boolean willInherit(ScopedMap parameters) {
+		return parameters == null || (parameters.containsKey("inherit") && parameters.get("inherit") instanceof Boolean && ((Boolean) parameters.get("inherit")));
+	}
+	
 	public static <T> void setDefaultComponentType(Class<T> clazz, String type) {
 		WRFRunnerComponentFactory<T> factory = getFactory(clazz);
 		factory.setDefaultComponentType(type);

@@ -2,61 +2,44 @@ package toberumono.wrf.timing;
 
 import java.util.Calendar;
 import java.util.function.Function;
-import java.util.logging.Logger;
 
 import toberumono.wrf.scope.Scope;
-import toberumono.wrf.scope.ScopedMap;
+import toberumono.wrf.timing.clear.Clear;
+import toberumono.wrf.timing.duration.Duration;
+import toberumono.wrf.timing.offset.Offset;
+import toberumono.wrf.timing.round.Round;
 
 /**
- * Provides a simple common mechanism by which lazy evaluation can implemented for components of {@link Timing}.
+ * Root interface for {@link TimingComponent TimingComponents}. This is for use with the root interfaces of each type of {@link TimingComponent}.
  * 
  * @author Toberumono
+ * @see Offset
+ * @see Clear
+ * @see Duration
+ * @see Round
  */
-public abstract class TimingComponent extends TimingScope implements Function<Calendar, Calendar> {
-	private final Logger log;
-	private boolean computed;
+public interface TimingComponent extends Function<Calendar, Calendar>, Scope {
 	
 	/**
-	 * Constructs a new {@link TimingComponent}.
-	 * 
-	 * @param parameters
-	 *            the parameters that define the component
-	 * @param parent
-	 *            the component's parent {@link Scope}
-	 * @param log
-	 *            the {@link Logger} that the component should use
-	 */
-	public TimingComponent(ScopedMap parameters, Scope parent, Logger log) {
-		super(parameters, parent);
-		this.log = log;
-	}
-	
-	/**
-	 * Implementations of this method <i>must not</i> modify the {@link Calendar} passed to it.<br>
-	 * {@inheritDoc}
+	 * Performs the steps necessary to apply the modifications specified by the {@link TimingComponent} to the given {@link Calendar}.
 	 * 
 	 * @param base
 	 *            the {@link Calendar} to modify with the {@link TimingComponent}
-	 * @return a <i>copy</i> of the provided {@link Calendar} as modified by the {@link TimingComponent}
+	 * @param inPlace
+	 *            whether the modification should be performed in place (if {@code false} then the {@link Calendar} is cloned before being modified)
+	 * @return {@code base} (or a clone thereof if {@code inPlace} is {@code false}) with the {@link TimingComponent TimingComponent's} changes
+	 *         applied
+	 */
+	public Calendar apply(Calendar base, boolean inPlace);
+	
+	/**
+	 * Performs the steps necessary to apply the modifications specified by the {@link TimingComponent} to the given {@link Calendar}.<br>
+	 * This is equivalent to {@link #apply(Calendar, boolean)} with {@code inPlace} set to {@code false}.
+	 * 
+	 * @param base
+	 *            the {@link Calendar} to modify with the {@link TimingComponent}
+	 * @return a clone of {@code base} with the {@link TimingComponent TimingComponent's} changes applied
 	 */
 	@Override
-	public final Calendar apply(Calendar base) {
-		if (computed)
-			return doApply(base);
-		synchronized (log) {
-			if (!computed) {
-				compute();
-				computed = true;
-			}
-		}
-		return doApply(base);
-	}
-	
-	protected abstract Calendar doApply(Calendar base);
-	
-	protected abstract void compute();
-	
-	protected Logger getLogger() {
-		return log;
-	}
+	public Calendar apply(Calendar base);
 }

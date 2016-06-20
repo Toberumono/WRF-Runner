@@ -7,7 +7,7 @@ import toberumono.wrf.scope.ScopedMap;
 
 import static toberumono.wrf.SimulationConstants.*;
 
-public class StandardOffset extends Offset {
+public class StandardOffset extends AbstractOffset {
 	private int[] offsets;
 	private Boolean wrap;
 	
@@ -26,20 +26,19 @@ public class StandardOffset extends Offset {
 	
 	@Override
 	protected Calendar doApply(Calendar base) {
-		Calendar out = (Calendar) base.clone();
 		if (doesWrap())
 			for (int i = 0; i < offsets.length; i++)
-				out.add(TIMING_FIELD_IDS.get(i), offsets[i]);
+				base.add(TIMING_FIELD_IDS.get(i), offsets[i]);
 		else
 			for (int i = 0; i < offsets.length; i++)
-				out.set(TIMING_FIELD_IDS.get(i), out.get(TIMING_FIELD_IDS.get(i)) + offsets[i]);
-		return out;
+				base.set(TIMING_FIELD_IDS.get(i), base.get(TIMING_FIELD_IDS.get(i)) + offsets[i]);
+		return base;
 	}
 	
 	@Override
 	public boolean doesWrap() {
 		if (wrap == null)
-			wrap = getParameters().containsKey("wrap") ? ((Boolean) getParameters().get("wrap")) : ((getParent() instanceof Offset) ? ((Offset) getParent()).doesWrap() : true);
+			wrap = getParameters().containsKey("wrap") ? ((Boolean) getParameters().get("wrap")) : ((getParent() instanceof AbstractOffset) ? ((AbstractOffset) getParent()).doesWrap() : true);
 		return wrap;
 	}
 }

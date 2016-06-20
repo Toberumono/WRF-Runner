@@ -4,11 +4,11 @@ import java.util.Calendar;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class DisabledOffset extends Offset {
+public class DisabledOffset extends AbstractOffset {
 	private static final Lock lock = new ReentrantLock();
-	private static Offset instance = null;
+	private static AbstractOffset instance = null;
 	
-	public static Offset getDisabledOffsetInstance() {
+	public static AbstractOffset getDisabledOffsetInstance() {
 		if (instance != null) //We don't want to acquire the lock unless we need to.
 			return instance;
 		try {
@@ -31,11 +31,11 @@ public class DisabledOffset extends Offset {
 
 	@Override
 	protected Calendar doApply(Calendar base) {
-		return (Calendar) base.clone();
+		return base;
 	}
 
 	@Override
 	public boolean doesWrap() {
-		return false;
+		return true;
 	}
 }

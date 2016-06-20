@@ -4,7 +4,7 @@ import java.util.Calendar;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class DisabledDuration extends Duration {
+public class DisabledDuration extends AbstractDuration {
 	private static final Lock lock = new ReentrantLock();
 	private static Duration instance = null;
 	
@@ -28,7 +28,7 @@ public class DisabledDuration extends Duration {
 
 	@Override
 	protected Calendar doApply(Calendar base) {
-		return (Calendar) base.clone();
+		return base;
 	}
 
 	@Override

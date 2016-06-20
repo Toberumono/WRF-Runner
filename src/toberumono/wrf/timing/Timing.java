@@ -10,7 +10,7 @@ import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.offset.Offset;
-import toberumono.wrf.timing.rounding.Rounding;
+import toberumono.wrf.timing.round.Round;
 
 /**
  * This interface defines the accessor methods used to interact with {@link Timing} Objects.
@@ -68,10 +68,10 @@ public interface Timing extends Scope {
 	public Offset getOffset();
 	
 	/**
-	 * @return the {@link Rounding} applied to {@link #getBase() base} to derive {@link #getStart() start}
+	 * @return the {@link Round} applied to {@link #getBase() base} to derive {@link #getStart() start}
 	 */
-	@NamedScopeValue("rounding")
-	public Rounding getRounding();
+	@NamedScopeValue("round")
+	public Round getRound();
 	
 	/**
 	 * @return the {@link Duration} of the {@link Simulation}

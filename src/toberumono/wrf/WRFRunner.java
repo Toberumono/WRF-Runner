@@ -28,27 +28,31 @@ import toberumono.wrf.timing.ComputedTiming;
 import toberumono.wrf.timing.Timing;
 import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.clear.DisabledClear;
+import toberumono.wrf.timing.clear.ListClear;
 import toberumono.wrf.timing.clear.StandardClear;
 import toberumono.wrf.timing.duration.DisabledDuration;
 import toberumono.wrf.timing.duration.Duration;
+import toberumono.wrf.timing.duration.ListDuration;
 import toberumono.wrf.timing.duration.StandardDuration;
 import toberumono.wrf.timing.offset.DisabledOffset;
+import toberumono.wrf.timing.offset.ListOffset;
 import toberumono.wrf.timing.offset.Offset;
 import toberumono.wrf.timing.offset.StandardOffset;
-import toberumono.wrf.timing.rounding.BucketRounding;
-import toberumono.wrf.timing.rounding.DisabledRounding;
-import toberumono.wrf.timing.rounding.FractionalRounding;
-import toberumono.wrf.timing.rounding.FunctionRounding;
-import toberumono.wrf.timing.rounding.Rounding;
+import toberumono.wrf.timing.round.BucketRound;
+import toberumono.wrf.timing.round.DisabledRound;
+import toberumono.wrf.timing.round.FractionalRound;
+import toberumono.wrf.timing.round.FunctionRound;
+import toberumono.wrf.timing.round.ListRound;
+import toberumono.wrf.timing.round.Round;
 
 import static toberumono.wrf.SimulationConstants.*;
 
 /**
  * A "script" for automatically running WRF and WPS installations.<br>
- * This will (from the Namelists and its own configuration file (a small one)) compute the appropriate start and end times of
- * a simulation based on the date and time at which it is run, download the relevant data (in this case NAM data) for that
- * time range, run WPS, run WRF, and then clean up after itself. (Note that the cleanup is fairly easy because it creates a
- * working directory in which it runs WRF, and then just leaves the output there)
+ * This will (from the Namelists and its own configuration file (a small one)) compute the appropriate start and end times of a simulation based on
+ * the date and time at which it is run, download the relevant data (in this case NAM data) for that time range, run WPS, run WRF, and then clean up
+ * after itself. (Note that the cleanup is fairly easy because it creates a working directory in which it runs WRF, and then just leaves the output
+ * there)
  * 
  * @author Toberumono
  */
@@ -63,8 +67,7 @@ public class WRFRunner {
 	 * All that is needed to run this "script".
 	 * 
 	 * @param args
-	 *            the arguments to the script. This must have a length of 1, and contain a valid path to a configuration
-	 *            file.
+	 *            the arguments to the script. This must have a length of 1, and contain a valid path to a configuration file.
 	 * @throws IOException
 	 *             if an I/O error occurs
 	 * @throws InterruptedException
@@ -81,17 +84,21 @@ public class WRFRunner {
 		WRFRunnerComponentFactory<Offset> offsetFactory = WRFRunnerComponentFactory.getFactory(Offset.class, "standard", DisabledOffset::getDisabledOffsetInstance);
 		offsetFactory.addComponentConstructor("standard", StandardOffset::new);
 		offsetFactory.addComponentConstructor("disabled", (p, s) -> offsetFactory.getDisabledComponentInstance());
-		WRFRunnerComponentFactory<Rounding> roundingFactory = WRFRunnerComponentFactory.getFactory(Rounding.class, "bucket", DisabledRounding::getDisabledRoundingInstance);
-		roundingFactory.addComponentConstructor("bucket", BucketRounding::new);
-		roundingFactory.addComponentConstructor("fractional", FractionalRounding::new);
-		roundingFactory.addComponentConstructor("function", FunctionRounding::new);
 		roundingFactory.addComponentConstructor("disabled", (p, s) -> roundingFactory.getDisabledComponentInstance());
+		offsetFactory.addComponentConstructor("list", ListOffset::new);
+		WRFRunnerComponentFactory<Round> roundFactory = WRFRunnerComponentFactory.getFactory(Round.class, "bucket", DisabledRound::getDisabledRoundInstance);
+		roundFactory.addComponentConstructor("bucket", BucketRound::new);
+		roundFactory.addComponentConstructor("fractional", FractionalRound::new);
+		roundFactory.addComponentConstructor("function", FunctionRound::new);
+		roundFactory.addComponentConstructor("list", ListRound::new);
 		WRFRunnerComponentFactory<Duration> durationFactory = WRFRunnerComponentFactory.getFactory(Duration.class, "standard", DisabledDuration::getDisabledDurationInstance);
 		durationFactory.addComponentConstructor("standard", StandardDuration::new);
 		durationFactory.addComponentConstructor("disabled", (p, s) -> durationFactory.getDisabledComponentInstance());
+		durationFactory.addComponentConstructor("list", ListDuration::new);
 		WRFRunnerComponentFactory<Clear> clearFactory = WRFRunnerComponentFactory.getFactory(Clear.class, "standard", DisabledClear::getDisabledClearInstance);
 		clearFactory.addComponentConstructor("standard", StandardClear::new);
 		clearFactory.addComponentConstructor("disabled", (p, s) -> clearFactory.getDisabledComponentInstance());
+		clearFactory.addComponentConstructor("list", ListClear::new);
 		WRFRunnerComponentFactory<Timing> timingFactory = WRFRunnerComponentFactory.getFactory(Timing.class, "computed", DisabledTiming::getDisabledTimingInstance);
 		timingFactory.addComponentConstructor("computed", ComputedTiming::new);
 		timingFactory.addComponentConstructor("disabled", (p, s) -> timingFactory.getDisabledComponentInstance());
@@ -132,9 +139,8 @@ public class WRFRunner {
 	}
 	
 	/**
-	 * Executes the steps needed to run wget, WPS, and then WRF. This method automatically calculates the appropriate start
-	 * and end times of the simulation from the configuration and {@link Namelist} files, and downloads the boundary data
-	 * accordingly.
+	 * Executes the steps needed to run wget, WPS, and then WRF. This method automatically calculates the appropriate start and end times of the
+	 * simulation from the configuration and {@link Namelist} files, and downloads the boundary data accordingly.
 	 * 
 	 * @param sim
 	 *            the {@link Simulation} to run
@@ -328,14 +334,13 @@ public class WRFRunner {
 	}
 	
 	/**
-	 * Simple method to depluralize sections of the configuration file. Primarily a helper method for
-	 * {@link #upgradeConfiguration(JSONObject)}.
+	 * Simple method to depluralize sections of the configuration file. Primarily a helper method for {@link #upgradeConfiguration(JSONObject)}.
 	 * 
 	 * @param configuration
 	 *            a {@link JSONObject} containing the configuration information
 	 * @param createCopy
-	 *            whether a duplicate of {@code configuration} should be made before applying the changes (if {@code true},
-	 *            this method will have no side effects)
+	 *            whether a duplicate of {@code configuration} should be made before applying the changes (if {@code true}, this method will have no
+	 *            side effects)
 	 * @return a {@link JSONObject} with the relevant sections depluralized
 	 */
 	public JSONObject depluralize(JSONObject configuration, boolean createCopy) {
