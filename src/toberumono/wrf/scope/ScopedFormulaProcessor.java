@@ -41,7 +41,7 @@ public class ScopedFormulaProcessor {
 	private static final ConsType KEYWORD = new BasicConsType("keyword");
 	
 	private static Operator addition, subtraction, multiplication, division, modulus, exponent, accessor;
-	private static Operator array, ternary, colon, compare, lt, lteq, gt, gteq, eq, neq, bitwiseAnd, bitwiseOr, bitwiseXor;
+	private static Operator array, ternary, colon, compareTo, lt, lteq, gt, gteq, eq, neq, bitwiseAnd, bitwiseOr, bitwiseXor;
 	
 	private static BasicLexer lexer = null;
 	
@@ -81,7 +81,7 @@ public class ScopedFormulaProcessor {
 					return accessScope((String) u, (Scope) t);
 				}
 			};
-			compare = new RelationalOperator(8, "compare", s -> s); //Using the identity function here, while possibly slightly less efficient, allows us to re-use the code in RelationalOperator
+			compareTo = new RelationalOperator(8, "compareTo", s -> s); //Using the identity function here, while possibly slightly less efficient, allows us to re-use the code in RelationalOperator
 			lt = new RelationalOperator(8, "<", s -> s < 0);
 			lteq = new RelationalOperator(8, "<=", s -> s <= 0);
 			gt = new RelationalOperator(8, ">", s -> s > 0);
@@ -135,7 +135,7 @@ public class ScopedFormulaProcessor {
 			lexer.addRule("string'", new BasicRule(Pattern.compile("'(([^'\\\\]+|\\\\['\\\\tbnrf\"])*)'"), (l, s, m) -> new ConsCell(m.group(1), STRING)));
 			lexer.addRule("string\"", new BasicRule(Pattern.compile("\"(([^\"\\\\]+|\\\\['\\\\tbnrf\"])*)\""), (l, s, m) -> new ConsCell(m.group(1), STRING)));
 			lexer.addRule("inherit", new BasicRule(Pattern.compile("inherit", Pattern.LITERAL), (l, s, m) -> new ConsCell(m.group(), KEYWORD)));
-			lexer.addRule("compare", new BasicRule(Pattern.compile("compare", Pattern.LITERAL), (l, s, m) -> new ConsCell(compare, OPERATOR)));
+			lexer.addRule("compareTo", new BasicRule(Pattern.compile("compareTo", Pattern.LITERAL), (l, s, m) -> new ConsCell(compareTo, OPERATOR)));
 			lexer.addRule("boolean", new BasicRule(Pattern.compile("(true|false)"), (l, s, m) -> new ConsCell(m.group().equals("true"), BOOLEAN)));
 			lexer.addRule("accessor", new BasicRule(Pattern.compile(".", Pattern.LITERAL), (l, s, m) -> new ConsCell(accessor, ACCESSOR)));
 			lexer.addRule("variable", new BasicRule(Pattern.compile("([a-zA-Z_]\\w*)"), (l, s, m) -> new ConsCell(m.group(), VARIABLE)));
@@ -295,7 +295,7 @@ public class ScopedFormulaProcessor {
 				return scope;
 			case "this":
 			case "current":
-				return scope; //Don't change this scope in this case
+				return scope; //Don't change the scope in this case
 			default:
 				return scope.getScopedValueByName(name);
 		}
