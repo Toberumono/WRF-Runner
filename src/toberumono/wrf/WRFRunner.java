@@ -76,8 +76,25 @@ public class WRFRunner {
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
 		initFactories();
+		boolean cacheUpdates = false;
+		Path configurationPath = Paths.get("configuration.json");
+		for (String arg : args) {
+			switch (arg) {
+				case "--cache-updates-only":
+					cacheUpdates = true;
+					break;
+				default:
+					configurationPath = Paths.get(arg);
+			}
+		}
 		WRFRunner runner = new WRFRunner();
-		Simulation sim = runner.createSimulation(Paths.get(args.length > 0 ? args[0] : "configuration.json"));
+		JSONObject configuration = runner.upgradeConfiguration((JSONObject) JSONSystem.loadJSON(configurationPath));
+		if (!cacheUpdates && configuration.isModified()) {
+			runner.getLog().info("Updating the configuration file located at: " + configurationPath);
+			JSONSystem.writeJSON(configuration, configurationPath);
+			runner.getLog().info("Updates completed.");
+		}
+		Simulation sim = runner.createSimulation(configuration, configurationPath);
 		runner.runSimulation(sim);
 	}
 	
@@ -131,6 +148,21 @@ public class WRFRunner {
 	 *             if an I/O error occurs
 	 */
 	public Simulation createSimulation(Path configurationFile) throws IOException {
+		return Simulation.initSimulation(upgradeConfiguration((JSONObject) JSONSystem.loadJSON(configurationFile)), configurationFile.toAbsolutePath().normalize().getParent());
+	}
+	
+	/**
+	 * Constructs a {@link Simulation} using the given configuration file.
+	 * 
+	 * @param configuration
+	 *            the configuration file loaded into a {@link JSONObject}
+	 * @param configurationFile
+	 *            a {@link Path} to the configuration file
+	 * @return the {@link Simulation} defined by that configuration file
+	 * @throws IOException
+	 *             if an I/O error occurs
+	 */
+	public Simulation createSimulation(JSONObject configuration, Path configurationFile) throws IOException {
 		return Simulation.initSimulation(upgradeConfiguration((JSONObject) JSONSystem.loadJSON(configurationFile)), configurationFile.toAbsolutePath().normalize().getParent());
 	}
 	
