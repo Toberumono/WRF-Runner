@@ -14,6 +14,8 @@ import toberumono.utils.files.TransferFileWalker;
 import toberumono.wrf.Module;
 import toberumono.wrf.Simulation;
 import toberumono.wrf.scope.ModuleScopedMap;
+import toberumono.wrf.scope.NamedScopeValue;
+import toberumono.wrf.scope.ScopedMap;
 
 import static toberumono.utils.general.ProcessBuilders.*;
 
@@ -26,6 +28,7 @@ public class WRFModule extends Module {
 	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
 	private static final int[] calendarCodes = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
 	private static final int[] timeCodeMultipliers = {0, 24, 60, 60};
+	private ScopedMap parallel;
 	
 	/**
 	 * Initializes a new {@link WRFModule} with the given {@code parameters} for the given {@link Simulation}
@@ -37,6 +40,22 @@ public class WRFModule extends Module {
 	 */
 	public WRFModule(ModuleScopedMap parameters, Simulation sim) {
 		super(parameters, sim);
+		parallel = null;
+	}
+	
+	/**
+	 * @return the {@link ScopedMap} containing information controlling how the WRF step is parallelized (if it is parallelized at all)
+	 */
+	@NamedScopeValue("parallel")
+	public ScopedMap getParallel() {
+		if (parallel != null)
+			return parallel;
+		synchronized (this) {
+			if (parallel != null)
+				return parallel;
+			parallel = (ScopedMap) getParameters().get("parallel");
+		}
+		return parallel;
 	}
 	
 	@Override
@@ -95,11 +114,11 @@ public class WRFModule extends Module {
 		runPB(wrfPB, "./real.exe", "2>&1", "|", "tee", "./real.log");
 		String[] wrfCommand;
 		//Calculate which command to use
-		if ((Boolean) getSim().getParallel().get("is-dmpar")) {
-			if ((Boolean) getSim().getParallel().get("boot-lam"))
-				wrfCommand = new String[]{"mpiexec", "-boot", "-np", getSim().getParallel().get("processors").toString(), "./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
+		if ((Boolean) getParallel().get("is-dmpar")) {
+			if ((Boolean) getParallel().get("boot-lam"))
+				wrfCommand = new String[]{"mpiexec", "-boot", "-np", getParallel().get("processors").toString(), "./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
 			else
-				wrfCommand = new String[]{"mpiexec", "-np", getSim().getParallel().get("processors").toString(), "./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
+				wrfCommand = new String[]{"mpiexec", "-np", getParallel().get("processors").toString(), "./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
 		}
 		else
 			wrfCommand = new String[]{"./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};

@@ -46,6 +46,7 @@ import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.ComputedTiming;
 import toberumono.wrf.timing.NamelistTiming;
 import toberumono.wrf.timing.Timing;
+import toberumono.wrf.modules.WRFModule;
 
 import static toberumono.wrf.SimulationConstants.*;
 
@@ -54,7 +55,7 @@ public class Simulation extends AbstractScope<Scope> {
 	
 	private final Logger logger;
 	private final JSONObject configuration;
-	private final ScopedMap general, timing, parallel;
+	private final ScopedMap general, timing;
 	private final Path working, resolver;
 	private final Timing globalTiming;
 	private final Map<String, Module> modules;
@@ -72,7 +73,6 @@ public class Simulation extends AbstractScope<Scope> {
 		this.timing = ScopedMap.buildFromJSON(timing, this);
 		logger = Logger.getLogger(SIMULATION_LOGGER_ROOT);
 		logger.setLevel(Level.parse(((String) general.get("logging-level").value()).toUpperCase()));
-		parallel = (ScopedMap) getGeneral().get("parallel");
 		source = new ScopedMap(this);
 		active = new ScopedMap(this);
 		disabledModules = new HashSet<>();
@@ -103,9 +103,10 @@ public class Simulation extends AbstractScope<Scope> {
 		return general;
 	}
 	
+	@Deprecated
 	@NamedScopeValue("parallel")
 	public ScopedMap getParallel() {
-		return parallel;
+		return ((WRFModule) getModule("wrf")).getParallel();
 	}
 	
 	public Path getSourcePath(String module) {

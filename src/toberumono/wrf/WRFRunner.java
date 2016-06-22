@@ -245,7 +245,15 @@ public class WRFRunner {
 		}
 		
 		if (version.compareTo(new VersionNumber("1.7.0")) < 0) {
-			JSONSystem.transferField("always-suffix", new JSONBoolean(false), (JSONObject) general.get("parallel"), general);
+			if (!general.containsKey("always-suffix")) {
+				if (general.get("parallel") instanceof JSONObject && ((JSONObject) general.get("parallel")).containsKey("always-suffix"))
+					general.put("always-suffix", ((JSONObject) general.get("parallel")).get("always-suffix"));
+				else if (out.get("wrf") instanceof JSONObject && ((JSONObject) out.get("wrf")).get("parallel") instanceof JSONObject &&
+						((JSONObject) ((JSONObject) out.get("wrf")).get("parallel")).containsKey("always-suffix"))
+					general.put("always-suffix", ((JSONObject) ((JSONObject) out.get("wrf")).get("parallel")).get("always-suffix"));
+				else
+					general.put("always-suffix", false);
+			}
 			version = updateVersionNumber(out, "1.7.0");
 		}
 		
@@ -367,6 +375,20 @@ public class WRFRunner {
 			if (!general.containsKey("serial-module-execution"))
 				general.put("serial-module-execution", false);
 			version = updateVersionNumber(out, "5.1.0");
+		}
+		
+		if (version.compareTo(new VersionNumber("5.2.0")) < 0) {
+			JSONObject defaultParallel = new JSONObject();
+			defaultParallel.put("is-dmpar", true);
+			defaultParallel.put("boot-lam", false);
+			defaultParallel.put("processors", 2);
+			JSONObject wrf;
+			if (!out.containsKey("wrf"))
+				out.put("wrf", wrf = new JSONObject());
+			else
+				wrf = (JSONObject) out.get("wrf");
+			JSONSystem.transferField("parallel", defaultParallel, general, wrf);
+			version = updateVersionNumber(out, "5.2.0");
 		}
 		return out;
 	}
