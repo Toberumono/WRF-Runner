@@ -72,7 +72,7 @@ public class Simulation extends AbstractScope<Scope> {
 		this.general = ScopedMap.buildFromJSON(general, this);
 		this.timing = ScopedMap.buildFromJSON(timing, this);
 		logger = Logger.getLogger(SIMULATION_LOGGER_ROOT);
-		logger.setLevel(Level.parse(((String) general.get("logging-level").value()).toUpperCase()));
+		logger.setLevel(Level.parse(general.get("logging-level").value().toString().toUpperCase()));
 		source = new ScopedMap(this);
 		active = new ScopedMap(this);
 		disabledModules = new HashSet<>();
