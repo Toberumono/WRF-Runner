@@ -19,6 +19,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -61,6 +62,7 @@ public class Simulation extends AbstractScope<Scope> {
 	private final ScopedMap source, active;
 	private Integer doms;
 	private final NamelistNumber interval_seconds;
+	private boolean serialModuleExecution;
 	
 	public Simulation(Calendar base, Path resolver, JSONObject configuration, JSONObject general, JSONObject modules, JSONObject paths, JSONObject timing) throws IOException {
 		super(null);
@@ -77,20 +79,20 @@ public class Simulation extends AbstractScope<Scope> {
 		this.modules = Collections.unmodifiableMap(parseModules(modules, paths));
 		globalTiming = ((Boolean) getTimingMap().get("use-computed-times")) ? new ComputedTiming((ScopedMap) getTimingMap().get("global"), base, this)
 				: new NamelistTiming(getModule("wrf").getNamelist().get("time_control"), this);
-		working = constructWorkingDirectory(getResolver().getFileSystem().getPath(getGeneral().get("working-directory").toString()), (Boolean) general.get("always-suffix").value());
+		working = constructWorkingDirectory(getResolver().resolve(getGeneral().get("working-directory").toString()), (Boolean) general.get("always-suffix").value());
 		for (String name : this.modules.keySet())
 			active.put(name, paths.containsKey(name) ? getWorkingPath().resolve(((Path) source.get(name)).getFileName()) : getWorkingPath().resolve(name));
 		ScopedMap timestep = this.modules.containsKey("grib") && !disabledModules.contains(modules.get("grib"))
-						? ScopedMap.buildFromJSON((JSONObject) ((JSONObject) configuration.get("grib")).get("timestep")) : null;
+				? ScopedMap.buildFromJSON((JSONObject) ((JSONObject) configuration.get("grib")).get("timestep")) : null;
 		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
 		doms = null;
 	}
-
+	
 	@NamedScopeValue("timing")
 	public Timing getTiming() {
 		return globalTiming;
 	}
-
+	
 	@NamedScopeValue("timing-map")
 	public ScopedMap getTimingMap() {
 		return timing;
@@ -118,6 +120,7 @@ public class Simulation extends AbstractScope<Scope> {
 		return resolver;
 	}
 	
+	@NamedScopeValue("working-directory")
 	public Path getWorkingPath() {
 		return working;
 	}
@@ -126,6 +129,7 @@ public class Simulation extends AbstractScope<Scope> {
 		return modules.get(name);
 	}
 	
+	@NamedScopeValue("doms")
 	public Integer getDoms() throws IOException {
 		if (doms == null)
 			doms = ((Number) modules.get("wrf").getNamelist().get("domains").get("max_dom").get(0).value()).intValue();
@@ -134,6 +138,11 @@ public class Simulation extends AbstractScope<Scope> {
 	
 	public NamelistNumber getIntervalSeconds() {
 		return interval_seconds;
+	}
+	
+	@NamedScopeValue("serial-module-execution")
+	public boolean isSerialModuleExecution() {
+		return serialModuleExecution;
 	}
 	
 	public Path constructWorkingDirectory(Path workingRoot, boolean always_suffix) throws IOException {
@@ -192,6 +201,14 @@ public class Simulation extends AbstractScope<Scope> {
 		return m;
 	}
 	
+	/**
+	 * Executes the {@link Module Modules} loaded in the {@link Simulation}
+	 * 
+	 * @throws IOException
+	 *             if an I/O error occurs
+	 * @throws InterruptedException
+	 *             if any of the {@link Module} processes are interrupted
+	 */
 	public void executeModules() throws IOException, InterruptedException {
 		List<Module> remaining = modules.values().stream().filter(mod -> !disabledModules.contains(mod)).collect(Collectors.toList());
 		Set<Module> completed = new HashSet<>();
@@ -206,26 +223,45 @@ public class Simulation extends AbstractScope<Scope> {
 			}
 			if (runnable.size() == 0)
 				break;
-			List<Future<Module>> running = runnable.stream().map(module -> pool.submit(() -> {
-				module.execute();
-				if ((Boolean) general.get("keep-logs"))
-					Files.walkFileTree(getActivePath(module.getName()),
-							new TransferFileWalker(getWorkingPath(), Files::move, p -> p.getFileName().toString().toLowerCase().endsWith(".log"), p -> true, null, null, true));
-				if ((Boolean) general.get("cleanup"))
-					module.cleanUp();
-				return module;
-			})).collect(Collectors.toList());
-			for (Future<Module> future : running) {
-				try {
-					completed.add(future.get());
-				}
-				catch (ExecutionException e) {
-					if (e.getCause() instanceof IOException)
-						throw (IOException) e.getCause();
-					e.printStackTrace();
+			if (isSerialModuleExecution()) {
+				for (Module module : runnable)
+					completed.add(executeModule(module));
+			}
+			else {
+				List<Future<Module>> running = runnable.stream().map(module -> pool.submit(() -> executeModule(module))).collect(Collectors.toList());
+				for (Future<Module> future : running) {
+					try {
+						completed.add(future.get());
+					}
+					catch (ExecutionException e) {
+						if (e.getCause() instanceof IOException)
+							throw (IOException) e.getCause();
+						e.printStackTrace();
+					}
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Executes a single {@link Module} and handles keep-logs and cleanup.
+	 * 
+	 * @param module
+	 *            the {@link Module} to execute
+	 * @return the {@link Module} passed to {@code Module} (for compatibility with {@link Callable})
+	 * @throws IOException
+	 *             if an I/O error occurs
+	 * @throws InterruptedException
+	 *             if the process is interrupted
+	 */
+	protected Module executeModule(Module module) throws IOException, InterruptedException {
+		module.execute();
+		if ((Boolean) general.get("keep-logs"))
+			Files.walkFileTree(getActivePath(module.getName()),
+					new TransferFileWalker(getWorkingPath(), Files::move, p -> p.getFileName().toString().toLowerCase().endsWith(".log"), p -> true, null, null, true));
+		if ((Boolean) general.get("cleanup"))
+			module.cleanUp();
+		return module;
 	}
 	
 	private static int calcIntervalSeconds(ScopedMap timestep) {
@@ -258,7 +294,7 @@ public class Simulation extends AbstractScope<Scope> {
 	public boolean hasValueByName(String name) {
 		if (getModule(name) != null)
 			return true;
-		switch(name) {
+		switch (name) {
 			case "sim":
 			case "simulation":
 			case "source-paths":
@@ -274,7 +310,7 @@ public class Simulation extends AbstractScope<Scope> {
 		Object out = getModule(name);
 		if (out != null)
 			return out;
-		switch(name) {
+		switch (name) {
 			case "sim":
 			case "simulation":
 				return this;

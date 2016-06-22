@@ -362,6 +362,12 @@ public class WRFRunner {
 			recursiveRenameField(timing, "rounding", "round"); //Rounding should only be renamed within timing
 			version = updateVersionNumber(out, "5.0.0");
 		}
+		
+		if (version.compareTo(new VersionNumber("5.1.0")) < 0) {
+			if (!general.containsKey("serial-module-execution"))
+				general.put("serial-module-execution", false);
+			version = updateVersionNumber(out, "5.1.0");
+		}
 		return out;
 	}
 	
