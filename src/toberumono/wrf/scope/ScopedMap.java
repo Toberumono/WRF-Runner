@@ -39,7 +39,7 @@ public class ScopedMap implements Scope, Map<String, Object> {
 			String str = (String) e;
 			if (str.charAt(0) == '=')
 				return ScopedFormulaProcessor.preProcess(str.substring(1));
-			else if (str.charAt(0) == '\\')
+			else if (str.charAt(0) == '\\' && str.length() > 1 && str.charAt(1) == '=')
 				return str.substring(1);
 		}
 		return e;

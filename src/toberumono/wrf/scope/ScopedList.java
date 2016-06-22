@@ -35,9 +35,9 @@ public class ScopedList implements Scope, List<Object> {
 		if (e instanceof String) {
 			String str = (String) e;
 			if (str.charAt(0) == '=')
-				e = ScopedFormulaProcessor.getLexer().lex(str.substring(1));
-			else if (str.charAt(0) == '\\')
-				e = str.substring(1);
+				return ScopedFormulaProcessor.getLexer().lex(str.substring(1));
+			else if (str.charAt(0) == '\\' && str.length() > 1 && str.charAt(1) == '=')
+				return str.substring(1);
 		}
 		return e;
 	}
