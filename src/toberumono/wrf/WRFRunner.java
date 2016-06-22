@@ -201,12 +201,20 @@ public class WRFRunner {
 		}
 	}
 	
+	/**
+	 * Uses the "version" field in the given {@code configuration} file to upgrade the file to the latest version.<br>
+	 * <b>Note:</b> This method does <i>not</i> modify the passed {@link JSONObject}
+	 * 
+	 * @param configuration
+	 *            the configuration file to upgrade as a {@link JSONObject}
+	 * @return an upgraded copy of {@code configuration}
+	 */
 	public JSONObject upgradeConfiguration(JSONObject configuration) {
 		JSONObject out = configuration.deepCopy();
 		JSONObject general = (JSONObject) out.get("general"), timing = (JSONObject) out.get("timing");
-		VersionNumber version = out.containsKey("version") ? getVersionNumber(out) : updateVersionNumber(out, "1.0.0");
-		
-		if (version.compareTo(new VersionNumber("1.3.0")) < 0) {
+		if (!out.containsKey("version"))
+			out.put("version", "1.0.0");
+		performConfigurationUpgradeAction(out, "1.3.0", () -> {
 			if (out.containsKey("paths")) {
 				JSONObject paths = (JSONObject) out.get("paths");
 				if (paths.containsKey("wrf")) { //As of this version, we use the root of the WRF directory
@@ -215,36 +223,25 @@ public class WRFRunner {
 						paths.put("wrf", wrf.substring(0, wrf.length() - 4)); //-4 because we want to get rid of the potential trailing '/'
 				}
 			}
-			version = updateVersionNumber(out, "1.3.0");
-		}
+		});
 		
-		if (version.compareTo(new VersionNumber("1.4.0")) < 0) {
+		performConfigurationUpgradeAction(out, "1.4.0", () -> {
 			JSONSystem.renameField(general, new JSONNumber<>(15), "max-outputs"); //This is renamed to max-kept-outputs in the 1.5.5 section, so this step is just for posterity
-			version = updateVersionNumber(out, "1.4.0");
-		}
+		});
 		
-		if (version.compareTo(new VersionNumber("1.5.0")) < 0) {
+		performConfigurationUpgradeAction(out, "1.5.0", () -> {
 			if (out.containsKey("commands")) //As of this version, commands are automatically determined
 				out.remove("commands");
-			version = updateVersionNumber(out, "1.5.0");
-		}
+		});
 		
-		if (version.compareTo(new VersionNumber("1.5.5")) < 0) {
-			JSONSystem.renameField(general, new JSONNumber<>(15), "max-outputs", "max-kept-outputs");
-			version = updateVersionNumber(out, "1.5.5");
-		}
+		performConfigurationUpgradeAction(out, "1.5.5", () -> JSONSystem.renameField(general, new JSONNumber<>(15), "max-outputs", "max-kept-outputs"));
 		
-		if (version.compareTo(new VersionNumber("1.5.6")) < 0) {
-			JSONSystem.transferField("use-computed-times", timing.containsKey("rounding") ? ((JSONObject) timing.get("rounding")).get("enabled") : new JSONBoolean(true), timing);
-			version = updateVersionNumber(out, "1.5.6");
-		}
+		performConfigurationUpgradeAction(out, "1.5.6",
+				() -> JSONSystem.transferField("use-computed-times", timing.containsKey("rounding") ? ((JSONObject) timing.get("rounding")).get("enabled") : new JSONBoolean(true), timing));
 		
-		if (version.compareTo(new VersionNumber("1.6.1")) < 0) {
-			JSONSystem.transferField("keep-logs", new JSONBoolean(false), general);
-			version = updateVersionNumber(out, "1.6.1");
-		}
+		performConfigurationUpgradeAction(out, "1.6.1", () -> JSONSystem.transferField("keep-logs", new JSONBoolean(false), general));
 		
-		if (version.compareTo(new VersionNumber("1.7.0")) < 0) {
+		performConfigurationUpgradeAction(out, "1.7.0", () -> {
 			if (!general.containsKey("always-suffix")) {
 				if (general.get("parallel") instanceof JSONObject && ((JSONObject) general.get("parallel")).containsKey("always-suffix"))
 					general.put("always-suffix", ((JSONObject) general.get("parallel")).get("always-suffix"));
@@ -254,15 +251,11 @@ public class WRFRunner {
 				else
 					general.put("always-suffix", false);
 			}
-			version = updateVersionNumber(out, "1.7.0");
-		}
+		});
 		
-		if (version.compareTo(new VersionNumber("2.0.0")) < 0) {
-			general.remove("wait-for-wrf");
-			version = updateVersionNumber(out, "2.0.0");
-		}
+		performConfigurationUpgradeAction(out, "2.0.0", () -> general.remove("wait-for-wrf"));
 		
-		if (version.compareTo(new VersionNumber("2.1.5")) < 0) {
+		performConfigurationUpgradeAction(out, "2.1.5", () -> {
 			if (out.containsKey("paths")) {
 				JSONObject paths = (JSONObject) out.get("paths");
 				String working = null;
@@ -278,22 +271,17 @@ public class WRFRunner {
 			}
 			if (((JSONObject) out.get("general")).containsKey("features"))
 				JSONSystem.transferField("cleanup", new JSONBoolean(true), (JSONObject) general.get("features"), general);
-			version = updateVersionNumber(out, "2.1.5");
-		}
+		});
 		
-		if (version.compareTo(new VersionNumber("2.1.9")) < 0) {
-			if (timing.containsKey("rounding"))
-				JSONSystem.transferField("fraction", new JSONNumber<>(1.0), (JSONObject) timing.get("rounding"));
-			version = updateVersionNumber(out, "2.1.9");
-		}
+		performConfigurationUpgradeAction(out, "2.1.9", () -> {
+			if (timing.get("rounding") instanceof JSONObject && !((JSONObject) timing.get("rounding")).containsKey("fraction"))
+				((JSONObject) timing.get("rounding")).put("fraction", 1.0);
+		});
 		
-		if (version.compareTo(new VersionNumber("3.1.0")) < 0) {
-			JSONSystem.transferField("wrap-timestep", new JSONBoolean(true), (JSONObject) out.get("grib"));
-			version = updateVersionNumber(out, "3.1.0");
-		}
+		performConfigurationUpgradeAction(out, "3.1.0", () -> JSONSystem.transferField("wrap-timestep", new JSONBoolean(true), (JSONObject) out.get("grib")));
 		
 		depluralize(out, false);
-		if (version.compareTo(new VersionNumber("4.0.0")) < 0) {
+		performConfigurationUpgradeAction(out, "4.0.0", () -> {
 			JSONObject modules = (JSONObject) out.get("module");
 			JSONSystem.transferField("logging-level", new JSONString("INFO"), general);
 			//Build the module section
@@ -340,14 +328,13 @@ public class WRFRunner {
 				global.put("rounding", rounding);
 				timing.put("global", global);
 			}
-			if (((JSONObject) out.get("grib")).containsKey("wrap-timestep"))
+			if (((JSONObject) out.get("grib")).containsKey("wrap-timestep")) //If grib contains wrap-timestep, transfer it to grib->timestep
 				JSONSystem.transferField("wrap-timestep", new JSONBoolean(true), (JSONObject) out.get("grib"), (JSONObject) ((JSONObject) out.get("grib")).get("timestep"));
 			if (((JSONObject) ((JSONObject) out.get("grib")).get("timestep")).containsKey("wrap-timestep"))
 				JSONSystem.renameField((JSONObject) ((JSONObject) out.get("grib")).get("timestep"), new JSONBoolean(true), "wrap-timestep", "wrap");
-			version = updateVersionNumber(out, "4.0.0");
-		}
+		});
 		
-		if (version.compareTo(new VersionNumber("5.0.0")) < 0) {
+		performConfigurationUpgradeAction(out, "5.0.0", () -> {
 			//Rename all uses of type = json in Timing subsections to type = computed
 			JSONObject temp;
 			for (JSONData<?> val : timing.values()) { //All timing subsections except for grib are single-depth.  Therefore, this will take care of most of the appropriate renaming
@@ -368,28 +355,30 @@ public class WRFRunner {
 			}
 			//Rename rounding to round
 			recursiveRenameField(timing, "rounding", "round"); //Rounding should only be renamed within timing
-			version = updateVersionNumber(out, "5.0.0");
-		}
+		});
 		
-		if (version.compareTo(new VersionNumber("5.1.0")) < 0) {
+		performConfigurationUpgradeAction(out, "5.1.0", () -> {
 			if (!general.containsKey("serial-module-execution"))
 				general.put("serial-module-execution", false);
-			version = updateVersionNumber(out, "5.1.0");
-		}
+		});
 		
-		if (version.compareTo(new VersionNumber("5.2.0")) < 0) {
-			JSONObject defaultParallel = new JSONObject();
-			defaultParallel.put("is-dmpar", true);
-			defaultParallel.put("boot-lam", false);
-			defaultParallel.put("processors", 2);
-			JSONObject wrf;
+		performConfigurationUpgradeAction(out, "5.2.0", () -> {
 			if (!out.containsKey("wrf"))
-				out.put("wrf", wrf = new JSONObject());
-			else
-				wrf = (JSONObject) out.get("wrf");
-			JSONSystem.transferField("parallel", defaultParallel, general, wrf);
-			version = updateVersionNumber(out, "5.2.0");
-		}
+				out.put("wrf", new JSONObject());
+			if (out.get("wrf") instanceof JSONObject && !((JSONObject) out.get("wrf")).containsKey("parallel")) {
+				if (general.containsKey("parallel"))
+					((JSONObject) out.get("wrf")).put("parallel", general.get("parallel"));
+				else {
+					JSONObject defaultParallel = new JSONObject();
+					defaultParallel.put("is-dmpar", true);
+					defaultParallel.put("boot-lam", false);
+					defaultParallel.put("processors", 2);
+					((JSONObject) out.get("wrf")).put("parallel", defaultParallel);
+				}
+			}
+			if (general.containsKey("parallel"))
+				general.remove("parallel");
+		});
 		return out;
 	}
 	
@@ -406,13 +395,15 @@ public class WRFRunner {
 		}
 	}
 	
-	private VersionNumber getVersionNumber(JSONObject configuration) {
+	private static VersionNumber getVersionNumber(JSONObject configuration) {
 		return new VersionNumber((String) configuration.get("version").value());
 	}
 	
-	private VersionNumber updateVersionNumber(JSONObject configuration, String newVersion) {
-		configuration.put("version", newVersion);
-		return new VersionNumber((String) configuration.get("version").value());
+	private static void performConfigurationUpgradeAction(JSONObject configuration, String newVersion, ConfigurationUpgradeAction action) {
+		if (getVersionNumber(configuration).compareTo(new VersionNumber(newVersion)) < 0) {
+			action.perform();
+			configuration.put("version", newVersion);
+		}
 	}
 	
 	private static final JSONObject buildModuleSubsection(Boolean enabled, String moduleClass, String namelist, String... dependencies) {
