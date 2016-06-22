@@ -4,11 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import toberumono.namelist.parser.Namelist;
 import toberumono.utils.files.BasicTransferActions;
@@ -29,7 +25,7 @@ public abstract class Module extends AbstractScope<Simulation> {
 	private Timing timing;
 	private Path namelistPath;
 	private Namelist namelist;
-	private List<Module> dependencies;
+	private ScopedList dependencies;
 	
 	public Module(ModuleScopedMap parameters, Simulation sim) {
 		super(sim);
@@ -82,21 +78,21 @@ public abstract class Module extends AbstractScope<Simulation> {
 		}
 	}
 	
-	public List<Module> getDependencies() {
+	public ScopedList getDependencies() {
 		if (dependencies != null) //First one is to avoid unnecessary use of synchronization
 			return dependencies;
 		synchronized (name) {
 			if (dependencies != null)
 				return dependencies;
-			if (!module.containsKey("dependencies"))
-				dependencies = new ArrayList<>();
-			else {
+			ScopedList dependencies = new ScopedList(this);
+			if (module.containsKey("dependencies")) {
 				Object deps = module.get("dependencies");
 				if (deps instanceof String)
-					dependencies = Arrays.asList(getSim().getModule((String) deps));
+					dependencies.add(getSim().getModule((String) deps));
 				else if (deps instanceof ScopedList)
-					dependencies = ((ScopedList) deps).stream().map(o -> o instanceof String ? (String) o : o.toString()).map(mod -> getSim().getModule(mod)).collect(Collectors.toList());
+					((ScopedList) deps).stream().map(o -> o instanceof String ? (String) o : o.toString()).map(getSim()::getModule).forEach(dependencies::add);
 			}
+			this.dependencies = dependencies;
 		}
 		return dependencies;
 	}
