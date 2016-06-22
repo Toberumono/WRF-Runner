@@ -12,12 +12,18 @@ import toberumono.utils.files.TransferFileWalker;
 import toberumono.wrf.scope.AbstractScope;
 import toberumono.wrf.scope.ModuleScopedMap;
 import toberumono.wrf.scope.NamedScopeValue;
-import toberumono.wrf.scope.ScopedMap;
+import toberumono.wrf.scope.ScopedFormulaProcessor;
 import toberumono.wrf.scope.ScopedList;
+import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.Timing;
 
 import static toberumono.wrf.SimulationConstants.*;
 
+/**
+ * Root class for {@link Module Modules} that are used by the {@link Simulation}.
+ * 
+ * @author Toberumono
+ */
 public abstract class Module extends AbstractScope<Simulation> {
 	protected final Logger logger;
 	private final String name;
@@ -127,6 +133,14 @@ public abstract class Module extends AbstractScope<Simulation> {
 	}
 	
 	/**
+	 * @return the result of {@link #getNamelistPath()} as a {@link String}; primarily for use with {@link ScopedFormulaProcessor}
+	 */
+	@NamedScopeValue("namelist-path")
+	public String getNamelistPathAsString() {
+		return namelistPath.toString();
+	}
+	
+	/**
 	 * @return the {@link Module Module's} processed {@link Timing} information
 	 */
 	@NamedScopeValue("timing")
@@ -143,6 +157,7 @@ public abstract class Module extends AbstractScope<Simulation> {
 	/**
 	 * @return a {@link ScopedList} wherein each value is a {@link Module} that must be run before this {@link Module} can be run
 	 */
+	@NamedScopeValue("dependencies")
 	public ScopedList getDependencies() {
 		if (dependencies != null) //First one is to avoid unnecessary use of synchronization
 			return dependencies;
@@ -165,6 +180,7 @@ public abstract class Module extends AbstractScope<Simulation> {
 	/**
 	 * @return the {@link Module Module's} name
 	 */
+	@NamedScopeValue("name")
 	public String getName() {
 		return name;
 	}
@@ -172,6 +188,7 @@ public abstract class Module extends AbstractScope<Simulation> {
 	/**
 	 * @return the {@link Simulation} that initialized the {@link Module}
 	 */
+	@NamedScopeValue("sim")
 	public Simulation getSim() {
 		return getParent();
 	}
