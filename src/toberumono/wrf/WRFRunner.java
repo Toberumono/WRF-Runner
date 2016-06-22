@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Map.Entry;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -87,17 +88,31 @@ public class WRFRunner {
 					configurationPath = Paths.get(arg);
 			}
 		}
+		boolean canRun = true;
 		WRFRunner runner = new WRFRunner();
-		JSONObject configuration = runner.upgradeConfiguration((JSONObject) JSONSystem.loadJSON(configurationPath));
-		if (!cacheUpdates && configuration.isModified()) {
-			runner.getLog().info("Updating the configuration file located at: " + configurationPath);
-			JSONSystem.writeJSON(configuration, configurationPath);
-			runner.getLog().info("Updates completed.");
+		JSONObject configuration = (JSONObject) JSONSystem.loadJSON(configurationPath);
+		if (!configuration.containsKey("version") || getVersionNumber(configuration).compareTo(new VersionNumber("4.0.0")) < 0)
+			canRun = !runner.checkForPotentialFormulaStrings(configuration);
+		if (!canRun) {
+			runner.log.severe("Cannot run the simulation - the configuration file has potentially invalid Strings");
+			Runtime.getRuntime().exit(1);
 		}
-		Simulation sim = runner.createSimulation(configuration, configurationPath);
-		runner.runSimulation(sim);
+		else {
+			configuration = runner.upgradeConfiguration(configuration);
+			if (!cacheUpdates && configuration.isModified()) {
+				runner.getLog().info("Updating the configuration file located at: " + configurationPath);
+				JSONSystem.writeJSON(configuration, configurationPath);
+				runner.getLog().info("Updates completed.");
+			}
+			Simulation sim = runner.createSimulation(configuration, configurationPath);
+			runner.runSimulation(sim);
+		}
 	}
 	
+	/**
+	 * Initializes the {@link WRFRunnerComponentFactory WRFRunnerComponentFactories} for {@link Offset}, {@link Round}, {@link Duration},
+	 * {@link Clear}, and {@link Timing}.
+	 */
 	public static void initFactories() {
 		WRFRunnerComponentFactory<Offset> offsetFactory = WRFRunnerComponentFactory.getFactory(Offset.class, "standard", DisabledOffset::getDisabledOffsetInstance);
 		offsetFactory.addComponentConstructor("standard", StandardOffset::new);
@@ -263,13 +278,10 @@ public class WRFRunner {
 					working = (String) paths.remove("working").value();
 				if (paths.containsKey("working-directory")) //working-directory is the more recent name, so it has priority
 					working = (String) paths.remove("working-directory").value();
-				if (working != null) {
-					if (working.charAt(0) == '=' || working.charAt(0) == '\\') //If so, it might not work with formulae
-						log.log(Level.WARNING, "The working-directory path starts with an '" + working.charAt(0) + "'.  This may cause issues when the value is read later."); //TODO add more information?
+				if (working != null)
 					JSONSystem.transferField("working-directory", new JSONString(working), general); //We use this because it will also ensure that existing values aren't overwritten
-				}
 			}
-			if (((JSONObject) out.get("general")).containsKey("features"))
+			if (general.containsKey("features"))
 				JSONSystem.transferField("cleanup", new JSONBoolean(true), (JSONObject) general.get("features"), general);
 		});
 		
@@ -380,6 +392,36 @@ public class WRFRunner {
 				general.remove("parallel");
 		});
 		return out;
+	}
+	
+	private boolean checkForPotentialFormulaStrings(JSONData<?> root) {
+		return checkForPotentialFormulaStrings(root, "");
+	}
+	
+	private boolean checkForPotentialFormulaStrings(JSONData<?> root, String path) {
+		if (root instanceof JSONString) {
+			if (((String) root.value()).charAt(0) == '=')
+				log.log(Level.WARNING, "The value of " + path + "starts with an '" + ((String) root.value()).charAt(0) + "'. It will therefore be treated as a formula." +
+						"\nIf this is not correct, add a '\\' to the start of the value before running the simulation." +
+						"\nSee https://github.com/Toberumono/WRF-Runner/wiki/Configuration-Formula-System for more information.");
+			return true;
+		}
+		else if (root instanceof JSONObject) {
+			boolean potentialIssue = false;
+			for (Entry<String, JSONData<?>> entry : ((JSONObject) root).entrySet())
+				if (checkForPotentialFormulaStrings(entry.getValue(), (path.length() > 0 ? path + "->" : path) + entry.getKey()))
+					potentialIssue = true;
+			return potentialIssue;
+		}
+		else if (root instanceof JSONArray) {
+			boolean potentialIssue = false;
+			JSONArray arr = (JSONArray) root;
+			for (int i = 0; i < arr.size(); i++)
+				if (checkForPotentialFormulaStrings(arr.get(i), path + "[" + i + "]"))
+					potentialIssue = true;
+			return potentialIssue;
+		}
+		return false;
 	}
 	
 	private static void recursiveRenameField(JSONData<?> root, String oldName, String newName) {
