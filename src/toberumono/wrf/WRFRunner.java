@@ -391,6 +391,7 @@ public class WRFRunner {
 			if (general.containsKey("parallel"))
 				general.remove("parallel");
 		});
+		performConfigurationUpgradeAction(out, "5.3.2", () -> JSONSystem.transferField("use-computed-times", new JSONBoolean(true), timing, general));
 		return out;
 	}
 	
