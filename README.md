@@ -113,7 +113,7 @@ These are all automatically downloaded, compiled, and linked as part of the inst
   3. Set the duration values to match how long you wish your script to run.
     - The fields accept extended values.  e.g. setting hours to 36 is equivalent to setting days to 1 and hours to 12.
 7. Configure the grib section (this is only required if the wget feature is enabled):
-  + See [Writing a GRIB URL](https://github.com/Toberumono/WRF-Runner/wiki/Writing-a-GRIB-URL) for the steps needed.
+  + See [Writing a GRIB URL](https://github.com/Toberumono/WRF-Runner/wiki/Grib-Module#writing-a-grib-url) for the steps needed.
 8. That's it.  Proceed to [Running](#running)
 
 ####Running
