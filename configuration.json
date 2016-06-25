@@ -1,18 +1,16 @@
 {
+	"version" : "5.3.2",
 	"general" : {
-		"parallel" : {
-			"is-dmpar" : true,
-			"boot-lam" : false,
-			"processors" : 2
-		},
 		"cleanup" : true,
-		"working-directory" : "/Users/toberumono/Working",
+		"working-directory" : "./Working",
 		"keep-logs" : false,
 		"always-suffix" : false,
-		"max-kept-outputs" : 15
+		"max-kept-outputs" : 15,
+		"logging-level" : "info",
+		"serial-module-execution" : false,
+		"use-computed-times" : true
 	},
 	"module" : {
-		"execution-order" : ["grib", "wps", "wrf"],
 		"grib" : {
 			"enabled" : true,
 			"class" : "toberumono.wrf.modules.GRIBModule"
@@ -20,25 +18,32 @@
 		"wps" : {
 			"enabled" : true,
 			"class" : "toberumono.wrf.modules.WPSModule",
-			"namelist" : "namelist.wps"
+			"namelist" : "namelist.wps",
+			"dependencies" : [ "grib" ]
 		},
 		"wrf" : {
 			"enabled" : true,
 			"class" : "toberumono.wrf.modules.WRFModule",
-			"namelist" : "run/namelist.input"
+			"namelist" : "run/namelist.input",
+			"dependencies" : [ "wps" ]
 		}
 	},
 	"path" : {
-		"wrf" : "/Users/toberumono/WRFV3",
-		"wps" : "/Users/toberumono/WPS"
+		"wrf" : "./WRFV3",
+		"wps" : "./WPS"
 	},
 	"timing" : {
-		"use-computed-times" : true,
 		"global" : {
+			"duration" : {
+				"enabled" : true,
+				"days" : 0,
+				"hours" : 3,
+				"minutes" : 0,
+				"seconds" : 0
+			},
 			"clear" : {
-				"enabled" : false,
-				"fraction" : 1.0,
-				"keep" : "day"
+				"enabled" : true,
+				"keep" : "hours"
 			},
 			"offset" : {
 				"enabled" : true,
@@ -47,25 +52,66 @@
 				"minutes" : 0,
 				"seconds" : 0
 			},
-			"rounding" : {
-				"enabled" : ["hours"],
+			"round" : {
+				"enabled" : [ "hours" ],
 				"type" : "bucket",
 				"arguments" : {
 					"rounding-mode" : "floor",
-					"hours-step" : 3, //step-size
-					"hours-offset" : 0, //offset
-					"hours-rounding-mode" : "floor", //Sets the rounding mode.  Must be one of: ceiling, floor, up, down, half_down, half_even, half_up, unnecessary.  Case-insensitive
-					"days" : [1, 2, 3, 4, 5, 6], //Explicit buckets
-					"minutes" : {
-						"step" : 15,
-						"offset" : 0,
-						"rounding-mode" : "ceiling"
-					},
-					"seconds" : {
-						"buckets" : [0, 30]
+					"hours-step" : 3,
+					"hours-offset" : 0
+				}
+			}
+		},
+		"grib" : {
+			"constant" : {
+				"inherit" : true,
+				"clear" : {
+					"enabled" : true,
+					"keep" : "hours"
+				},
+				"offset" : {
+					"enabled" : true,
+					"days" : 0,
+					"hours" : 0,
+					"minutes" : 0,
+					"seconds" : 0
+				},
+				"round" : {
+					"enabled" : [ "hours" ],
+					"type" : "bucket",
+					"arguments" : {
+						"rounding-mode" : "floor",
+						"hours-step" : 3,
+						"hours-offset" : 0
 					}
 				}
-			}	
+			},
+			"incremented" : {
+				"inherit" : true,
+				"clear" : {
+					"enabled" : true,
+					"keep" : "hours"
+				},
+				"offset" : {
+					"enabled" : true,
+					"days" : 0,
+					"hours" : 0,
+					"minutes" : 0,
+					"seconds" : 0
+				},
+				"round" : {
+					"enabled" : [ "hours" ],
+					"type" : "bucket",
+					"arguments" : {
+						"rounding-mode" : "floor",
+						"hours-step" : 3,
+						"hours-offset" : 0
+					}
+				}
+			}
+		},
+		"wps" : {
+			"inherit" : true
 		},
 		"wrf" : {
 			"inherit" : true
@@ -79,87 +125,13 @@
 			"hours" : 3,
 			"minutes" : 0,
 			"seconds" : 0
-		},
-		"timing" : {
-			"inherit" : true,
-			"constant" : {
-				"inherit" : true,
-				"clear" : {
-					"inherit" : true,
-					"enabled" : true,
-					"fraction" : 1.0,
-					"keep" : "day"
-				},
-				"offset" : {
-					"inherit" : true,
-					"enabled" : true,
-					"days" : 0,
-					"hours" : 0,
-					"minutes" : 0,
-					"seconds" : 0
-				},
-				"rounding" : {
-					"inherit" : true,
-					"enabled" : ["hours"],
-					"type" : "bucket",
-					"arguments" : {
-						"hours" : 3, //step-size
-						"hours-offset" : 0, //offset
-						"days" : [1, 2, 3, 4, 5, 6] //Explicit buckets
-					}
-				}
-			},
-			"incremented" : {
-				"inherit" : true,
-				"clear" : {
-					"inherit" : true,
-					"enabled" : true,
-					"fraction" : 1.0,
-					"keep" : "day"
-				},
-				"offset" : {
-					"inherit" : true,
-					"enabled" : true,
-					"days" : 0,
-					"hours" : 0,
-					"minutes" : 0,
-					"seconds" : 0
-				},
-				"rounding" : {
-					"inherit" : true,
-					"enabled" : ["hours"],
-					"type" : "bucket",
-					"arguments" : {
-						"hours" : 3, //step-size
-						"hours-offset" : 0, //offset
-						"days" : [1, 2, 3, 4, 5, 6] //Explicit buckets
-					}
-				}
-			}
 		}
 	},
-	"timing" : {
-		"use-computed-times" : true,
-		"clear" : {
-			"enabled" : true,
-			"fraction" : 1.0,
-			"keep" : "day"
-		},
-		"offset" : {
-			"enabled" : true,
-			"days" : 0,
-			"hours" : 0,
-			"minutes" : 0,
-			"seconds" : 0
-		},
-		"rounding" : {
-			"enabled" : ["hours"],
-			"type" : "bucket",
-			"arguments" : {
-				"hours" : 3, //step-size
-				"hours-offset" : 0, //offset
-				"days" : [1, 2, 3, 4, 5, 6] //Explicit buckets
-			}
+	"wrf" : {
+		"parallel" : {
+			"is-dmpar" : true,
+			"boot-lam" : false,
+			"processors" : 2
 		}
 	}
 }
