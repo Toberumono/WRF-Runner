@@ -220,6 +220,7 @@ A Quick Note: Ruby and Curl are already installed on Macs, so we don't need to w
 If you are upgrading from a version below 4, you may have invalid Strings in your configuration file due to the configuration file changes between versions 3 and 4. For safety, the WRF-Runner program checks for potential issues before attempting to run a Simulation. If it finds any problems, it will notify you where they are, and provide a description of the problem. Fixing these can be done manually or through the interactive upgrade helper.
 
 To run the interactive upgrade helper, follow the following steps:
+
 1. cd to the directory into which you linked the WRFRunner.jar and configuration.json files.
 2. run `java -jar WRFRunner.jar --interactive-upgrade configuration.json`
   * Replace `configuration.json` with the path to your configuration file as needed.
