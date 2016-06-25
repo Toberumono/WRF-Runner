@@ -77,7 +77,7 @@ public class Simulation extends AbstractScope<Scope> {
 		active = new ScopedMap(this);
 		disabledModules = new HashSet<>();
 		this.modules = Collections.unmodifiableMap(parseModules(modules, paths));
-		globalTiming = ((Boolean) getTimingMap().get("use-computed-times")) ? new ComputedTiming((ScopedMap) getTimingMap().get("global"), base, this)
+		globalTiming = ((Boolean) getGeneral().get("use-computed-times")) ? new ComputedTiming((ScopedMap) getTimingMap().get("global"), base, this)
 				: new NamelistTiming(getModule("wrf").getNamelist().get("time_control"), this);
 		working = constructWorkingDirectory(getResolver().resolve(getGeneral().get("working-directory").toString()), (Boolean) general.get("always-suffix").value());
 		for (String name : this.modules.keySet())

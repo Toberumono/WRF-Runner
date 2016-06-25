@@ -53,7 +53,7 @@ public class WRFModule extends Module {
 		synchronized (this) {
 			if (parallel != null)
 				return parallel;
-			parallel = (ScopedMap) getParameters().get("parallel");
+			parallel = (ScopedMap) ((ScopedMap) getParameters().get("configuration")).get("parallel");
 		}
 		return parallel;
 	}
