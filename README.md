@@ -1,8 +1,8 @@
-#WRF-Runner
-##What is it?
+# WRF-Runner
+## What is it?
 This is a Java 8 program that simplifies automatically running WRF simulations.
 
-##A Summary of Features
+## A Summary of Features
 
 1. Runs on personal systems, desktops, workstations, etc. (It has *not* been tested or deployed on large-scale systems or clusters with job-management systems)
 2. Simplifies the process by deriving as much information as possible, and shifts the repeated configuration values into a central location so that they only need to be set once.
@@ -12,7 +12,7 @@ This is a Java 8 program that simplifies automatically running WRF simulations.
 6. Allows for a large amount of customization, but only requires a small amount.
 7. Can be used as a library for programmers that want an even deeper level of customization.
 
-##What does this program do?
+## What does this program do?
 
 1. Automatically acquires GRIB data
   + By default, this is set to the NAM 212 AWIPS Grid - Regional - CONUS Double Resolution (40-km Resolution) dataset
@@ -30,19 +30,19 @@ This is a Java 8 program that simplifies automatically running WRF simulations.
 4. Cleans up temporary files
 5. Deletes old forecasts if there are more forecasts than the user-defined limit
 
-##What does this program not do?
+## What does this program not do?
 
 1. Set up WRF and WPS - Check out my [WRF Setup Script](https://github.com/Toberumono/WRF-Setup-Script) for automating that.
 2. Postprocess data
 3. Run more complex simulations (e.g. those requiring ndown.exe or tc.exe)
 
-##Usage
-###Experience Needed
+## Usage
+### Experience Needed
 This guide does assume a basic level of comfort with a UNIX-based prompt.  If you are new to working with terminal, tutorial one at [http://www.ee.surrey.ac.uk/Teaching/Unix/](http://www.ee.surrey.ac.uk/Teaching/Unix/) will cover everything you need for this tutorial. (Its prompt likely looks a bit different, but those commands are effectively identical across UNIX shells)
 
-###Setup
-####Required Programs
-#####(these are all command line utilities)
+### Setup
+#### Required Programs
+##### (these are all command line utilities)
 
 * curl
 * git
@@ -54,7 +54,7 @@ This guide does assume a basic level of comfort with a UNIX-based prompt.  If yo
 If you don't have these, see [Getting the Required Programs](#getting-the-required-programs) for how to get them.
 If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Brewless Setup](#brewless-setup) section.
 
-####Required Libraries
+#### Required Libraries
 These are all my libraries.
 
 * [JSON Library](https://github.com/Toberumono/JSON-Library)
@@ -64,7 +64,7 @@ These are all my libraries.
 
 These are all automatically downloaded, compiled, and linked as part of the installation process if you are using Homebrew/Linuxbrew.
 
-####Compiling WRFRunner.jar
+#### Compiling WRFRunner.jar
 
 1. Make sure that you have the [Required Programs](#required-programs).
   + If you don't, follow the directions in [Getting the Required Programs](#getting-the-required-programs).
@@ -79,14 +79,14 @@ These are all automatically downloaded, compiled, and linked as part of the inst
 6. Run `wrf-linker.sh`
 7. Proceed to [Running a WRF process](#running-a-wrf-process)
 
-###Running a WRF process
-####A few quick notes
+### Running a WRF process
+#### A few quick notes
 
 * This program does not override any fields in the namelist files other than the run_, start_, end_, wps paths (it just makes them absolute), and interval_seconds (however, it is overriden with a user-defined value) - everything else is preserved.  Therefore, this can still be used with more advanced configurations.
 * This section describes only the minimal amount of configuration required for a successful run.  There are several options not visited here.
   See [Description of Configuration Variables](https://github.com/Toberumono/WRF-Runner/wiki/Description-of-Configuration-Variables) for information on each option in the configuration.json file.
 
-####Configuring
+#### Configuring
 
 1. This program downloads data that needs the NAM Vtable in WPS by default.  To ensure that the correct Vtable is used, run: `ln -sf ./ungrib/Variable_Tables/Vtable.NAM ./Vtable` in the WPS installation directory if you are using NAM data.
 2. Edit the namelist files for WRF and WPS.  In the general case, this requires:
@@ -96,31 +96,31 @@ These are all automatically downloaded, compiled, and linked as part of the inst
     + Make sure that the number of values on lines that have per-domain values are equal to the value in max_dom
   3. Setting input_from_file to ".true." in time_control (make sure to set it for each domain)
   4. For NAM data, setting num_metgrid_levels to 40 and num_metgrid_soil_levels to 4 in namelist.input
-  5. For runs *not* using wget, settting interval_seconds in the time_control and share sections (This is computed from the grib->timestep subsection when wget is being used)
 3. Open the configuration file (configuration.json) in the directory into which you linked the WRFRunner.jar and configuration.json files.
-4. Set the working directory (general -> "working-directory") to an *empty or uncreated* directory.  This is path from which the simulations will be run and where the timestamped output folders will be placed.
-5. Configure the parallelization options in the general->parallel subsection:
-  1. If you expect to have multiple simulations with the same start time and wish to keep them, set "use-suffix" to true.
-  2. Set "is-dmpar" to false if you are using a non-DMPAR build of WRF.
-  3. If WRF was compiled in DMPAR mode, set "processors" to the number of processors you would like to allow WRF to use.
+4. Set the working directory (general -> "working-directory") to an *empty or uncreated* directory.
+  - This is path from which the simulations will be run and where the timestamped output folders will be placed.
+5. Configure the parallelization options in the wrf->parallel subsection:
+  1. Set "is-dmpar" to false if you are using a non-DMPAR build of WRF.
+  2. If WRF was compiled in DMPAR mode, set "processors" to the number of processors you would like to allow WRF to use.
     + It is a good idea to set this value to at most two less than the number of processors (or cores) in your system.
-5. Configure the paths section (All of these *must* be absolute paths):
+6. If you expect to regularly have multiple simulations with the same start time, and wish to have a constant folder-naming scheme, set general -> "always-suffix" to true.
+7. Configure the path section (While these can be relative paths, it is *highly recommended* that they be absolute paths):
   1. Set the "wrf" path to the root directory of your WRF installation.
   2. Set the "wps" path to the root directory of your WPS installation.
-6. Configure the timing section (These are used to determine the values used in the run_, start_, and end_ fields):
+8. Configure the timing section (These are used to determine the values used in the run_, start_, and end_ fields):
   1. Go through and set the variables as appropriate.  If you are unsure about "rounding", leave it enabled.
   2. Set the offset values if you want the simulation to start at a time different from that produced by rounding (e.g. with rounding set to current day, setting hours 6 and the other fields to 0 would cause the simulation to start 6:00am on the current day).  Otherwise, disable it (set "enabled" to false).
   3. Set the duration values to match how long you wish your script to run.
     - The fields accept extended values.  e.g. setting hours to 36 is equivalent to setting days to 1 and hours to 12.
-7. Configure the grib section (this is only required if the wget feature is enabled):
+9. Configure the grib section (this is only required if the GRIB Module is enabled):
   + See [Writing a GRIB URL](https://github.com/Toberumono/WRF-Runner/wiki/Grib-Module#writing-a-grib-url) for the steps needed.
-8. That's it.  Proceed to [Running](#running)
+10. That's it.  Proceed to [Running](#running)
 
-####Running
+#### Running
 1. cd to the directory into which you linked the WRFRunner.jar and configuration.json files.
 2. run `java -jar WRFRunner.jar configuration.json`
 
-####Setting Up a Cron Task
+#### Setting Up a Cron Task
 In order for this to run automatically, we need to set up a Cron task.
 
 1. cd to the directory into which you linked the WRFRunner.jar and configuration.json files.
@@ -138,8 +138,8 @@ In order for this to run automatically, we need to set up a Cron task.
   * See [http://www.nncron.ru/help/EN/working/cron-format.htm](http://www.nncron.ru/help/EN/working/cron-format.htm) for syntax help.
 6. Save the file and quit the editor.
 
-##Help
-###Brewless Setup
+## Help
+### Brewless Setup
 These instructions will walk you through setting up the program without Homebrew/Linuxbrew.  While this is *strongly* discouraged on Macs, Linuxbrew has been known to have some issues on Linux-based machines.  These instructions are an equally stable alternative to Homebrew/Linuxbrew; however, they do take a few more steps.<br>
 Note that, unlike every other section of the tutorial, these commands use curl.  This is because installing wget on a Mac without Homebrew can be a pain.
 
@@ -173,10 +173,10 @@ Note that, unlike every other section of the tutorial, these commands use curl. 
     ```
 6. You're all set.  Proceed to [Running a WRF Process](#running-a-wrf-process).
 
-###Getting the Required Programs
+### Getting the Required Programs
 If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Brewless Setup](#brewless-setup) section.
 
-####Linux
+#### Linux
 
 1. Download the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
 2. `cd` into the directory into which you downloaded the JDK (`cd $HOME/Downloads` will likely do it) and run:
@@ -209,7 +209,7 @@ If you do not want to use Homebrew/Linuxbrew, follow the instructions in the [Br
     ```
     * This is **not** recommended; however, it is technically a valid option.
 
-####Mac
+#### Mac
 A Quick Note: Ruby and Curl are already installed on Macs, so we don't need to worry about them.
 
 1. Install the appropriate [Java 8 JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
