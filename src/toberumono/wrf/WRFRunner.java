@@ -175,7 +175,7 @@ public class WRFRunner {
 			}
 		}
 		configuration = depluralize(upgradeResult.getX(), false);
-		if (!args.cacheUpdates() && configuration.isModified()) {
+		if ((!args.ignoreUpgradeProblems() || upgradeResult.getY().size() == 0) && !args.cacheUpdates() && configuration.isModified()) {
 			getLog().info("Updating the configuration file located at: " + args.getConfigurationPath());
 			JSONSystem.writeJSON(configuration, args.getConfigurationPath());
 			getLog().info("Updates completed.");
