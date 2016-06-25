@@ -174,7 +174,7 @@ public class WRFRunner {
 						"\nRun the program with the '--interactive-upgrade' command-line argument to be walked through the potential problems.");
 			}
 		}
-		configuration = depluralize(upgradeResult.getX(), false);
+		configuration = applyDefaults(depluralize(upgradeResult.getX(), false));
 		if ((!args.ignoreUpgradeProblems() || upgradeResult.getY().size() == 0) && !args.cacheUpdates() && configuration.isModified()) {
 			getLog().info("Updating the configuration file located at: " + args.getConfigurationPath());
 			JSONSystem.writeJSON(configuration, args.getConfigurationPath());
@@ -499,5 +499,22 @@ public class WRFRunner {
 		JSONSystem.renameField(out, new JSONObject(), "paths", "path");
 		JSONSystem.renameField(out, new JSONObject(), "modules", "module");
 		return out;
+	}
+	
+	private static JSONObject applyDefaults(JSONObject configuration) {
+		JSONObject general = (JSONObject) configuration.get("general");
+		applyDefault(general, "cleanup", true);
+		applyDefault(general, "keep-logs", false);
+		applyDefault(general, "always-suffix", false);
+		applyDefault(general, "max-kept-outputs", 15);
+		applyDefault(general, "logging-level", "info");
+		applyDefault(general, "serial-module-execution", false);
+		applyDefault(general, "use-computed-times", true);
+		return configuration;
+	}
+	
+	private static void applyDefault(JSONObject container, String name, Object value) {
+		if (!container.containsKey(name))
+			container.put(name, value);
 	}
 }
