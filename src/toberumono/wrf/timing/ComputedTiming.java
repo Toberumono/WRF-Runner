@@ -1,13 +1,12 @@
 package toberumono.wrf.timing;
 
 import java.util.Calendar;
-import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.locks.ReentrantLock;
 
 import toberumono.wrf.Simulation;
 import toberumono.wrf.WRFRunnerComponentFactory;
 import toberumono.wrf.scope.Scope;
+import toberumono.wrf.scope.ScopedComponent;
 import toberumono.wrf.scope.ScopedList;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.clear.Clear;
@@ -24,9 +23,7 @@ import toberumono.wrf.timing.round.Round;
  * 
  * @author Toberumono
  */
-public class ComputedTiming extends TimingScope implements Timing {
-	private final ReentrantLock computationLock;
-	
+public class ComputedTiming extends ScopedComponent<Scope> implements Timing {
 	private Calendar base, start, end;
 	private Offset offset;
 	private Round round;
@@ -61,7 +58,6 @@ public class ComputedTiming extends TimingScope implements Timing {
 		super(parameters, parent);
 		if (!(parent instanceof Timing))
 			Objects.requireNonNull(base, "The base Calendar cannot be null if the parent is not an instance of Timing");
-		computationLock = new ReentrantLock();
 		start = end = null;
 		offset = null;
 		round = null;
@@ -74,27 +70,19 @@ public class ComputedTiming extends TimingScope implements Timing {
 	@Override
 	public Calendar getBase() {
 		if (base == null) {
-			try {
-				computationLock.lock();
+			synchronized (this) {
 				if (base == null) { //Have to re-check for synchronization
 					base = getClear().apply((getParent() instanceof Timing) ? ((Timing) getParent()).getBase() : null);
 					appliedClear = true;
 				}
 			}
-			finally {
-				computationLock.unlock();
-			}
 		}
 		if (!appliedClear) {
-			try {
-				computationLock.lock();
+			synchronized (this) {
 				if (!appliedClear) { //Have to re-check for synchronization
 					base = getClear().apply(base);
 					appliedClear = true;
 				}
-			}
-			finally {
-				computationLock.unlock();
 			}
 		}
 		return base;
@@ -104,13 +92,9 @@ public class ComputedTiming extends TimingScope implements Timing {
 	public Calendar getStart() {
 		if (start != null)
 			return start;
-		try {
-			computationLock.lock();
+		synchronized (this) {
 			if (start == null)
 				start = getOffset().apply(getRound().apply(getBase()));
-		}
-		finally {
-			computationLock.unlock();
 		}
 		return start;
 	}
@@ -119,13 +103,9 @@ public class ComputedTiming extends TimingScope implements Timing {
 	public Calendar getEnd() {
 		if (end != null)
 			return end;
-		try {
-			computationLock.lock();
+		synchronized (this) {
 			if (end == null)
 				end = getDuration().apply(getStart());
-		}
-		finally {
-			computationLock.unlock();
 		}
 		return end;
 	}
@@ -134,8 +114,7 @@ public class ComputedTiming extends TimingScope implements Timing {
 	public Offset getOffset() {
 		if (offset != null)
 			return offset;
-		try {
-			computationLock.lock();
+		synchronized (this) {
 			if (offset == null) {
 				if (getParameters().get("offset") instanceof ScopedList)
 					offset = new ListOffset((ScopedList) getParameters().get("offset"), (getParent() instanceof Timing) ? ((Timing) getParent()).getOffset() : this);
@@ -144,9 +123,6 @@ public class ComputedTiming extends TimingScope implements Timing {
 							(getParent() instanceof Timing) ? ((Timing) getParent()).getOffset() : this);
 			}
 		}
-		finally {
-			computationLock.unlock();
-		}
 		return offset;
 	}
 	
@@ -154,8 +130,7 @@ public class ComputedTiming extends TimingScope implements Timing {
 	public Round getRound() {
 		if (round != null)
 			return round;
-		try {
-			computationLock.lock();
+		synchronized (this) {
 			if (round == null) {
 				if (getParameters().get("round") instanceof ScopedList)
 					round = new ListRound((ScopedList) getParameters().get("round"), (getParent() instanceof Timing) ? ((Timing) getParent()).getRound() : this);
@@ -164,9 +139,6 @@ public class ComputedTiming extends TimingScope implements Timing {
 							(getParent() instanceof Timing) ? ((Timing) getParent()).getRound() : this);
 			}
 		}
-		finally {
-			computationLock.unlock();
-		}
 		return round;
 	}
 	
@@ -174,8 +146,7 @@ public class ComputedTiming extends TimingScope implements Timing {
 	public Duration getDuration() {
 		if (duration != null)
 			return duration;
-		try {
-			computationLock.lock();
+		synchronized (this) {
 			if (duration == null) {
 				if (getParameters().get("duration") instanceof ScopedList)
 					duration = new ListDuration((ScopedList) getParameters().get("duration"), (getParent() instanceof Timing) ? ((Timing) getParent()).getDuration() : this);
@@ -184,9 +155,6 @@ public class ComputedTiming extends TimingScope implements Timing {
 							(getParent() instanceof Timing) ? ((Timing) getParent()).getDuration() : this);
 			}
 		}
-		finally {
-			computationLock.unlock();
-		}
 		return duration;
 	}
 	
@@ -194,8 +162,7 @@ public class ComputedTiming extends TimingScope implements Timing {
 	public Clear getClear() {
 		if (clear != null)
 			return clear;
-		try {
-			computationLock.lock();
+		synchronized (this) {
 			if (clear == null) {
 				if (getParameters().get("clear") instanceof ScopedList)
 					clear = new ListClear((ScopedList) getParameters().get("clear"), (getParent() instanceof Timing) ? ((Timing) getParent()).getClear() : this);
@@ -203,9 +170,6 @@ public class ComputedTiming extends TimingScope implements Timing {
 					clear = WRFRunnerComponentFactory.generateComponent(Clear.class, (ScopedMap) getParameters().get("clear"),
 							(getParent() instanceof Timing) ? ((Timing) getParent()).getClear() : this);
 			}
-		}
-		finally {
-			computationLock.unlock();
 		}
 		return clear;
 	}

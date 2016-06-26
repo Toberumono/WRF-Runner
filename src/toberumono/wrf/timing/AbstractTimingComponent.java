@@ -4,6 +4,7 @@ import java.util.Calendar;
 import java.util.logging.Logger;
 
 import toberumono.wrf.scope.Scope;
+import toberumono.wrf.scope.ScopedComponent;
 import toberumono.wrf.scope.ScopedMap;
 
 /**
@@ -11,7 +12,7 @@ import toberumono.wrf.scope.ScopedMap;
  * 
  * @author Toberumono
  */
-public abstract class AbstractTimingComponent extends TimingScope implements TimingComponent {
+public abstract class AbstractTimingComponent extends ScopedComponent<Scope> implements TimingComponent {
 	private final Logger log;
 	private boolean computed;
 	
