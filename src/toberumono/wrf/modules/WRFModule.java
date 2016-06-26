@@ -13,6 +13,8 @@ import toberumono.utils.files.RecursiveEraser;
 import toberumono.utils.files.TransferFileWalker;
 import toberumono.wrf.Module;
 import toberumono.wrf.Simulation;
+import toberumono.wrf.WRFRunnerComponentFactory;
+import toberumono.wrf.components.parallel.Parallel;
 import toberumono.wrf.scope.ModuleScopedMap;
 import toberumono.wrf.scope.NamedScopeValue;
 import toberumono.wrf.scope.ScopedMap;
@@ -28,7 +30,7 @@ public class WRFModule extends Module {
 	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
 	private static final int[] calendarCodes = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
 	private static final int[] timeCodeMultipliers = {0, 24, 60, 60};
-	private ScopedMap parallel;
+	private Parallel parallel;
 	
 	/**
 	 * Initializes a new {@link WRFModule} with the given {@code parameters} for the given {@link Simulation}
@@ -47,13 +49,13 @@ public class WRFModule extends Module {
 	 * @return the {@link ScopedMap} containing information controlling how the WRF step is parallelized (if it is parallelized at all)
 	 */
 	@NamedScopeValue("parallel")
-	public ScopedMap getParallel() {
+	public Parallel getParallel() {
 		if (parallel != null)
 			return parallel;
 		synchronized (this) {
 			if (parallel != null)
 				return parallel;
-			parallel = (ScopedMap) ((ScopedMap) getParameters().get("configuration")).get("parallel");
+			parallel = WRFRunnerComponentFactory.generateComponent(Parallel.class, (ScopedMap) ((ScopedMap) getParameters().get("configuration")).get("parallel"), this);
 		}
 		return parallel;
 	}
@@ -109,27 +111,22 @@ public class WRFModule extends Module {
 	
 	@Override
 	public void execute() throws IOException, InterruptedException {
-		Path run = getSim().getActivePath("wrf").resolve("run");
+		Path run = getSim().getActivePath(getName()).resolve("run");
 		ProcessBuilder wrfPB = makePB(run.toFile());
-		runPB(wrfPB, "./real.exe", "2>&1", "|", "tee", "./real.log");
-		String[] wrfCommand;
-		//Calculate which command to use
-		if ((Boolean) getParallel().get("is-dmpar")) {
-			if ((Boolean) getParallel().get("boot-lam"))
-				wrfCommand = new String[]{"mpiexec", "-boot", "-np", getParallel().get("processors").toString(), "./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
-			else
-				wrfCommand = new String[]{"mpiexec", "-np", getParallel().get("processors").toString(), "./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
-		}
-		else
-			wrfCommand = new String[]{"./wrf.exe", "2>&1", "|", "tee", "./wrf.log"};
+		runPB(wrfPB, Parallel.makeSerialCommand("./real.exe", "./real.log")); //Same basic command, but we don't want it to run in parallel
 		try {
-			runPB(wrfPB, wrfCommand);
+			runPB(wrfPB, getParallel().makeCommand("./wrf.exe", "./wrf.log"));
+		}
+		catch (IOException | InterruptedException e) {
+			throw e;
 		}
 		catch (Throwable t) {
 			logger.log(Level.SEVERE, "WRF error", t);
 		}
-		//Move the wrfout files to the output directory
-		Files.walkFileTree(run, new TransferFileWalker(getSim().getWorkingPath(), Files::move, p -> p.getFileName().toString().toLowerCase().startsWith("wrfout"), p -> true, null, null, false));
+		finally {
+			//Move the wrfout files to the output directory
+			Files.walkFileTree(run, new TransferFileWalker(getSim().getWorkingPath(), Files::move, p -> p.getFileName().toString().toLowerCase().startsWith("wrfout"), p -> true, null, null, false));
+		}
 	}
 	
 	@Override

@@ -25,6 +25,9 @@ import toberumono.structures.SortingMethods;
 import toberumono.structures.collections.lists.SortedList;
 import toberumono.structures.tuples.Pair;
 import toberumono.utils.files.RecursiveEraser;
+import toberumono.wrf.components.parallel.DisabledParallel;
+import toberumono.wrf.components.parallel.Parallel;
+import toberumono.wrf.components.parallel.StandardParallel;
 import toberumono.wrf.timing.ComputedTiming;
 import toberumono.wrf.timing.DisabledTiming;
 import toberumono.wrf.timing.Timing;
@@ -89,7 +92,7 @@ public class WRFRunner {
 	
 	/**
 	 * Initializes the {@link WRFRunnerComponentFactory WRFRunnerComponentFactories} for {@link Offset}, {@link Round}, {@link Duration},
-	 * {@link Clear}, and {@link Timing}.
+	 * {@link Clear}, {@link Timing}, and {@link Parallel}.
 	 */
 	public static void initFactories() {
 		WRFRunnerComponentFactory<Offset> offsetFactory = WRFRunnerComponentFactory.getFactory(Offset.class, "standard", DisabledOffset::new);
@@ -108,6 +111,8 @@ public class WRFRunner {
 		clearFactory.addComponentConstructor("list", ListClear::new);
 		WRFRunnerComponentFactory<Timing> timingFactory = WRFRunnerComponentFactory.getFactory(Timing.class, "computed", DisabledTiming::new);
 		timingFactory.addComponentConstructor("computed", ComputedTiming::new);
+		WRFRunnerComponentFactory<Parallel> parallelFactory = WRFRunnerComponentFactory.getFactory(Parallel.class, "standard", DisabledParallel::new);
+		parallelFactory.addComponentConstructor("standard", StandardParallel::new);
 	}
 	
 	/**

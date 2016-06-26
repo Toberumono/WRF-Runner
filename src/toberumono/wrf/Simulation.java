@@ -46,6 +46,7 @@ import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.ComputedTiming;
 import toberumono.wrf.timing.NamelistTiming;
 import toberumono.wrf.timing.Timing;
+import toberumono.wrf.components.parallel.Parallel;
 import toberumono.wrf.modules.WRFModule;
 
 import static toberumono.wrf.SimulationConstants.*;
@@ -105,7 +106,7 @@ public class Simulation extends AbstractScope<Scope> {
 	
 	@Deprecated
 	@NamedScopeValue("parallel")
-	public ScopedMap getParallel() {
+	public Parallel getParallel() {
 		return ((WRFModule) getModule("wrf")).getParallel();
 	}
 	
