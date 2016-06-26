@@ -40,10 +40,10 @@ public class NamelistTiming extends AbstractScope<Scope> implements Timing {
 		super(parent);
 		this.base = Calendar.getInstance();
 		timecontrolParser(getBase(), timeControl, "start");
-		offset = WRFRunnerComponentFactory.getDisabledComponentInstance(Offset.class);
-		round = WRFRunnerComponentFactory.getDisabledComponentInstance(Round.class);
+		offset = WRFRunnerComponentFactory.getDisabledComponentInstance(Offset.class, null, this);
+		round = WRFRunnerComponentFactory.getDisabledComponentInstance(Round.class, null, this);
 		duration = new NamelistDuration(timeControl, this);
-		clear = WRFRunnerComponentFactory.getDisabledComponentInstance(Clear.class);
+		clear = WRFRunnerComponentFactory.getDisabledComponentInstance(Clear.class, null, this);
 		start = getOffset().apply(getRound().apply(getBase()));
 		end = getDuration().apply(getStart());
 	}

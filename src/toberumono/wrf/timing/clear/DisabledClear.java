@@ -1,36 +1,34 @@
 package toberumono.wrf.timing.clear;
 
 import java.util.Calendar;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
+import toberumono.wrf.scope.Scope;
+import toberumono.wrf.scope.ScopedMap;
+
+/**
+ * An implementation of {@link Clear} that does not perform any actions.
+ * 
+ * @author Toberumono
+ */
 public class DisabledClear extends AbstractClear {
-	private static final Lock lock = new ReentrantLock();
-	private static Clear instance = null;
 	
-	public static Clear getDisabledClearInstance() {
-		if (instance != null) //We don't want to acquire the lock unless we need to.
-			return instance;
-		try {
-			lock.lock();
-			if (instance != null)
-				return instance;
-			return instance = new DisabledClear();
-		}
-		finally {
-			lock.unlock();
-		}
-	}
-	
-	private DisabledClear() {
-		super(null, null);
+	/**
+	 * Constructs a new instance of an implementation of {@link Clear} that does not perform any actions.
+	 * 
+	 * @param parameters
+	 *            the parameters that defined the instance as a {@link ScopedMap}
+	 * @param parent
+	 *            the parent {@link Scope}
+	 */
+	public DisabledClear(ScopedMap parameters, Scope parent) {
+		super(parameters, parent);
 	}
 	
 	@Override
 	protected Calendar doApply(Calendar base) {
 		return base;
 	}
-
+	
 	@Override
 	protected void compute() {/* Nothing to do here */}
 }

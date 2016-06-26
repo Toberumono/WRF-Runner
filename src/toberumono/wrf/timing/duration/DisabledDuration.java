@@ -1,29 +1,27 @@
 package toberumono.wrf.timing.duration;
 
 import java.util.Calendar;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
+import toberumono.wrf.scope.Scope;
+import toberumono.wrf.scope.ScopedMap;
+
+/**
+ * An implementation of {@link Duration} that does not perform any actions.
+ * 
+ * @author Toberumono
+ */
 public class DisabledDuration extends AbstractDuration {
-	private static final Lock lock = new ReentrantLock();
-	private static Duration instance = null;
 	
-	public static Duration getDisabledDurationInstance() {
-		if (instance != null) //We don't want to acquire the lock unless we need to.
-			return instance;
-		try {
-			lock.lock();
-			if (instance != null)
-				return instance;
-			return instance = new DisabledDuration();
-		}
-		finally {
-			lock.unlock();
-		}
-	}
-	
-	private DisabledDuration() {
-		super(null, null);
+	/**
+	 * Constructs a new instance of an implementation of {@link Duration} that does not perform any actions.
+	 * 
+	 * @param parameters
+	 *            the parameters that defined the instance as a {@link ScopedMap}
+	 * @param parent
+	 *            the parent {@link Scope}
+	 */
+	public DisabledDuration(ScopedMap parameters, Scope parent) {
+		super(parameters, parent);
 	}
 
 	@Override

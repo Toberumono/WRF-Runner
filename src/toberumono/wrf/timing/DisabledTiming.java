@@ -1,42 +1,35 @@
 package toberumono.wrf.timing;
 
 import java.util.Calendar;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import toberumono.wrf.WRFRunnerComponentFactory;
 import toberumono.wrf.scope.AbstractScope;
+import toberumono.wrf.scope.Scope;
+import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.clear.Clear;
 import toberumono.wrf.timing.duration.Duration;
 import toberumono.wrf.timing.offset.Offset;
 import toberumono.wrf.timing.round.Round;
 
 /**
- * This is a dummy class used solely for compatibility with {@link WRFRunnerComponentFactory}. It should not be constructed
- * in any other context.
+ * This is a dummy class used solely for compatibility with {@link WRFRunnerComponentFactory}. It should not be constructed in any context.
  * 
  * @author Toberumono
  */
-public class DisabledTiming extends AbstractScope<Timing> implements Timing {
-	private static final Lock lock = new ReentrantLock();
-	private static Timing instance = null;
+public class DisabledTiming extends AbstractScope<Scope> implements Timing {
 	
-	public static Timing getDisabledTimingInstance() {
-		if (instance != null) //We don't want to acquire the lock unless we need to.
-			return instance;
-		try {
-			lock.lock();
-			if (instance != null)
-				return instance;
-			return instance = new DisabledTiming();
-		}
-		finally {
-			lock.unlock();
-		}
-	}
-	
-	private DisabledTiming() {
-		super(null);
+	/**
+	 * This constructor should <i>not</i> be called - it will just throw an {@link UnsupportedOperationException}
+	 * 
+	 * @param parameters
+	 *            ignored - here for compatibility only
+	 * @param parent
+	 *            ignored - here for compatibility only
+	 * @throws UnsupportedOperationException
+	 *             always - if this constructor has been called, something went wrong.
+	 */
+	public DisabledTiming(ScopedMap parameters, Scope parent) throws UnsupportedOperationException {
+		super(parent);
 		throw new UnsupportedOperationException("Cannot have a DisabledTiming Object");
 	}
 	

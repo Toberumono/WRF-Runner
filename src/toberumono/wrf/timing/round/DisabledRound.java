@@ -1,29 +1,27 @@
 package toberumono.wrf.timing.round;
 
 import java.util.Calendar;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
+import toberumono.wrf.scope.Scope;
+import toberumono.wrf.scope.ScopedMap;
+
+/**
+ * An implementation of {@link Round} that does not perform any actions.
+ * 
+ * @author Toberumono
+ */
 public class DisabledRound extends AbstractRound {
-	private static final Lock lock = new ReentrantLock();
-	private static Round instance = null;
 	
-	public static Round getDisabledRoundInstance() {
-		if (instance != null) //We don't want to acquire the lock unless we need to.
-			return instance;
-		try {
-			lock.lock();
-			if (instance != null)
-				return instance;
-			return instance = new DisabledRound();
-		}
-		finally {
-			lock.unlock();
-		}
-	}
-	
-	private DisabledRound() {
-		super(null, null);
+	/**
+	 * Constructs a new instance of an implementation of {@link Round} that does not perform any actions.
+	 * 
+	 * @param parameters
+	 *            the parameters that defined the instance as a {@link ScopedMap}
+	 * @param parent
+	 *            the parent {@link Scope}
+	 */
+	public DisabledRound(ScopedMap parameters, Scope parent) {
+		super(parameters, parent);
 	}
 	
 	@Override

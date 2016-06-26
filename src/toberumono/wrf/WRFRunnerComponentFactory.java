@@ -12,14 +12,14 @@ public class WRFRunnerComponentFactory<T> {
 	private static final Map<Class<?>, WRFRunnerComponentFactory<?>> factories = new HashMap<>();
 	private final Map<String, BiFunction<ScopedMap, Scope, T>> components;
 	private String defaultComponentType;
-	private Supplier<T> disabledComponentInstanceSupplier;
+	private BiFunction<ScopedMap, Scope, T> disabledComponentConstructor;
 	private final Class<T> rootType;
 	
-	private WRFRunnerComponentFactory(Class<T> rootType, String defaultComponentType, Supplier<T> disabledComponentInstanceSupplier) {
+	private WRFRunnerComponentFactory(Class<T> rootType, String defaultComponentType, BiFunction<ScopedMap, Scope, T> disabledComponentConstructor) {
 		components = new HashMap<>();
 		this.rootType = rootType;
 		this.defaultComponentType = defaultComponentType;
-		this.disabledComponentInstanceSupplier = disabledComponentInstanceSupplier;
+		this.disabledComponentConstructor = disabledComponentConstructor;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -29,14 +29,14 @@ public class WRFRunnerComponentFactory<T> {
 		}
 	}
 	
-	public static <T> WRFRunnerComponentFactory<T> getFactory(Class<T> clazz, String defaultComponentType, Supplier<T> disabledComponentInstanceSupplier) {
+	public static <T> WRFRunnerComponentFactory<T> getFactory(Class<T> clazz, String defaultComponentType, BiFunction<ScopedMap, Scope, T> disabledComponentConstructor) {
 		synchronized (factories) {
 			if (factories.containsKey(clazz)) {
 				@SuppressWarnings("unchecked") WRFRunnerComponentFactory<T> factory = (WRFRunnerComponentFactory<T>) factories.get(clazz);
 				factory.setDefaultComponentType(defaultComponentType);
 				return factory;
 			}
-			WRFRunnerComponentFactory<T> factory = new WRFRunnerComponentFactory<>(clazz, defaultComponentType, disabledComponentInstanceSupplier);
+			WRFRunnerComponentFactory<T> factory = new WRFRunnerComponentFactory<>(clazz, defaultComponentType, disabledComponentConstructor);
 			factories.put(clazz, factory);
 			return factory;
 		}
@@ -59,9 +59,7 @@ public class WRFRunnerComponentFactory<T> {
 	}
 	
 	public T generateComponent(ScopedMap parameters, Scope parent) {
-		if (parameters == null)
-			return getDisabledComponentInstance();
-		return generateComponent(parameters.containsKey("type") ? parameters.get("type").toString() : defaultComponentType, parameters, parent);
+		return generateComponent(parameters != null && parameters.containsKey("type") ? parameters.get("type").toString() : defaultComponentType, parameters, parent);
 	}
 	
 	public static <T> T generateComponent(Class<T> clazz, String type, ScopedMap parameters, Scope parent) {
@@ -71,8 +69,8 @@ public class WRFRunnerComponentFactory<T> {
 	
 	public T generateComponent(String type, ScopedMap parameters, Scope parent) {
 		synchronized (components) {
-			if (type.equals("disabled") || (parameters.containsKey("enabled") && parameters.get("enabled") instanceof Boolean && !((Boolean) parameters.get("enabled"))))
-				return getDisabledComponentInstance();
+			if (type.equals("disabled") || (parameters != null && parameters.containsKey("enabled") && parameters.get("enabled") instanceof Boolean && !((Boolean) parameters.get("enabled"))))
+				return getDisabledComponentInstance(parameters, parent);
 			if (parameters == null || (parameters.containsKey("inherit") && parameters.get("inherit") instanceof Boolean && ((Boolean) parameters.get("inherit"))))
 				return rootType.isInstance(parent) ? rootType.cast(parent) : null; //TODO possibly throw an exception about an invalid type hierarchy instead of null
 			return components.get(type != null ? type : defaultComponentType).apply(parameters, parent);
@@ -94,25 +92,25 @@ public class WRFRunnerComponentFactory<T> {
 		}
 	}
 	
-	public static <T> void setDisabledComponentInstance(Class<T> clazz, Supplier<T> disabledComponentInstanceSupplier) {
+	public static <T> void setDisabledComponentInstance(Class<T> clazz, BiFunction<ScopedMap, Scope, T> disabledComponentConstructor) {
 		WRFRunnerComponentFactory<T> factory = getFactory(clazz);
-		factory.setDisabledComponentInstanceSupplier(disabledComponentInstanceSupplier);
+		factory.setDisabledComponentConstructor(disabledComponentConstructor);
 	}
 	
-	public void setDisabledComponentInstanceSupplier(Supplier<T> disabledComponentInstanceSupplier) {
+	public void setDisabledComponentConstructor(BiFunction<ScopedMap, Scope, T> disabledComponentConstructor) {
 		synchronized (components) {
-			this.disabledComponentInstanceSupplier = disabledComponentInstanceSupplier;
+			this.disabledComponentConstructor = disabledComponentConstructor;
 		}
 	}
 	
-	public static <T> T getDisabledComponentInstance(Class<T> clazz) {
+	public static <T> T getDisabledComponentInstance(Class<T> clazz, ScopedMap parameters, Scope parent) {
 		WRFRunnerComponentFactory<T> factory = getFactory(clazz);
-		return factory.getDisabledComponentInstance();
+		return factory.getDisabledComponentInstance(parameters, parent);
 	}
 	
-	public T getDisabledComponentInstance() {
+	public T getDisabledComponentInstance(ScopedMap parameters, Scope parent) {
 		synchronized (components) {
-			return disabledComponentInstanceSupplier.get();
+			return disabledComponentConstructor.apply(parameters, parent);
 		}
 	}
 }

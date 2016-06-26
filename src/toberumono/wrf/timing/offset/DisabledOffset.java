@@ -1,29 +1,27 @@
 package toberumono.wrf.timing.offset;
 
 import java.util.Calendar;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
+import toberumono.wrf.scope.Scope;
+import toberumono.wrf.scope.ScopedMap;
+
+/**
+ * An implementation of {@link Offset} that does not perform any actions.
+ * 
+ * @author Toberumono
+ */
 public class DisabledOffset extends AbstractOffset {
-	private static final Lock lock = new ReentrantLock();
-	private static AbstractOffset instance = null;
 	
-	public static AbstractOffset getDisabledOffsetInstance() {
-		if (instance != null) //We don't want to acquire the lock unless we need to.
-			return instance;
-		try {
-			lock.lock();
-			if (instance != null)
-				return instance;
-			return instance = new DisabledOffset();
-		}
-		finally {
-			lock.unlock();
-		}
-	}
-	
-	private DisabledOffset() {
-		super(null, null);
+	/**
+	 * Constructs a new instance of an implementation of {@link Offset} that does not perform any actions.
+	 * 
+	 * @param parameters
+	 *            the parameters that defined the instance as a {@link ScopedMap}
+	 * @param parent
+	 *            the parent {@link Scope}
+	 */
+	public DisabledOffset(ScopedMap parameters, Scope parent) {
+		super(parameters, parent);
 	}
 	
 	@Override

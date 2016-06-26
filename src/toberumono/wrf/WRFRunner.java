@@ -92,21 +92,21 @@ public class WRFRunner {
 	 * {@link Clear}, and {@link Timing}.
 	 */
 	public static void initFactories() {
-		WRFRunnerComponentFactory<Offset> offsetFactory = WRFRunnerComponentFactory.getFactory(Offset.class, "standard", DisabledOffset::getDisabledOffsetInstance);
+		WRFRunnerComponentFactory<Offset> offsetFactory = WRFRunnerComponentFactory.getFactory(Offset.class, "standard", DisabledOffset::new);
 		offsetFactory.addComponentConstructor("standard", StandardOffset::new);
 		offsetFactory.addComponentConstructor("list", ListOffset::new);
-		WRFRunnerComponentFactory<Round> roundFactory = WRFRunnerComponentFactory.getFactory(Round.class, "bucket", DisabledRound::getDisabledRoundInstance);
+		WRFRunnerComponentFactory<Round> roundFactory = WRFRunnerComponentFactory.getFactory(Round.class, "bucket", DisabledRound::new);
 		roundFactory.addComponentConstructor("bucket", BucketRound::new);
 		roundFactory.addComponentConstructor("fractional", FractionalRound::new);
 		roundFactory.addComponentConstructor("function", FunctionRound::new);
 		roundFactory.addComponentConstructor("list", ListRound::new);
-		WRFRunnerComponentFactory<Duration> durationFactory = WRFRunnerComponentFactory.getFactory(Duration.class, "standard", DisabledDuration::getDisabledDurationInstance);
+		WRFRunnerComponentFactory<Duration> durationFactory = WRFRunnerComponentFactory.getFactory(Duration.class, "standard", DisabledDuration::new);
 		durationFactory.addComponentConstructor("standard", StandardDuration::new);
 		durationFactory.addComponentConstructor("list", ListDuration::new);
-		WRFRunnerComponentFactory<Clear> clearFactory = WRFRunnerComponentFactory.getFactory(Clear.class, "standard", DisabledClear::getDisabledClearInstance);
+		WRFRunnerComponentFactory<Clear> clearFactory = WRFRunnerComponentFactory.getFactory(Clear.class, "standard", DisabledClear::new);
 		clearFactory.addComponentConstructor("standard", StandardClear::new);
 		clearFactory.addComponentConstructor("list", ListClear::new);
-		WRFRunnerComponentFactory<Timing> timingFactory = WRFRunnerComponentFactory.getFactory(Timing.class, "computed", DisabledTiming::getDisabledTimingInstance);
+		WRFRunnerComponentFactory<Timing> timingFactory = WRFRunnerComponentFactory.getFactory(Timing.class, "computed", DisabledTiming::new);
 		timingFactory.addComponentConstructor("computed", ComputedTiming::new);
 	}
 	
