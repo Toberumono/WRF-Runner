@@ -8,8 +8,8 @@ import java.util.Map;
 import toberumono.utils.functions.ExceptedSupplier;
 
 /**
- * An implementation of {@link Scope} that works with the {@link NamedScopeValue} annotation to simplify the process of
- * adding values to a {@link Scope}.
+ * An implementation of {@link Scope} that works with the {@link NamedScopeValue} annotation to simplify the process of adding values to a
+ * {@link Scope}.
  * 
  * @author Toberumono
  * @param <T>
@@ -20,8 +20,7 @@ public class AbstractScope<T extends Scope> implements Scope {
 	private final Map<String, ExceptedSupplier<Object>> namedItems;
 	
 	/**
-	 * Constructs the {@link AbstractScope} and builds the scopes variable table from fields and methods annotated with
-	 * {@link NamedScopeValue}.
+	 * Constructs the {@link AbstractScope} and builds the scopes variable table from fields and methods annotated with {@link NamedScopeValue}.
 	 * 
 	 * @param parent
 	 *            the parent {@link Scope}

@@ -49,6 +49,11 @@ import toberumono.wrf.timing.Timing;
 
 import static toberumono.wrf.SimulationConstants.*;
 
+/**
+ * The primary management construct for this program.
+ * 
+ * @author Toberumono
+ */
 public class Simulation extends ScopedComponent<Scope> {
 	private static final ExecutorService pool = Executors.newWorkStealingPool();
 	
@@ -64,24 +69,36 @@ public class Simulation extends ScopedComponent<Scope> {
 	private final NamelistNumber interval_seconds;
 	private boolean serialModuleExecution;
 	
+	/**
+	 * Constructs a new {@link Simulation}.
+	 * 
+	 * @param base
+	 *            the time at which the {@link Simulation} was started
+	 * @param resolver
+	 *            the {@link Path} used to resolve relative paths
+	 * @param configuration
+	 *            a {@link JSONObject} holding the configuration for the {@link Simulation}
+	 * @throws IOException
+	 *             if an error occurs while constructing the working directory
+	 */
 	public Simulation(Calendar base, Path resolver, JSONObject configuration) throws IOException {
 		super(ModuleScopedMap.buildFromJSON(configuration), null);
-		getParameters().setParent(this); //ModuleScopedMap is built for this issue
+		getParameters().setParent(this); //We have to assign parent after calling super because of the "this" component
 		this.resolver = resolver;
 		this.configuration = configuration;
 		this.general = (ScopedMap) getParameters().get("general");
 		this.timing = (ScopedMap) getParameters().get("timing");
 		logger = Logger.getLogger(SIMULATION_LOGGER_ROOT);
-		logger.setLevel(Level.parse(general.get("logging-level").value().toString().toUpperCase()));
+		logger.setLevel(Level.parse(general.get("logging-level").toString().toUpperCase()));
 		source = new ScopedMap(this);
 		active = new ScopedMap(this);
 		disabledModules = new HashSet<>();
-		this.modules = Collections.unmodifiableMap(parseModules(modules, paths));
+		modules = Collections.unmodifiableMap(parseModules((JSONObject) configuration.get("module"), (JSONObject) configuration.get("path")));
 		globalTiming = ((Boolean) getGeneral().get("use-computed-times")) ? new ComputedTiming((ScopedMap) getTimingMap().get("global"), base, this)
 				: new NamelistTiming(getModule("wrf").getNamelist().get("time_control"), this);
-		working = constructWorkingDirectory(getResolver().resolve(getGeneral().get("working-directory").toString()), (Boolean) general.get("always-suffix").value());
+		working = constructWorkingDirectory(getResolver().resolve(getGeneral().get("working-directory").toString()), (Boolean) getGeneral().get("always-suffix"));
 		for (String name : this.modules.keySet())
-			active.put(name, paths.containsKey(name) ? getWorkingPath().resolve(((Path) source.get(name)).getFileName()) : getWorkingPath().resolve(name));
+			active.put(name, ((JSONObject) configuration.get("path")).containsKey(name) ? getWorkingPath().resolve(((Path) source.get(name)).getFileName()) : getWorkingPath().resolve(name));
 		ScopedMap timestep = this.modules.containsKey("grib") && !disabledModules.contains(modules.get("grib"))
 				? ScopedMap.buildFromJSON((JSONObject) ((JSONObject) configuration.get("grib")).get("timestep")) : null;
 		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
@@ -114,16 +131,26 @@ public class Simulation extends ScopedComponent<Scope> {
 	public Path getResolver() {
 		return resolver;
 	}
-
-	@NamedScopeValue(value="working-directory", asString=true)
+	
+	@NamedScopeValue(value = "working-directory", asString = true)
 	public Path getWorkingPath() {
 		return working;
 	}
 	
+	/**
+	 * @param name
+	 *            the name of the {@link Module} to retrieve
+	 * @return the {@link Module} corresponding to the given {@code name} or {@code null}
+	 */
 	public Module getModule(String name) {
 		return modules.get(name);
 	}
 	
+	/**
+	 * @return the number of domains to use (pulled from the WRF {@link Module Module's} {@link Namelist} file
+	 * @throws IOException
+	 *             if an error occurs while loading the {@link Namelist} data
+	 */
 	@NamedScopeValue("doms")
 	public Integer getDoms() throws IOException {
 		if (doms == null)
@@ -131,12 +158,19 @@ public class Simulation extends ScopedComponent<Scope> {
 		return doms;
 	}
 	
+	/**
+	 * @return the computed interval seconds value for {@link Namelist} files
+	 */
+	@NamedScopeValue("interval-seconds")
 	public NamelistNumber getIntervalSeconds() {
 		return interval_seconds;
 	}
 	
+	/**
+	 * @return {@code true} if {@link Module Modules} should be executed exclusively serially
+	 */
 	@NamedScopeValue("serial-module-execution")
-	public boolean isSerialModuleExecution() {
+	public Boolean isSerialModuleExecution() {
 		return serialModuleExecution;
 	}
 	
@@ -279,6 +313,9 @@ public class Simulation extends ScopedComponent<Scope> {
 				cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), cal.get(Calendar.SECOND));
 	}
 	
+	/**
+	 * @return a {@link JSONObject} that just has the field, "inherit" set to {@code true}
+	 */
 	public static final JSONObject makeGenericInheriter() {
 		JSONObject out = new JSONObject();
 		out.put("inherit", new JSONBoolean(true));
@@ -334,6 +371,17 @@ public class Simulation extends ScopedComponent<Scope> {
 		return condensed;
 	}
 	
+	/**
+	 * Creates a new {@link Simulation}.
+	 * 
+	 * @param resolver
+	 *            the {@link Path} used to resolve relative paths
+	 * @param configuration
+	 *            a {@link JSONObject} holding the configuration for the {@link Simulation}
+	 * @return the new {@link Simulation}
+	 * @throws IOException
+	 *             if an error occurs while constructing the working directory
+	 */
 	public static Simulation initSimulation(JSONObject configuration, Path resolver) throws IOException {
 		return new Simulation(Calendar.getInstance(), resolver, configuration);
 	}
