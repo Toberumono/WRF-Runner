@@ -43,7 +43,7 @@ public class AbstractScope<T extends Scope> implements Scope {
 		NamedScopeValue nsv = f.getAnnotation(NamedScopeValue.class);
 		if (nsv != null) {
 			f.setAccessible(true);
-			addNamedValue(nsv, () -> f.get(this));
+			addNamedValue(nsv, nsv.asString() ? () -> (f.get(this) != null ? f.get(this).toString() : null) : () -> f.get(this));
 		}
 	}
 	
@@ -51,7 +51,7 @@ public class AbstractScope<T extends Scope> implements Scope {
 		NamedScopeValue nsv = m.getAnnotation(NamedScopeValue.class);
 		if (nsv != null) {
 			m.setAccessible(true);
-			addNamedValue(nsv, () -> m.invoke(this));
+			addNamedValue(nsv, nsv.asString() ? () -> (m.invoke(this) != null ? m.invoke(this).toString() : null) : () -> m.invoke(this));
 		}
 	}
 	

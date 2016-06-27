@@ -122,14 +122,10 @@ public class Simulation extends ScopedComponent<Scope> {
 	public Path getResolver() {
 		return resolver;
 	}
-	
+
+	@NamedScopeValue(value="working-directory", asString=true)
 	public Path getWorkingPath() {
 		return working;
-	}
-
-	@NamedScopeValue("working-directory")
-	public String getWorkingPathString() {
-		return getWorkingPath().toString();
 	}
 	
 	public Module getModule(String name) {

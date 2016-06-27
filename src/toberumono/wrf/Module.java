@@ -12,7 +12,6 @@ import toberumono.utils.files.TransferFileWalker;
 import toberumono.wrf.scope.AbstractScope;
 import toberumono.wrf.scope.ModuleScopedMap;
 import toberumono.wrf.scope.NamedScopeValue;
-import toberumono.wrf.scope.ScopedFormulaProcessor;
 import toberumono.wrf.scope.ScopedList;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.Timing;
@@ -126,18 +125,11 @@ public abstract class Module extends AbstractScope<Simulation> {
 	/**
 	 * @return the {@link Path} to the {@link Module Module's} namelist file relative to the {@link Module Module's} root directory
 	 */
+	@NamedScopeValue(value="namelist-path", asString=true)
 	public Path getNamelistPath() { //namelistPath holds the location of the namelist file relative to the module's root directory
 		if (namelistPath == null)
 			namelistPath = (module.containsKey(NAMELIST_FIELD_NAME) ? Paths.get((String) module.get(NAMELIST_FIELD_NAME)) : null);
 		return namelistPath;
-	}
-	
-	/**
-	 * @return the result of {@link #getNamelistPath()} as a {@link String}; primarily for use with {@link ScopedFormulaProcessor}
-	 */
-	@NamedScopeValue("namelist-path")
-	public String getNamelistPathAsString() {
-		return namelistPath.toString();
 	}
 	
 	/**

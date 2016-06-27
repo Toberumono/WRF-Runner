@@ -20,4 +20,9 @@ public @interface NamedScopeValue {
 	 * @return the name by which the annotated value can be accessed within the {@link Scope}
 	 */
 	String[] value();
+	
+	/**
+	 * @return {@code true} iff the value should have {@link Object#toString() toString()} called on it.
+	 */
+	boolean asString() default false;
 }
