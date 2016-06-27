@@ -11,7 +11,11 @@ import toberumono.namelist.parser.NamelistValueList;
 import toberumono.utils.files.RecursiveEraser;
 import toberumono.wrf.Module;
 import toberumono.wrf.Simulation;
+import toberumono.wrf.WRFRunnerComponentFactory;
+import toberumono.wrf.components.parallel.Parallel;
 import toberumono.wrf.scope.ModuleScopedMap;
+import toberumono.wrf.scope.NamedScopeValue;
+import toberumono.wrf.scope.ScopedMap;
 
 import static toberumono.utils.general.ProcessBuilders.*;
 
@@ -21,6 +25,7 @@ import static toberumono.utils.general.ProcessBuilders.*;
  * @author Toberumono
  */
 public class WPSModule extends Module {
+	private Parallel parallel;
 	
 	/**
 	 * Initializes a new {@link WPSModule} with the given {@code parameters} for the given {@link Simulation}
@@ -32,6 +37,23 @@ public class WPSModule extends Module {
 	 */
 	public WPSModule(ModuleScopedMap parameters, Simulation sim) {
 		super(parameters, sim);
+		parallel = null;
+	}
+	
+	/**
+	 * @return the {@link ScopedMap} containing information controlling how the WRF step is parallelized (if it is parallelized at all)
+	 */
+	@NamedScopeValue("parallel")
+	public Parallel getParallel() {
+		if (parallel != null)
+			return parallel;
+		synchronized (this) {
+			if (parallel == null)
+				parallel = ((ScopedMap) getParameters().get("configuration")).get("parallel") instanceof ScopedMap
+						? WRFRunnerComponentFactory.generateComponent(Parallel.class, (ScopedMap) ((ScopedMap) getParameters().get("configuration")).get("parallel"), this)
+						: WRFRunnerComponentFactory.getDisabledComponentInstance(Parallel.class, null, this);
+		}
+		return parallel;
 	}
 	
 	@Override
@@ -85,11 +107,11 @@ public class WPSModule extends Module {
 			path += System.getProperty("file.separator");
 		runPB(wpsPB, "./link_grib.csh", path);
 		//Run ungrib and geogrid in parallel
-		wpsPB.command("./ungrib.exe", "2>&1", "|", "tee", "./ungrib.log");
+		wpsPB.command(Parallel.makeSerialCommand("./ungrib.exe", "./ungrib.log"));
 		Process ungrib = wpsPB.start();
-		runPB(wpsPB, "./geogrid.exe", "2>&1", "|", "tee", "./geogrid.log");
+		runPB(wpsPB, getParallel().makeCommand("./geogrid.exe", "./geogrid.log"));
 		ungrib.waitFor();
-		runPB(wpsPB, "./metgrid.exe", "2>&1", "|", "tee", "./metgrid.log");
+		runPB(wpsPB, getParallel().makeCommand("./metgrid.exe", "./metgrid.log"));
 	}
 	
 	@Override

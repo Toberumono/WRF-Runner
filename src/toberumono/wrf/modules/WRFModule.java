@@ -53,9 +53,10 @@ public class WRFModule extends Module {
 		if (parallel != null)
 			return parallel;
 		synchronized (this) {
-			if (parallel != null)
-				return parallel;
-			parallel = WRFRunnerComponentFactory.generateComponent(Parallel.class, (ScopedMap) ((ScopedMap) getParameters().get("configuration")).get("parallel"), this);
+			if (parallel == null)
+				parallel = ((ScopedMap) getParameters().get("configuration")).get("parallel") instanceof ScopedMap
+						? WRFRunnerComponentFactory.generateComponent(Parallel.class, (ScopedMap) ((ScopedMap) getParameters().get("configuration")).get("parallel"), this)
+						: WRFRunnerComponentFactory.getDisabledComponentInstance(Parallel.class, null, this);
 		}
 		return parallel;
 	}
