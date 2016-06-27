@@ -66,7 +66,7 @@ public class Simulation extends ScopedComponent<Scope> {
 	private final NamelistNumber interval_seconds;
 	private boolean serialModuleExecution;
 	
-	public Simulation(Calendar base, Path resolver, JSONObject configuration, JSONObject general, JSONObject modules, JSONObject paths, JSONObject timing) throws IOException {
+	public Simulation(Calendar base, Path resolver, JSONObject configuration) throws IOException {
 		super(ModuleScopedMap.buildFromJSON(configuration), null);
 		getParameters().setParent(this); //ModuleScopedMap is built for this issue
 		this.resolver = resolver;
@@ -347,13 +347,6 @@ public class Simulation extends ScopedComponent<Scope> {
 	}
 	
 	public static Simulation initSimulation(JSONObject configuration, Path resolver) throws IOException {
-		Calendar base = Calendar.getInstance();
-		//Extract configuration file sections
-		JSONObject general = (JSONObject) configuration.get("general");
-		JSONObject module = (JSONObject) configuration.get("module");
-		JSONObject path = (JSONObject) configuration.get("path");
-		JSONObject timing = (JSONObject) configuration.get("timing");
-		
-		return new Simulation(base, resolver, configuration, general, module, path, timing);
+		return new Simulation(Calendar.getInstance(), resolver, configuration);
 	}
 }
