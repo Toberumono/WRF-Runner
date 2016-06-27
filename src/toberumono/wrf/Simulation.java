@@ -37,8 +37,6 @@ import toberumono.json.JSONString;
 import toberumono.namelist.parser.Namelist;
 import toberumono.namelist.parser.NamelistNumber;
 import toberumono.utils.files.TransferFileWalker;
-import toberumono.wrf.components.parallel.Parallel;
-import toberumono.wrf.modules.WRFModule;
 import toberumono.wrf.scope.InvalidVariableAccessException;
 import toberumono.wrf.scope.ModuleScopedMap;
 import toberumono.wrf.scope.NamedScopeValue;
@@ -103,12 +101,6 @@ public class Simulation extends ScopedComponent<Scope> {
 	@NamedScopeValue("general")
 	public ScopedMap getGeneral() {
 		return general;
-	}
-	
-	@Deprecated
-	@NamedScopeValue("parallel")
-	public Parallel getParallel() {
-		return ((WRFModule) getModule("wrf")).getParallel();
 	}
 	
 	public Path getSourcePath(String module) {
