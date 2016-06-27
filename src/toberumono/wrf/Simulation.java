@@ -37,21 +37,21 @@ import toberumono.json.JSONString;
 import toberumono.namelist.parser.Namelist;
 import toberumono.namelist.parser.NamelistNumber;
 import toberumono.utils.files.TransferFileWalker;
-import toberumono.wrf.scope.AbstractScope;
+import toberumono.wrf.components.parallel.Parallel;
+import toberumono.wrf.modules.WRFModule;
 import toberumono.wrf.scope.InvalidVariableAccessException;
 import toberumono.wrf.scope.ModuleScopedMap;
 import toberumono.wrf.scope.NamedScopeValue;
 import toberumono.wrf.scope.Scope;
+import toberumono.wrf.scope.ScopedComponent;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.ComputedTiming;
 import toberumono.wrf.timing.NamelistTiming;
 import toberumono.wrf.timing.Timing;
-import toberumono.wrf.components.parallel.Parallel;
-import toberumono.wrf.modules.WRFModule;
 
 import static toberumono.wrf.SimulationConstants.*;
 
-public class Simulation extends AbstractScope<Scope> {
+public class Simulation extends ScopedComponent<Scope> {
 	private static final ExecutorService pool = Executors.newWorkStealingPool();
 	
 	private final Logger logger;
@@ -67,11 +67,12 @@ public class Simulation extends AbstractScope<Scope> {
 	private boolean serialModuleExecution;
 	
 	public Simulation(Calendar base, Path resolver, JSONObject configuration, JSONObject general, JSONObject modules, JSONObject paths, JSONObject timing) throws IOException {
-		super(null);
+		super(ModuleScopedMap.buildFromJSON(configuration), null);
+		getParameters().setParent(this); //ModuleScopedMap is built for this issue
 		this.resolver = resolver;
 		this.configuration = configuration;
-		this.general = ScopedMap.buildFromJSON(general, this);
-		this.timing = ScopedMap.buildFromJSON(timing, this);
+		this.general = (ScopedMap) getParameters().get("general");
+		this.timing = (ScopedMap) getParameters().get("timing");
 		logger = Logger.getLogger(SIMULATION_LOGGER_ROOT);
 		logger.setLevel(Level.parse(general.get("logging-level").value().toString().toUpperCase()));
 		source = new ScopedMap(this);
@@ -122,9 +123,13 @@ public class Simulation extends AbstractScope<Scope> {
 		return resolver;
 	}
 	
-	@NamedScopeValue("working-directory")
 	public Path getWorkingPath() {
 		return working;
+	}
+
+	@NamedScopeValue("working-directory")
+	public String getWorkingPathString() {
+		return getWorkingPath().toString();
 	}
 	
 	public Module getModule(String name) {

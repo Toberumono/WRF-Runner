@@ -14,6 +14,7 @@ import toberumono.lexer.BasicDescender;
 import toberumono.lexer.BasicLanguage;
 import toberumono.lexer.BasicLexer;
 import toberumono.lexer.BasicRule;
+import toberumono.lexer.base.Lexer;
 import toberumono.lexer.util.DefaultIgnorePatterns;
 import toberumono.lexer.util.NumberPatterns;
 import toberumono.structures.sexpressions.BasicConsType;
@@ -21,6 +22,11 @@ import toberumono.structures.sexpressions.ConsCell;
 import toberumono.structures.sexpressions.ConsType;
 import toberumono.structures.tuples.Pair;
 
+/**
+ * Processing logic that allows the {@link Scope} system to work.
+ * 
+ * @author Toberumono
+ */
 public class ScopedFormulaProcessor {
 	private static final Lock lock = new ReentrantLock();
 	private static final ConsType PARENTHESES = new BasicConsType("parentheses", "(", ")");
@@ -45,11 +51,16 @@ public class ScopedFormulaProcessor {
 	
 	private static BasicLexer lexer = null;
 	
+	/**
+	 * @return the initialized {@link Lexer} used by the {@link ScopedFormulaProcessor}
+	 */
 	public static BasicLexer getLexer() {
+		if (ScopedFormulaProcessor.lexer != null)
+			return ScopedFormulaProcessor.lexer;
 		try {
 			lock.lock();
-			if (lexer != null)
-				return lexer;
+			if (ScopedFormulaProcessor.lexer != null)
+				return ScopedFormulaProcessor.lexer;
 			addition = new ArithmaticOperator(6, "+", BigDecimal::add, BigInteger::add) {
 				@Override
 				public Object apply(Object t, Object u) {
@@ -131,7 +142,7 @@ public class ScopedFormulaProcessor {
 					return ((List<?>) t).get(((Number) u).intValue());
 				}
 			};
-			lexer = new BasicLexer(DefaultIgnorePatterns.WHITESPACE);
+			BasicLexer lexer = new BasicLexer(DefaultIgnorePatterns.WHITESPACE);
 			lexer.addRule("string'", new BasicRule(Pattern.compile("'(([^'\\\\]+|\\\\['\\\\tbnrf\"])*)'"), (l, s, m) -> new ConsCell(m.group(1), STRING)));
 			lexer.addRule("string\"", new BasicRule(Pattern.compile("\"(([^\"\\\\]+|\\\\['\\\\tbnrf\"])*)\""), (l, s, m) -> new ConsCell(m.group(1), STRING)));
 			lexer.addRule("inherit", new BasicRule(Pattern.compile("inherit", Pattern.LITERAL), (l, s, m) -> new ConsCell(m.group(), KEYWORD)));
@@ -141,7 +152,7 @@ public class ScopedFormulaProcessor {
 			lexer.addRule("variable", new BasicRule(Pattern.compile("([a-zA-Z_]\\w*)"), (l, s, m) -> new ConsCell(m.group(), VARIABLE)));
 			lexer.addRule("integer", new BasicRule(NumberPatterns.SIGNLESS_INTEGER, (l, s, m) -> new ConsCell(Integer.parseInt(m.group()), NUMBER)));
 			lexer.addRule("double", new BasicRule(NumberPatterns.SIGNLESS_DOUBLE, (l, s, m) -> new ConsCell(Double.parseDouble(m.group()), NUMBER)));
-			addOperators(addition, subtraction, multiplication, division, modulus, exponent, lt, lteq, gt, gteq, eq, neq, bitwiseAnd, bitwiseOr, bitwiseXor);
+			addOperators(lexer, addition, subtraction, multiplication, division, modulus, exponent, lt, lteq, gt, gteq, eq, neq, bitwiseAnd, bitwiseOr, bitwiseXor);
 			lexer.addDescender("parentheses", new BasicDescender("(", ")", (l, s, m) -> s.pushLanguage(l.getLanguage()), (l, s, m) -> { //We have to reset the language here
 				s.popLanguage();
 				return new ConsCell(m, PARENTHESES);
@@ -194,7 +205,7 @@ public class ScopedFormulaProcessor {
 				return new ConsCell(new Pair<>(left, right), PAIR, current.split());
 			});
 			ternaryLang.addRule("ternary:", ternaryColon);
-			return lexer;
+			return ScopedFormulaProcessor.lexer = lexer;
 		}
 		finally {
 			lock.unlock();
@@ -204,18 +215,53 @@ public class ScopedFormulaProcessor {
 	/*
 	 * This should ONLY be called from within getLexer()
 	 */
-	private static void addOperators(Operator... operators) {
+	private static void addOperators(BasicLexer lexer, Operator... operators) {
 		for (Operator operator : operators)
 			lexer.addRule(operator.getSymbol(), new BasicRule(Pattern.compile(operator.getSymbol(), Pattern.LITERAL), (l, s, m) -> new ConsCell(operator, OPERATOR)));
 	}
+	
+	/**
+	 * Performs the preprocessing step for processing scoped formulae. This is essentially just converting the {@link String} to a {@link ConsCell}
+	 * tree.
+	 * 
+	 * @param input
+	 *            the formula to convert
+	 * @return the formula's tokenized representation as a {@link ConsCell} tree
+	 */
 	public static ConsCell preProcess(String input) {
 		return getLexer().lex(input);
 	}
 	
+	/**
+	 * Processes the scoped formula represented by the {@link String}.
+	 * 
+	 * @param input
+	 *            the input {@link String}
+	 * @param scope
+	 *            the formula's {@link Scope}
+	 * @param fieldName
+	 *            the name of the field that the formula was assigned to (this can be {@code null})
+	 * @return a {@link ConsCell} containing the result of evaluating the formula
+	 * @throws InvalidVariableAccessException
+	 *             if an invalid variable access is attempted in the course of processing the formula
+	 */
 	public static ConsCell process(String input, Scope scope, String fieldName) throws InvalidVariableAccessException {
 		return process(preProcess(input), scope, fieldName);
 	}
 	
+	/**
+	 * Processes the scoped formula represented by the {@link ConsCell} tree.
+	 * 
+	 * @param input
+	 *            the input {@link ConsCell} tree
+	 * @param scope
+	 *            the formula's {@link Scope}
+	 * @param fieldName
+	 *            the name of the field that the formula was assigned to (this can be {@code null})
+	 * @return a {@link ConsCell} containing the result of evaluating the formula
+	 * @throws InvalidVariableAccessException
+	 *             if an invalid variable access is attempted in the course of processing the formula
+	 */
 	public static ConsCell process(ConsCell input, Scope scope, String fieldName) throws InvalidVariableAccessException {
 		ConsCell equation;
 		if (input.getCarType() == OPERATOR) {
