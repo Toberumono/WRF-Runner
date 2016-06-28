@@ -1,5 +1,5 @@
 {
-	"version" : "5.3.2",
+	"version" : "6.0.2",
 	"general" : {
 		"cleanup" : true,
 		"working-directory" : "./Working",
@@ -7,7 +7,7 @@
 		"always-suffix" : false,
 		"max-kept-outputs" : 15,
 		"logging-level" : "info",
-		"serial-module-execution" : false,
+		"force-serial-module-execution" : false,
 		"use-computed-times" : true
 	},
 	"module" : {

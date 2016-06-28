@@ -435,6 +435,7 @@ public class WRFRunner {
 				general.remove("parallel");
 		});
 		upgrader.addUpgradeAction("5.3.2", root -> JSONSystem.transferField("use-computed-times", new JSONBoolean(true), (JSONObject) root.get("timing"), (JSONObject) root.get("general")));
+		upgrader.addUpgradeAction("6.0.2", root -> JSONSystem.renameField((JSONObject) root.get("general"), new JSONBoolean(false), "serial-module-execution", "force-serial-module-execution"));
 	}
 	
 	protected void initConfigurationUpgradeProblemHandlers(ConfigurationUpgrader upgrader) {

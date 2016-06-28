@@ -177,10 +177,10 @@ public class Simulation extends ScopedComponent<Scope> {
 	/**
 	 * @return {@code true} if {@link Module Modules} should be executed exclusively serially
 	 */
-	@NamedScopeValue("serial-module-execution")
+	@NamedScopeValue({"serial-module-execution", "force-serial-module-execution"})
 	public Boolean isSerialModuleExecution() {
 		if (serialModuleExecution == null)
-			serialModuleExecution = getGeneral().containsKey("serial-module-execution") ? ((Boolean) getGeneral().get("serial-module-execution")) : false;
+			serialModuleExecution = getGeneral().containsKey("force-serial-module-execution") ? ((Boolean) getGeneral().get("force-serial-module-execution")) : false;
 		return serialModuleExecution;
 	}
 	
