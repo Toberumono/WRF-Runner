@@ -67,7 +67,7 @@ public class Simulation extends ScopedComponent<Scope> {
 	private final ScopedMap source, active;
 	private Integer doms;
 	private final NamelistNumber interval_seconds;
-	private boolean serialModuleExecution;
+	private Boolean serialModuleExecution;
 	
 	/**
 	 * Constructs a new {@link Simulation}.
@@ -103,6 +103,7 @@ public class Simulation extends ScopedComponent<Scope> {
 				? ScopedMap.buildFromJSON((JSONObject) ((JSONObject) configuration.get("grib")).get("timestep")) : null;
 		interval_seconds = timestep != null ? new NamelistNumber(calcIntervalSeconds(timestep)) : null;
 		doms = null;
+		serialModuleExecution = null;
 	}
 	
 	@NamedScopeValue("timing")
@@ -171,6 +172,8 @@ public class Simulation extends ScopedComponent<Scope> {
 	 */
 	@NamedScopeValue("serial-module-execution")
 	public Boolean isSerialModuleExecution() {
+		if (serialModuleExecution == null)
+			serialModuleExecution = getGeneral().containsKey("serial-module-execution") ? ((Boolean) getGeneral().get("serial-module-execution")) : false;
 		return serialModuleExecution;
 	}
 	
