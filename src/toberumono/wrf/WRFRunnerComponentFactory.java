@@ -3,9 +3,9 @@ package toberumono.wrf;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 import toberumono.wrf.scope.Scope;
+import toberumono.wrf.scope.ScopedFormulaProcessor;
 import toberumono.wrf.scope.ScopedMap;
 
 public class WRFRunnerComponentFactory<T> {
@@ -69,16 +69,35 @@ public class WRFRunnerComponentFactory<T> {
 	
 	public T generateComponent(String type, ScopedMap parameters, Scope parent) {
 		synchronized (components) {
-			if (type.equals("disabled") || (parameters != null && parameters.containsKey("enabled") && parameters.get("enabled") instanceof Boolean && !((Boolean) parameters.get("enabled"))))
+			if (type.equals("disabled"))
 				return getDisabledComponentInstance(parameters, parent);
-			if (parameters == null || (parameters.containsKey("inherit") && parameters.get("inherit") instanceof Boolean && ((Boolean) parameters.get("inherit"))))
-				return rootType.isInstance(parent) ? rootType.cast(parent) : null; //TODO possibly throw an exception about an invalid type hierarchy instead of null
+			if (parameters == null)
+				return implicitInheritance(parent);
+			if (parameters.get("enabled") instanceof Boolean && !((Boolean) parameters.get("enabled")))
+				return getDisabledComponentInstance(parameters, parent);
+			Object inherit = parameters.get("inherit");
+			if (inherit != null) {
+				if (inherit instanceof String) //Then this is an explicit inheritance
+					inherit = ScopedFormulaProcessor.process((String) inherit, parameters, null);
+				if (inherit instanceof Boolean && (Boolean) inherit)
+					return implicitInheritance(parent);
+				if (inherit instanceof ScopedMap) //Then this is scope-based inheritance
+					return generateComponent((ScopedMap) inherit, parent);
+				if (rootType.isInstance(inherit))
+					return rootType.cast(inherit);
+			}
 			return components.get(type != null ? type : defaultComponentType).apply(parameters, parent);
 		}
 	}
 	
+	private T implicitInheritance(Scope parent) {
+		if (rootType.isInstance(parent))
+			return rootType.cast(parent);
+		throw new TypeHierarchyException("Cannot perform implicit full-object inheritance when the parent is of a different type.");
+	}
+	
 	public static boolean willInherit(ScopedMap parameters) {
-		return parameters == null || (parameters.containsKey("inherit") && parameters.get("inherit") instanceof Boolean && ((Boolean) parameters.get("inherit")));
+		return parameters == null || (parameters.containsKey("inherit") && (!(parameters.get("inherit") instanceof Boolean) || ((Boolean) parameters.get("inherit"))));
 	}
 	
 	public static <T> void setDefaultComponentType(Class<T> clazz, String type) {
