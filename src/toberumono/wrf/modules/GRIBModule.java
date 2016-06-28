@@ -60,8 +60,11 @@ public class GRIBModule extends Module {
 		lock = new ReentrantLock();
 	}
 	
+	/**
+	 * @return a {@link ScopedMap} that points to the constant and incremented timing data
+	 */
 	@NamedScopeValue("timing")
-	private ScopedMap intermediateScope() {
+	public ScopedMap intermediateScope() {
 		if (intermediate != null)
 			return intermediate;
 		try {
@@ -83,9 +86,16 @@ public class GRIBModule extends Module {
 		return super.parseTiming(timing.containsKey("constant") ? (ScopedMap) timing.get("constant") : timing);
 	}
 	
+	@Override
+	@NamedScopeValue("constant")
+	public Timing getTiming() {
+		return super.getTiming();
+	}
+	
 	/**
 	 * @return the {@link Timing} data for the incremented component of the download URL
 	 */
+	@NamedScopeValue("incremented")
 	public Timing getIncrementedTiming() {
 		if (incremented != null)
 			return incremented;
@@ -104,7 +114,11 @@ public class GRIBModule extends Module {
 	@Override
 	public void updateNamelist() throws IOException, InterruptedException {/* This module has no Namelist */}
 	
-	private boolean shouldWrap() {
+	/**
+	 * @return {@code true} iff the incremented timing values should be wrapped via the {@link Calendar Calendar's} wrapping policy
+	 */
+	@NamedScopeValue({"should-wrap", "wrap"})
+	public boolean shouldWrap() {
 		if (wrap == null) //First time is so that we can avoid unnecessary synchronization
 			synchronized (timestep) {
 				if (wrap == null)

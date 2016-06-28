@@ -160,11 +160,18 @@ public class Simulation extends ScopedComponent<Scope> {
 	}
 	
 	/**
-	 * @return the computed interval seconds value for {@link Namelist} files
+	 * @return the computed interval seconds value for {@link Namelist} files as a {@link NamelistNumber}
 	 */
-	@NamedScopeValue("interval-seconds")
 	public NamelistNumber getIntervalSeconds() {
 		return interval_seconds;
+	}
+
+	/**
+	 * @return the computed interval seconds value for {@link Namelist} files as a {@link Number}
+	 */
+	@NamedScopeValue("interval-seconds")
+	public Number getIntervalSecondsValue() {
+		return getIntervalSeconds().value();
 	}
 	
 	/**
