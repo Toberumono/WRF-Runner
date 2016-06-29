@@ -165,6 +165,9 @@ public class Simulation extends ScopedComponent<Scope> {
 		return resolver;
 	}
 	
+	/**
+	 * @return an absolute {@link Path} to the timestamped working directory
+	 */
 	@NamedScopeValue(value = {"working-directory", "working-path"}, asString = true)
 	public Path getWorkingPath() {
 		return working;
@@ -241,12 +244,26 @@ public class Simulation extends ScopedComponent<Scope> {
 		return root;
 	}
 	
+	/**
+	 * Links the {@link Simulation Simulation's} {@link Module Modules} into their respective active directories as per the logic in
+	 * {@link Module#linkToWorkingDirectory()}.
+	 * 
+	 * @throws IOException
+	 *             if an I/O error occurs while linking the {@link Module Modules}
+	 */
 	public void linkModules() throws IOException {
 		for (Module module : modules.values())
 			module.linkToWorkingDirectory();
 	}
 	
-	public void updateNamelists() throws IOException, InterruptedException {
+	/**
+	 * Updates the {@link Simulation Simulation's} {@link Module Modules'} {@link Namelist} files and writes to the result to each {@link Module
+	 * Module's} active directory as per the logic in {@link Module#updateNamelist()} and {@link Module#writeNamelist()}.
+	 * 
+	 * @throws IOException
+	 *             if an I/O error occurs
+	 */
+	public void updateNamelists() throws IOException {
 		for (Module module : modules.values()) {
 			module.updateNamelist();
 			module.writeNamelist();
