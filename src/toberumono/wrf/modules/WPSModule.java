@@ -57,7 +57,7 @@ public class WPSModule extends Module {
 	}
 	
 	@Override
-	public void updateNamelist() throws IOException, InterruptedException {
+	public void updateNamelist() throws IOException {
 		Namelist wps = getNamelist();
 		NamelistString start = new NamelistString(Simulation.makeWPSDateString(getTiming().getStart()));
 		NamelistString end = new NamelistString(Simulation.makeWPSDateString(getTiming().getEnd()));
@@ -115,7 +115,7 @@ public class WPSModule extends Module {
 	}
 	
 	@Override
-	public void cleanUp() throws IOException, InterruptedException {
+	public void cleanUp() throws IOException {
 		RecursiveEraser re = new RecursiveEraser();
 		Files.walkFileTree(getSim().getActivePath(getName()), re);
 		Files.walkFileTree(getSim().getActivePath("grib"), re);

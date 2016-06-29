@@ -143,7 +143,7 @@ public class GRIBModule extends Module {
 	}
 	
 	@Override
-	public void updateNamelist() throws IOException, InterruptedException {/* This module has no Namelist */}
+	public void updateNamelist() throws IOException {/* This module has no Namelist */}
 	
 	/**
 	 * @return {@code true} iff the incremented timing values should be wrapped via the {@link Calendar Calendar's} wrapping policy
@@ -284,5 +284,5 @@ public class GRIBModule extends Module {
 	}
 	
 	@Override
-	public void cleanUp() throws IOException, InterruptedException {/* This module doesn't perform any cleanup */}
+	public void cleanUp() throws IOException {/* This module doesn't perform any cleanup */}
 }

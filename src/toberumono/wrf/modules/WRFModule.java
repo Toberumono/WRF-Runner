@@ -63,7 +63,7 @@ public class WRFModule extends Module {
 	
 	@Override
 	@SuppressWarnings("unchecked")
-	public void updateNamelist() throws IOException, InterruptedException {
+	public void updateNamelist() throws IOException {
 		NamelistValueList<NamelistNumber> syear = new NamelistValueList<>(), smonth = new NamelistValueList<>(), sday = new NamelistValueList<>();
 		NamelistValueList<NamelistNumber> shour = new NamelistValueList<>(), sminute = new NamelistValueList<>(), ssecond = new NamelistValueList<>();
 		NamelistValueList<NamelistNumber> eyear = new NamelistValueList<>(), emonth = new NamelistValueList<>(), eday = new NamelistValueList<>();
@@ -131,7 +131,7 @@ public class WRFModule extends Module {
 	}
 	
 	@Override
-	public void cleanUp() throws IOException, InterruptedException {
+	public void cleanUp() throws IOException {
 		Files.walkFileTree(getSim().getActivePath(getName()), new RecursiveEraser());
 	}
 }

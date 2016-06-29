@@ -97,10 +97,8 @@ public abstract class Module extends AbstractScope<Simulation> {
 	 * 
 	 * @throws IOException
 	 *             if an I/O error occurs while updating the {@link Namelist} file
-	 * @throws InterruptedException
-	 *             if the process is interrupted
 	 */
-	public abstract void updateNamelist() throws IOException, InterruptedException;
+	public abstract void updateNamelist() throws IOException;
 	
 	/**
 	 * The logic to execute the subprocesses that form the {@link Module Module's} step in the {@link Simulation}.
@@ -117,10 +115,8 @@ public abstract class Module extends AbstractScope<Simulation> {
 	 * 
 	 * @throws IOException
 	 *             if an I/O error occurs while cleaning up files
-	 * @throws InterruptedException
-	 *             if the process is interrupted
 	 */
-	public abstract void cleanUp() throws IOException, InterruptedException;
+	public abstract void cleanUp() throws IOException;
 	
 	/**
 	 * @return the {@link Path} to the {@link Module Module's} namelist file relative to the {@link Module Module's} root directory
