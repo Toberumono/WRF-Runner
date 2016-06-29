@@ -22,10 +22,23 @@ public class WRFRunnerComponentFactory<T> {
 		this.disabledComponentConstructor = disabledComponentConstructor;
 	}
 	
+	/**
+	 * Retrieves the {@link WRFRunnerComponentFactory factory} for the provided {@link Class}.
+	 * 
+	 * @param clazz
+	 *            the root {@link Class} of the Component type for which the {@link WRFRunnerComponentFactory} is being retrieved
+	 * @return an instance of {@link WRFRunnerComponentFactory} that produces components that are subclasses of {@code clazz} if one has already been
+	 *         created, otherwise {@code null}
+	 * @throws NoSuchFactoryException
+	 *             if the factory for {@code clazz} does not exist
+	 */
 	@SuppressWarnings("unchecked")
 	public static <T> WRFRunnerComponentFactory<T> getFactory(Class<T> clazz) {
 		synchronized (factories) {
-			return (WRFRunnerComponentFactory<T>) factories.get(clazz);
+			WRFRunnerComponentFactory<T> out = (WRFRunnerComponentFactory<T>) factories.get(clazz);
+			if (out == null)
+				throw new NoSuchFactoryException("Cannot find or create a factory for " + clazz.getName());
+			return out;
 		}
 	}
 	
@@ -34,6 +47,7 @@ public class WRFRunnerComponentFactory<T> {
 			if (factories.containsKey(clazz)) {
 				@SuppressWarnings("unchecked") WRFRunnerComponentFactory<T> factory = (WRFRunnerComponentFactory<T>) factories.get(clazz);
 				factory.setDefaultComponentType(defaultComponentType);
+				factory.setDisabledComponentConstructor(disabledComponentConstructor);
 				return factory;
 			}
 			WRFRunnerComponentFactory<T> factory = new WRFRunnerComponentFactory<>(clazz, defaultComponentType, disabledComponentConstructor);
