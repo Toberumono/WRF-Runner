@@ -46,8 +46,10 @@ public class WRFRunnerComponentFactory<T> {
 		synchronized (factories) {
 			if (factories.containsKey(clazz)) {
 				@SuppressWarnings("unchecked") WRFRunnerComponentFactory<T> factory = (WRFRunnerComponentFactory<T>) factories.get(clazz);
-				factory.setDefaultComponentType(defaultComponentType);
-				factory.setDisabledComponentConstructor(disabledComponentConstructor);
+				if (defaultComponentType != null)
+					factory.setDefaultComponentType(defaultComponentType);
+				if (disabledComponentConstructor != null)
+					factory.setDisabledComponentConstructor(disabledComponentConstructor);
 				return factory;
 			}
 			WRFRunnerComponentFactory<T> factory = new WRFRunnerComponentFactory<>(clazz, defaultComponentType, disabledComponentConstructor);
