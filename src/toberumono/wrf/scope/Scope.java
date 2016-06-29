@@ -8,6 +8,13 @@ public interface Scope {
 	
 	public boolean hasValueByName(String name);
 	
+	public default boolean hasScopedValueByName(String name) {
+		for (Scope scope = this; scope != null; scope = scope.getParent())
+			if (scope.hasValueByName(name))
+				return true;
+		return false;
+	}
+	
 	public default Object getScopedValueByName(String name) throws InvalidVariableAccessException {
 		for (Scope scope = this; scope != null; scope = scope.getParent())
 			if (scope.hasValueByName(name))
