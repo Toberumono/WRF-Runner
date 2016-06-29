@@ -13,8 +13,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
 import toberumono.wrf.Module;
@@ -37,7 +35,6 @@ public class GRIBModule extends Module {
 	private Timing incremented;
 	private ScopedMap timestep, intermediate;
 	private Boolean wrap;
-	private final Lock lock;
 	
 	/**
 	 * Initializes a new {@link GRIBModule} with the given {@code parameters} for the given {@link Simulation}
@@ -57,7 +54,6 @@ public class GRIBModule extends Module {
 		ScopedMap grib = (ScopedMap) parameters.get("configuration");
 		url = (String) grib.get("url");
 		timestep = (ScopedMap) grib.get("timestep");
-		lock = new ReentrantLock();
 	}
 	
 	/**
@@ -67,16 +63,12 @@ public class GRIBModule extends Module {
 	public ScopedMap intermediateScope() {
 		if (intermediate != null)
 			return intermediate;
-		try {
-			lock.lock();
+		synchronized (this) {
 			if (intermediate == null) {
 				intermediate = new ScopedMap(this);
 				intermediate.put("constant", getTiming());
 				intermediate.put("incremented", getIncrementedTiming());
 			}
-		}
-		finally {
-			lock.unlock();
 		}
 		return intermediate;
 	}
@@ -99,14 +91,10 @@ public class GRIBModule extends Module {
 	public Timing getIncrementedTiming() {
 		if (incremented != null)
 			return incremented;
-		try {
-			lock.lock();
+		synchronized (this) {
 			if (incremented == null)
 				incremented = WRFRunnerComponentFactory.generateComponent(Timing.class, ((ScopedMap) getParameters().get("timing")).containsKey("incremented")
 						? (ScopedMap) ((ScopedMap) getParameters().get("timing")).get("incremented") : ((ScopedMap) getParameters().get("timing")), getTiming());
-		}
-		finally {
-			lock.unlock();
 		}
 		return incremented;
 	}
