@@ -7,7 +7,7 @@ import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.AbstractTimingComponent;
 
 /**
- * Convenience class to make the necessary extensions and implementations needed to implement a new type of {@link Duration} easier to follow.
+ * Convenience class to make the extensions and methods needed to implement a new type of {@link Duration} easier to follow.
  * 
  * @author Toberumono
  */

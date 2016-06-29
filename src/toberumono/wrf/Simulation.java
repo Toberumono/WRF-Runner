@@ -106,34 +106,66 @@ public class Simulation extends ScopedComponent<Scope> {
 		serialModuleExecution = null;
 	}
 	
+	/**
+	 * @return the processed global {@link Timing} information
+	 */
 	@NamedScopeValue("timing")
 	public Timing getTiming() {
 		return globalTiming;
 	}
 	
+	/**
+	 * @return the raw global {@link Timing} information as a {@link ScopedMap}
+	 */
 	@NamedScopeValue("timing-map")
 	public ScopedMap getTimingMap() {
 		return timing;
 	}
 	
+	/**
+	 * @return the "general" subsection of the configuration file as a {@link ScopedMap}
+	 */
 	@NamedScopeValue("general")
 	public ScopedMap getGeneral() {
 		return general;
 	}
 	
+	/**
+	 * Retrieves the absolute {@link Path} to the given {@link Module Module's} source directory.<br>
+	 * The source directory of a {@link Module} is the absolute form of the {@link Path} specified in the "path" section of the configuration file.
+	 * 
+	 * @param module
+	 *            the name of the {@link Module}
+	 * @return absolute {@link Path} to the named {@link Module Module's} source directory
+	 * @see #getActivePath(String)
+	 */
 	public Path getSourcePath(String module) {
 		return (Path) source.get(module);
 	}
 	
+	/**
+	 * Retrieves the absolute {@link Path} to the given {@link Module Module's} active directory.<br>
+	 * The active directory of a {@link Module} is the absolute {@link Path} to the root of the {@link Module Module's} directory in the timestamped
+	 * {@link #getWorkingPath() working directory} for the {@link Simulation}
+	 * 
+	 * @param module
+	 *            the name of the {@link Module}
+	 * @return absolute {@link Path} to the named {@link Module Module's} active directory
+	 * @see #getSourcePath(String)
+	 */
 	public Path getActivePath(String module) {
 		return (Path) active.get(module);
 	}
 	
+	/**
+	 * @return the {@link Path} used to resolve relative {@link Path Paths} in the configuration file
+	 */
+	@NamedScopeValue(value = "resolver", asString = true)
 	public Path getResolver() {
 		return resolver;
 	}
 	
-	@NamedScopeValue(value = "working-directory", asString = true)
+	@NamedScopeValue(value = {"working-directory", "working-path"}, asString = true)
 	public Path getWorkingPath() {
 		return working;
 	}
@@ -165,7 +197,7 @@ public class Simulation extends ScopedComponent<Scope> {
 	public NamelistNumber getIntervalSeconds() {
 		return interval_seconds;
 	}
-
+	
 	/**
 	 * @return the computed interval seconds value for {@link Namelist} files as a {@link Number}
 	 */
@@ -184,6 +216,19 @@ public class Simulation extends ScopedComponent<Scope> {
 		return serialModuleExecution;
 	}
 	
+	/**
+	 * Constructs the {@link Simulation Simulation's} timestamped working directory based on the {@link Path} specified in the "working-directory"
+	 * field of "general".
+	 * 
+	 * @param workingRoot
+	 *            the {@link Path} to the root (non-timestamped) working directory
+	 * @param always_suffix
+	 *            if {@code true} a '+1' will be appended to unique timestamped names (this is to provide consistency with the notation for when
+	 *            subsequent {@link Simulation Simulations} request folders with the same timestamp).
+	 * @return the {@link Path} to the constructed working directory
+	 * @throws IOException
+	 *             if an I/O error occured
+	 */
 	public Path constructWorkingDirectory(Path workingRoot, boolean always_suffix) throws IOException {
 		Path active = Files.createDirectories(workingRoot).resolve("active"), root;
 		try (FileChannel channel = FileChannel.open(active, StandardOpenOption.CREATE, StandardOpenOption.WRITE); FileLock lock = channel.lock()) {
