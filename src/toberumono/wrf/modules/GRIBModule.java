@@ -29,12 +29,13 @@ import toberumono.wrf.timing.Timing;
  * @author Toberumono
  */
 public class GRIBModule extends Module {
-	private static final ExecutorService pool = Executors.newWorkStealingPool(12);
 	private static final int[] calendarOffsetFields = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
 	private String url;
 	private Timing incremented;
 	private ScopedMap timestep, intermediate;
 	private Boolean wrap;
+	private Integer maxConcurrentDownloads;
+	private ExecutorService pool;
 	
 	/**
 	 * Initializes a new {@link GRIBModule} with the given {@code parameters} for the given {@link Simulation}
@@ -51,6 +52,8 @@ public class GRIBModule extends Module {
 		timestep = null;
 		intermediate = null;
 		wrap = null;
+		maxConcurrentDownloads = null;
+		pool = null;
 		ScopedMap grib = (ScopedMap) parameters.get("configuration");
 		url = (String) grib.get("url");
 		timestep = (ScopedMap) grib.get("timestep");
@@ -99,6 +102,46 @@ public class GRIBModule extends Module {
 		return incremented;
 	}
 	
+	/**
+	 * @return the maximum number of concurrent downloads allowed. Defaults to 8 (because 8 downloads at a 3-hour timestep is enough to download the
+	 *         GRIB data for a 24-hour {@link Simulation})
+	 */
+	@NamedScopeValue("max-concurrent-downloads")
+	public Integer getMaxConcurrentDownloads() {
+		if (maxConcurrentDownloads != null)
+			return maxConcurrentDownloads;
+		synchronized (this) {
+			if (maxConcurrentDownloads == null) {
+				Object mcd = ((ScopedMap) getParameters().get("configuration")).get("max-concurrent-downloads");
+				if (mcd instanceof Number) {
+					maxConcurrentDownloads = ((Number) mcd).intValue();
+					if (maxConcurrentDownloads < 1) //If max-concurrent-downloads is less than 1, it is treated as disabling the limit
+						maxConcurrentDownloads = Integer.MAX_VALUE;
+				}
+				else if (mcd instanceof Boolean) {
+					if ((Boolean) mcd)
+						maxConcurrentDownloads = Integer.MAX_VALUE;
+					else
+						throw new IllegalArgumentException("If max-concurrent-downloads is a Boolean, its value must be false.");
+				}
+				else {
+					maxConcurrentDownloads = 8;
+				}
+			}
+		}
+		return maxConcurrentDownloads;
+	}
+	
+	private ExecutorService getPool() {
+		if (pool != null)
+			return pool;
+		synchronized (this) {
+			if (pool == null)
+				pool = Executors.newWorkStealingPool(getMaxConcurrentDownloads());
+		}
+		return pool;
+	}
+	
 	@Override
 	public void updateNamelist() throws IOException, InterruptedException {/* This module has no Namelist */}
 	
@@ -129,12 +172,17 @@ public class GRIBModule extends Module {
 		steps[2] = ((Number) timestep.get("minutes")).intValue();
 		steps[3] = ((Number) timestep.get("seconds")).intValue();
 		
-		for (; !test.after(end); incrementOffsets(offsets, steps, test, increment))
-			downloads.add(downloadGribFile(parseIncrementedURL(url, constant, increment, shouldWrap(), 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), getSim()));
+		if (getMaxConcurrentDownloads() < 1)
+			throw new IllegalArgumentException("max-concurrent-downloads must be greater than 0.");
+		if (test.after(end))
+			return;
 		
 		IOException exc = null;
 		boolean failed = false;
-		for (Future<Boolean> download : downloads) {
+		do {
+			for (; downloads.size() < getMaxConcurrentDownloads() && !test.after(end); incrementOffsets(offsets, steps, test, increment))
+				downloads.add(downloadGribFile(parseIncrementedURL(url, constant, increment, shouldWrap(), 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), getSim()));
+			Future<Boolean> download = downloads.remove(0);
 			try {
 				download.get();
 			}
@@ -143,7 +191,7 @@ public class GRIBModule extends Module {
 				if (e.getCause() instanceof IOException) //We want to throw an IOException if it occured
 					exc = (IOException) e.getCause();
 			}
-		}
+		} while (downloads.size() > 0);
 		if (failed) {
 			if (exc != null)
 				throw exc;
@@ -218,7 +266,7 @@ public class GRIBModule extends Module {
 	 *             if the transfer fails
 	 */
 	private Future<Boolean> downloadGribFile(String url, Simulation sim) {
-		return pool.submit(() -> {
+		return getPool().submit(() -> {
 			String name = url.substring(url.lastIndexOf('/') + 1);
 			Path dest = sim.getActivePath(getName()).resolve(name);
 			logger.info("Transferring: " + url + " -> " + dest.toString());

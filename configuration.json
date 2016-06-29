@@ -119,12 +119,20 @@
 	},
 	"grib" : {
 		"url" : "http://www.ftp.ncep.noaa.gov/data/nccf/com/nam/prod/nam.%tY%tm%td/nam.t00z.awip3d%iH.tm00.grib2",
+		"max-concurrent-downloads" : 8,
 		"timestep" : {
-			"wrap" : true,
+			"wrap" : false,
 			"days" : 0,
 			"hours" : 3,
 			"minutes" : 0,
 			"seconds" : 0
+		}
+	},
+	"wps" : {
+		"parallel" : {
+			"is-dmpar" : false,
+			"boot-lam" : false,
+			"processors" : 2
 		}
 	},
 	"wrf" : {

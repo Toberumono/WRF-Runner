@@ -436,6 +436,7 @@ public class WRFRunner {
 		});
 		upgrader.addUpgradeAction("5.3.2", root -> JSONSystem.transferField("use-computed-times", new JSONBoolean(true), (JSONObject) root.get("timing"), (JSONObject) root.get("general")));
 		upgrader.addUpgradeAction("6.0.2", root -> JSONSystem.renameField((JSONObject) root.get("general"), new JSONBoolean(false), "serial-module-execution", "force-serial-module-execution"));
+		upgrader.addUpgradeAction("6.0.3", root -> JSONSystem.renameField((JSONObject) root.get("grib"), new JSONNumber<>(8), "max-concurrent-downloads"));
 	}
 	
 	protected void initConfigurationUpgradeProblemHandlers(ConfigurationUpgrader upgrader) {
@@ -485,7 +486,7 @@ public class WRFRunner {
 		if (namelist != null)
 			out.put("namelist", namelist);
 		if (dependencies.length > 0)
-			out.put("dependencies", new JSONArray(Arrays.stream(dependencies).map(s -> new JSONString(s)).collect(Collectors.toList())));
+			out.put("dependencies", new JSONArray(Arrays.stream(dependencies).map(JSONString::new).collect(Collectors.toList())));
 		return out;
 	}
 	
@@ -514,7 +515,7 @@ public class WRFRunner {
 		applyDefault(general, "always-suffix", false);
 		applyDefault(general, "max-kept-outputs", 15);
 		applyDefault(general, "logging-level", "info");
-		applyDefault(general, "serial-module-execution", false);
+		applyDefault(general, "force-serial-module-execution", false);
 		applyDefault(general, "use-computed-times", true);
 		return configuration;
 	}
