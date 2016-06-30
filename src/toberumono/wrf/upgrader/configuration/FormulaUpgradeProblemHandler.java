@@ -6,9 +6,20 @@ import java.util.function.Supplier;
 import toberumono.json.JSONData;
 import toberumono.json.JSONString;
 import toberumono.structures.versioning.VersionNumber;
+import toberumono.wrf.scope.ScopedFormulaProcessor;
 
+/**
+ * Implementation of {@link ConfigurationUpgradeProblemHandler} that handles potential issues with the {@link ScopedFormulaProcessor} and related
+ * logic.
+ * 
+ * @author Toberumono
+ * @see ConfigurationUpgrader
+ */
 public class FormulaUpgradeProblemHandler extends ConfigurationUpgradeProblemHandler {
 	
+	/**
+	 * Creates a new {@link FormulaUpgradeProblemHandler} for use with a {@link ConfigurationUpgrader}.
+	 */
 	public FormulaUpgradeProblemHandler() {
 		super("formula", new VersionNumber("4.0.0"));
 	}
