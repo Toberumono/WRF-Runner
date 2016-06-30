@@ -2,16 +2,30 @@ package toberumono.wrf.timing.clear;
 
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.logging.Logger;
 
 import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedMap;
 
 import static toberumono.wrf.SimulationConstants.*;
 
+/**
+ * The default implementation of {@link Clear}.
+ * 
+ * @author Toberumono
+ */
 public class StandardClear extends AbstractClear {
 	private final int[] values;
 	private int keep;
 	
+	/**
+	 * Initializes a new instance of {@link StandardClear} with a {@link Logger} derived from {@link Clear#LOGGER_NAME}.
+	 * 
+	 * @param parameters
+	 *            the parameters that define the implementation as a {@link ScopedMap}
+	 * @param parent
+	 *            the parent {@link Scope}
+	 */
 	public StandardClear(ScopedMap parameters, Scope parent) {
 		super(parameters, parent);
 		values = new int[TIMING_FIELD_NAMES.size()];

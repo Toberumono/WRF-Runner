@@ -1,16 +1,30 @@
 package toberumono.wrf.timing.offset;
 
 import java.util.Calendar;
+import java.util.logging.Logger;
 
 import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedMap;
 
 import static toberumono.wrf.SimulationConstants.*;
 
+/**
+ * The default implementation of {@link Offset}.
+ * 
+ * @author Toberumono
+ */
 public class StandardOffset extends AbstractOffset {
 	private int[] offsets;
 	private Boolean wrap;
 	
+	/**
+	 * Initializes a new instance of {@link StandardOffset} with a {@link Logger} derived from {@link Offset#LOGGER_NAME}.
+	 * 
+	 * @param parameters
+	 *            the parameters that define the implementation as a {@link ScopedMap}
+	 * @param parent
+	 *            the parent {@link Scope}
+	 */
 	public StandardOffset(ScopedMap parameters, Scope parent) {
 		super(parameters, parent);
 		wrap = null;

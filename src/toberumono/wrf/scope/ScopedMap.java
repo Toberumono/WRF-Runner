@@ -15,6 +15,11 @@ import toberumono.json.JSONObject;
 import toberumono.structures.collections.iterators.WrappedIterator;
 import toberumono.structures.sexpressions.ConsCell;
 
+/**
+ * An implementation of {@link Map} that works with the {@link Scope} tree and automatically handles accessing the {@link ScopedFormulaProcessor}.
+ * 
+ * @author Toberumono
+ */
 public class ScopedMap implements Scope, Map<String, Object> {
 	private final Function<Entry<String, Object>, Object> valuesConverter = e -> processOutput(e.getKey(), e.getValue());
 	
@@ -23,6 +28,12 @@ public class ScopedMap implements Scope, Map<String, Object> {
 	private EntrySet entries;
 	private Collection<Object> values;
 	
+	/**
+	 * Creates a new {@link ScopedMap} with the given parent {@link Scope}.
+	 * 
+	 * @param parent
+	 *            the parent {@link Scope}; if it is {@code null}, the parent {@link Scope} can be set later via a call to {@link #setParent(Scope)}
+	 */
 	public ScopedMap(Scope parent) {
 		this.parent = parent;
 		backing = new HashMap<>();
@@ -186,11 +197,27 @@ public class ScopedMap implements Scope, Map<String, Object> {
 			throw new UnsupportedOperationException("The parent of a ScopedConfiguration object cannot be changed once set.");
 	}
 	
-	public static ScopedMap buildFromJSON(JSONObject base) throws InvalidVariableAccessException {
+	/**
+	 * Builds a {@link ScopedMap} with a {@code null} parent {@link Scope} from the given {@link JSONObject}
+	 * 
+	 * @param base
+	 *            the given {@link JSONObject}
+	 * @return a {@link ScopedMap} with a {@code null} parent {@link Scope} based on the given {@link JSONObject}
+	 */
+	public static ScopedMap buildFromJSON(JSONObject base) {
 		return buildFromJSON(base, null);
 	}
 	
-	public static ScopedMap buildFromJSON(JSONObject base, Scope parent) throws InvalidVariableAccessException {
+	/**
+	 * Builds a {@link ScopedMap} with the given parent {@link Scope} from the given {@link JSONObject}
+	 * 
+	 * @param base
+	 *            the given {@link JSONObject}
+	 * @param parent
+	 *            the given parent {@link Scope}
+	 * @return a {@link ScopedMap} with the given parent {@link Scope} based on the given {@link JSONObject}
+	 */
+	public static ScopedMap buildFromJSON(JSONObject base, Scope parent) {
 		ScopedMap out = new ScopedMap(parent);
 		for (Entry<String, JSONData<?>> entry : base.entrySet()) {
 			if (entry.getValue() instanceof JSONObject)

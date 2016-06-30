@@ -8,11 +8,35 @@ import java.util.ListIterator;
 
 import toberumono.wrf.scope.InvalidVariableAccessException;
 import toberumono.wrf.scope.Scope;
+import toberumono.wrf.timing.clear.ListClear;
+import toberumono.wrf.timing.duration.ListDuration;
+import toberumono.wrf.timing.offset.ListOffset;
+import toberumono.wrf.timing.round.ListRound;
 
+/**
+ * An implementation of {@link TimingComponent} that provides all of the methods needed to implement the ListComponent form of each type of
+ * {@link TimingComponent}.
+ * 
+ * @author Toberumono
+ * @param <E>
+ *            the type of {@link TimingComponent} being wrapped
+ * @see ListClear
+ * @see ListDuration
+ * @see ListOffset
+ * @see ListRound
+ */
 public class ScopedTimingComponentList<E extends TimingComponent> implements TimingComponent, List<E> {
 	private final List<E> backing;
 	private final Scope parent;
 	
+	/**
+	 * Initializes a new {@link ScopedTimingComponentList} wrapper around an existing {@link List} of {@link TimingComponent} instances.
+	 * 
+	 * @param backing
+	 *            the {@link List} of {@link TimingComponent} instances
+	 * @param parent
+	 *            the parent {@link Scope}
+	 */
 	public ScopedTimingComponentList(List<E> backing, Scope parent) {
 		this.backing = backing;
 		this.parent = parent;
@@ -45,12 +69,12 @@ public class ScopedTimingComponentList<E extends TimingComponent> implements Tim
 			return get(0).hasValueByName(name);
 		}
 	}
-
+	
 	@Override
 	public Calendar apply(Calendar base) {
 		return apply(base, false);
 	}
-
+	
 	@Override
 	public Calendar apply(Calendar base, boolean inPlace) {
 		Calendar out = inPlace ? base : (Calendar) base.clone();

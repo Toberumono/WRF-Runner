@@ -13,10 +13,21 @@ import toberumono.json.JSONObject;
 import toberumono.structures.collections.iterators.WrappedIterator;
 import toberumono.structures.sexpressions.ConsCell;
 
+/**
+ * An implementation of {@link List} that works with the {@link Scope} tree and automatically handles accessing the {@link ScopedFormulaProcessor}.
+ * 
+ * @author Toberumono
+ */
 public class ScopedList implements Scope, List<Object> {
 	private final List<Object> backing;
 	private Scope parent;
 	
+	/**
+	 * Creates a new {@link ScopedList} with the given parent {@link Scope}.
+	 * 
+	 * @param parent
+	 *            the parent {@link Scope};
+	 */
 	public ScopedList(Scope parent) {
 		backing = new ArrayList<>();
 		this.parent = parent;
@@ -306,10 +317,26 @@ public class ScopedList implements Scope, List<Object> {
 			throw new UnsupportedOperationException("The parent of a ScopedList object cannot be changed once set.");
 	}
 	
-	public static ScopedList buildFromJSON(JSONArray base) throws InvalidVariableAccessException {
+	/**
+	 * Builds a {@link ScopedList} with a {@code null} parent {@link Scope} from the given {@link JSONObject}
+	 * 
+	 * @param base
+	 *            the given {@link JSONObject}
+	 * @return a {@link ScopedList} with a {@code null} parent {@link Scope} based on the given {@link JSONObject}
+	 */
+	public static ScopedList buildFromJSON(JSONArray base) {
 		return buildFromJSON(base, null);
 	}
 	
+	/**
+	 * Builds a {@link ScopedList} with the given parent {@link Scope} from the given {@link JSONArray}
+	 * 
+	 * @param base
+	 *            the given {@link JSONArray}
+	 * @param parent
+	 *            the given parent {@link Scope}
+	 * @return a {@link ScopedList} with the given parent {@link Scope} based on the given {@link JSONArray}
+	 */
 	public static ScopedList buildFromJSON(JSONArray base, Scope parent) {
 		ScopedList out = new ScopedList(parent);
 		for (JSONData<?> e : base) {
