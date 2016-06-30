@@ -23,8 +23,7 @@ public class SimulationConstants {
 	 */
 	public static final List<String> TIMING_FIELD_NAMES = Collections.unmodifiableList(Arrays.asList("milliseconds", "seconds", "minutes", "hours", "days", "months", "years"));
 	/**
-	 * The ids of the valid timing fields as they are defined in {@link Calendar}. Used in conjunction with
-	 * {@link #TIMING_FIELD_NAMES}.
+	 * The IDs of the valid timing fields as they are defined in {@link Calendar}. Used in conjunction with {@link #TIMING_FIELD_NAMES}.
 	 * 
 	 * @see #TIMING_FIELD_NAMES
 	 */
