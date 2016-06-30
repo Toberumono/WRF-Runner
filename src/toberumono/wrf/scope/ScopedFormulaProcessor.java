@@ -236,24 +236,24 @@ public class ScopedFormulaProcessor {
 	 * Processes the scoped formula represented by the {@link String}.
 	 * 
 	 * @param input
-	 *            the input {@link String}
+	 *            the formula as a {@link String}
 	 * @param scope
 	 *            the formula's {@link Scope}
 	 * @param fieldName
 	 *            the name of the field that the formula was assigned to (this can be {@code null})
-	 * @return a {@link ConsCell} containing the result of evaluating the formula
+	 * @return the result of evaluating the formula
 	 * @throws InvalidVariableAccessException
 	 *             if an invalid variable access is attempted in the course of processing the formula
 	 */
-	public static ConsCell process(String input, Scope scope, String fieldName) throws InvalidVariableAccessException {
-		return process(preProcess(input), scope, fieldName);
+	public static Object process(String input, Scope scope, String fieldName) throws InvalidVariableAccessException {
+		return process(preProcess(input), scope, fieldName).getCar();
 	}
 	
 	/**
 	 * Processes the scoped formula represented by the {@link ConsCell} tree.
 	 * 
 	 * @param input
-	 *            the input {@link ConsCell} tree
+	 *            the formula as a {@link ConsCell} tree
 	 * @param scope
 	 *            the formula's {@link Scope}
 	 * @param fieldName
