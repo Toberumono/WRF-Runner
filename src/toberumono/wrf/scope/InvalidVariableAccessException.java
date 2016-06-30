@@ -1,7 +1,7 @@
 package toberumono.wrf.scope;
 
 /**
- * Thrown when a {@link VariableAccess} is used on a {@link Scope} that doesn't have data under that name.
+ * Thrown when a named variable is requested from {@link Scope} that doesn't have variable with that name.
  * 
  * @author Toberumono
  */
