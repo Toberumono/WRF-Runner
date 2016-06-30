@@ -95,6 +95,21 @@ public abstract class UpgradeProblemHandler<V> {
 		return !input.get().toLowerCase().startsWith("n");
 	}
 	
+	/**
+	 * Prompts the user for value correctness and, if needed, prompts the user for the new (correct) value.
+	 * 
+	 * @param path
+	 *            the path to the potentially problematic field
+	 * @param oldValue
+	 *            the value of the potentially problematic field
+	 * @param input
+	 *            a {@link Supplier} that, when called, provides a single line of user input (equivalent to {@link Scanner#nextLine()}) as a
+	 *            {@link String}
+	 * @param output
+	 *            a {@link Consumer} that, when called, writes the passed {@link String} to an output (equivalent to {@link PrintStream#print(String)}
+	 *            or {@code System.out.print(String)})
+	 * @return the correct value for the field (this will be {@code oldValue} if the existing value was correct)
+	 */
 	public V interactiveFix(String path, V oldValue, Supplier<String> input, Consumer<String> output) {
 		if (promptForValueCorrectness(path, oldValue, input, output))
 			return oldValue; //If current the value is correct, we can just return it
