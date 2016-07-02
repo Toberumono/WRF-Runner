@@ -336,7 +336,7 @@ public class ScopedFormulaProcessor {
 		for (String n : name.split("\\.")) {
 			if (!(out instanceof Scope))
 				throw new InvalidVariableAccessException(out.getClass().getName() + " is not an instance of Scope.");
-			switch (name) {
+			switch (n) {
 				case "super":
 				case "parent":
 					out = ((Scope) out).getParent();
