@@ -95,23 +95,23 @@ public class WRFRunner {
 	 * {@link Clear}, {@link Timing}, and {@link Parallel}.
 	 */
 	public static void initFactories() {
-		WRFRunnerComponentFactory<Offset> offsetFactory = WRFRunnerComponentFactory.getFactory(Offset.class, "standard", DisabledOffset::new);
+		WRFRunnerComponentFactory<Offset> offsetFactory = WRFRunnerComponentFactory.createFactory(Offset.class, "standard", DisabledOffset::new);
 		offsetFactory.addComponentConstructor("standard", StandardOffset::new);
 		offsetFactory.addComponentConstructor("list", ListOffset::new);
-		WRFRunnerComponentFactory<Round> roundFactory = WRFRunnerComponentFactory.getFactory(Round.class, "bucket", DisabledRound::new);
+		WRFRunnerComponentFactory<Round> roundFactory = WRFRunnerComponentFactory.createFactory(Round.class, "bucket", DisabledRound::new);
 		roundFactory.addComponentConstructor("bucket", BucketRound::new);
 		roundFactory.addComponentConstructor("fractional", FractionalRound::new);
 		roundFactory.addComponentConstructor("function", FunctionRound::new);
 		roundFactory.addComponentConstructor("list", ListRound::new);
-		WRFRunnerComponentFactory<Duration> durationFactory = WRFRunnerComponentFactory.getFactory(Duration.class, "standard", DisabledDuration::new);
+		WRFRunnerComponentFactory<Duration> durationFactory = WRFRunnerComponentFactory.createFactory(Duration.class, "standard", DisabledDuration::new);
 		durationFactory.addComponentConstructor("standard", StandardDuration::new);
 		durationFactory.addComponentConstructor("list", ListDuration::new);
-		WRFRunnerComponentFactory<Clear> clearFactory = WRFRunnerComponentFactory.getFactory(Clear.class, "standard", DisabledClear::new);
+		WRFRunnerComponentFactory<Clear> clearFactory = WRFRunnerComponentFactory.createFactory(Clear.class, "standard", DisabledClear::new);
 		clearFactory.addComponentConstructor("standard", StandardClear::new);
 		clearFactory.addComponentConstructor("list", ListClear::new);
-		WRFRunnerComponentFactory<Timing> timingFactory = WRFRunnerComponentFactory.getFactory(Timing.class, "computed", DisabledTiming::new);
+		WRFRunnerComponentFactory<Timing> timingFactory = WRFRunnerComponentFactory.createFactory(Timing.class, "computed", DisabledTiming::new);
 		timingFactory.addComponentConstructor("computed", ComputedTiming::new);
-		WRFRunnerComponentFactory<Parallel> parallelFactory = WRFRunnerComponentFactory.getFactory(Parallel.class, "standard", DisabledParallel::new);
+		WRFRunnerComponentFactory<Parallel> parallelFactory = WRFRunnerComponentFactory.createFactory(Parallel.class, "standard", DisabledParallel::new);
 		parallelFactory.addComponentConstructor("standard", StandardParallel::new);
 	}
 	
