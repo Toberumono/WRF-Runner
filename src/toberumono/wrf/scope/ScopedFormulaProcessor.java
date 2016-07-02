@@ -267,7 +267,7 @@ public class ScopedFormulaProcessor {
 		if (input.getCarType() == OPERATOR) {
 			if (scope.getParent() == null)
 				throw new InvalidVariableAccessException("The current scope does not have a parent");
-			Object accessed = accessScope(fieldName, scope.getParent());
+			Object accessed = process(fieldName, scope.getParent(), null);
 			equation = new ConsCell(accessed, getTypeForObject(accessed));
 		}
 		else {
@@ -288,7 +288,7 @@ public class ScopedFormulaProcessor {
 					case "inherit":
 						if (scope.getParent() == null)
 							throw new InvalidVariableAccessException("The current scope does not have a parent");
-						Object accessed = accessScope(fieldName, scope.getParent());
+						Object accessed = process(fieldName, scope.getParent(), null);
 						head = head.append(new ConsCell(accessed, getTypeForObject(accessed)));
 						break;
 					default:
@@ -332,19 +332,25 @@ public class ScopedFormulaProcessor {
 				nme.append(name.charAt(i));
 		}
 		name = nme.toString();
-		switch (name) {
-			case "super":
-			case "parent":
-				scope = scope.getParent();
-				if (scope == null)
-					throw new InvalidVariableAccessException("The current scope does not have a parent");
-				return scope;
-			case "this":
-			case "current":
-				return scope; //Don't change the scope in this case
-			default:
-				return scope.getScopedValueByName(name);
+		Object out = scope;
+		for (String n : name.split("\\.")) {
+			if (!(out instanceof Scope))
+				throw new InvalidVariableAccessException(out.getClass().getName() + " is not an instance of Scope.");
+			switch (name) {
+				case "super":
+				case "parent":
+					out = ((Scope) out).getParent();
+					if (out == null)
+						throw new InvalidVariableAccessException("The current scope does not have a parent");
+					break;
+				case "this":
+				case "current":
+					break; //Don't change the scope in this case
+				default:
+					out = ((Scope) out).getScopedValueByName(n);
+			}
 		}
+		return out;
 	}
 	
 	private static ConsType getTypeForObject(Object o) {
