@@ -3,10 +3,21 @@ package toberumono.wrf;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/**
+ * A container that processes and holds the command-line arguments passed to the {@link WRFRunner}.
+ * 
+ * @author Toberumono
+ */
 public class WRFRunnerCommandLineArguments {
 	private final Path configurationPath;
 	private final boolean cacheUpdates, ignoreUpgradeProblems, performInteractiveUpgrade;
 	
+	/**
+	 * Constructs a new {@link WRFRunnerCommandLineArguments} container from the given command-line arguments.
+	 * 
+	 * @param args
+	 *            the command-line arguments
+	 */
 	public WRFRunnerCommandLineArguments(String[] args) {
 		Path configurationPath = Paths.get("configuration.json");
 		boolean cacheUpdates = false, ignoreUpgradeProblems = false, performInteractiveUpgrade = false;
@@ -31,6 +42,18 @@ public class WRFRunnerCommandLineArguments {
 		this.performInteractiveUpgrade = performInteractiveUpgrade;
 	}
 	
+	/**
+	 * Constructs a new {@link WRFRunnerCommandLineArguments} container with the given preprocessed arguments.
+	 * 
+	 * @param configurationPath
+	 *            the {@link Path} to the configuration file
+	 * @param cacheUpdates
+	 *            whether updates to the configuration file should be written back to disk
+	 * @param ignoreUpgradeProblems
+	 *            whether the {@link Simulation} should continue with potential upgrade problems
+	 * @param performInteractiveUpgrade
+	 *            whether the potential upgrade problems should be resolved interactively
+	 */
 	public WRFRunnerCommandLineArguments(Path configurationPath, boolean cacheUpdates, boolean ignoreUpgradeProblems, boolean performInteractiveUpgrade) {
 		this.configurationPath = configurationPath;
 		this.cacheUpdates = cacheUpdates;
@@ -46,21 +69,21 @@ public class WRFRunnerCommandLineArguments {
 	}
 	
 	/**
-	 * @return the updates to the configuration file should be written back to disk
+	 * @return whether updates to the configuration file should be written back to disk
 	 */
 	public boolean cacheUpdates() {
 		return cacheUpdates;
 	}
 	
 	/**
-	 * @return the whether the {@link Simulation} should continue with potential upgrade problems should
+	 * @return whether the {@link Simulation} should continue with potential upgrade problems
 	 */
 	public boolean ignoreUpgradeProblems() {
 		return ignoreUpgradeProblems;
 	}
 	
 	/**
-	 * @return the whether the upgrade problems should be resolved interactively
+	 * @return whether the potential upgrade problems should be resolved interactively
 	 */
 	public boolean isPerformInteractiveUpgrade() {
 		return performInteractiveUpgrade;
