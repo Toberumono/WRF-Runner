@@ -23,13 +23,20 @@ import toberumono.wrf.scope.NamedScopeValue;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.Timing;
 
+import static toberumono.wrf.SimulationConstants.*;
+import static java.util.Calendar.*;
+
 /**
  * Contains the logic for getting the necessary GRIB files.
  * 
  * @author Toberumono
  */
 public class GRIBModule extends Module {
-	private static final int[] calendarOffsetFields = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
+	private static final long[] TIMING_FACTORS = {1, 1000, 60, 60, 24, 30, 365};
+	static {
+		for (int i = 1; i < TIMING_FACTORS.length; i++) //This makes it so that each factor is how much the value in the corresponding timing field would have to be multiplied by to convert it to milliseconds
+			TIMING_FACTORS[i] *= TIMING_FACTORS[i - 1];
+	}
 	private String url;
 	private Timing incremented;
 	private ScopedMap timestep, intermediate;
@@ -183,18 +190,19 @@ public class GRIBModule extends Module {
 	
 	@Override
 	public void execute() throws IOException, InterruptedException {
-		int[] offsets = new int[4], steps = new int[4];
+		int[] offsets = new int[TIMING_FIELD_IDS.size()], steps = new int[TIMING_FIELD_IDS.size()];
 		List<Future<Boolean>> downloads = new ArrayList<>();
 		Calendar constant = getTiming().getStart(), test = (Calendar) getSim().getTiming().getStart().clone(), end = getSim().getTiming().getEnd(),
 				increment = (Calendar) getIncrementedTiming().getStart().clone();
-		for (int i = 0; i < offsets.length; i++)
-			offsets[i] = increment.get(calendarOffsetFields[i]);
+		long stepLength = 0l;
+		for (int i = 0; i < TIMING_FIELD_IDS.size(); i++) {
+			offsets[i] = increment.get(TIMING_FIELD_IDS.get(i));
+			steps[i] = getTimestep().containsKey(TIMING_FIELD_NAMES.get(i)) ? evaluateToNumber(getTimestep().get(TIMING_FIELD_NAMES.get(i)), "timing." + TIMING_FIELD_NAMES.get(i)).intValue() : 0;
+			stepLength += steps[i] * TIMING_FACTORS[i];
+		}
 		
-		steps[0] = ((Number) timestep.get("days")).intValue();
-		steps[1] = ((Number) timestep.get("hours")).intValue();
-		steps[2] = ((Number) timestep.get("minutes")).intValue();
-		steps[3] = ((Number) timestep.get("seconds")).intValue();
-		
+		if (stepLength <= 0)
+			throw new IllegalArgumentException("The net step length must be greater than 0.");
 		if (getMaxConcurrentDownloads() < 1)
 			throw new IllegalArgumentException("max-concurrent-downloads must be greater than 0.");
 		if (test.after(end))
@@ -204,7 +212,7 @@ public class GRIBModule extends Module {
 		boolean failed = false;
 		do {
 			for (; downloads.size() < getMaxConcurrentDownloads() && !test.after(end); incrementOffsets(offsets, steps, test, increment))
-				downloads.add(downloadGribFile(parseIncrementedURL(url, constant, increment, shouldWrap(), 0, 0, offsets[0], offsets[1], offsets[2], offsets[3]), getSim()));
+				downloads.add(downloadGribFile(parseIncrementedURL(getURL(), constant, increment, shouldWrap(), offsets), getSim()));
 			Future<Boolean> download = downloads.remove(0);
 			try {
 				download.get();
@@ -240,39 +248,30 @@ public class GRIBModule extends Module {
 	 *            the {@link Calendar} containing the incremented time - this changes across URLs
 	 * @param wrapTimestep
 	 *            whether the increment {@link Calendar} or the offsets should be used (if false, the time fields will not wrap)
-	 * @param years
-	 *            the year offset from <tt>start</tt>
-	 * @param months
-	 *            the month offset from <tt>start</tt>
-	 * @param days
-	 *            the day offset from <tt>start</tt>
-	 * @param hours
-	 *            the hour offset from <tt>start</tt>
-	 * @param minutes
-	 *            the minute offset from <tt>start</tt>
-	 * @param seconds
-	 *            the second offset from <tt>start</tt>
+	 * @param offsets
+	 *            the offsets from <tt>start</tt>
 	 * @return a {@link String} representation of a {@link URL} pointing to the generated location
 	 */
-	public static String parseIncrementedURL(String url, Calendar start, Calendar increment, boolean wrapTimestep, int years, int months, int days, int hours, int minutes, int seconds) {
+	public static String parseIncrementedURL(String url, Calendar start, Calendar increment, boolean wrapTimestep, int[] offsets) {
 		url = url.trim().replaceAll("%([\\Q-#+ 0,(\\E]*?[tT])", "%1\\$$1"); //Force the formatter to use the first argument for all of the default date/time markers
-		url = url.replaceAll("%[iI]Y", "%2\\$04d").replaceAll("%[iI]y", "%2\\$d"); //Year
-		url = url.replaceAll("%[iI]m", "%3\\$02d").replaceAll("%[iI]e", "%3\\$d"); //Month
-		url = url.replaceAll("%[iI]D", "%4\\$02d").replaceAll("%[iI]d", "%4\\$d"); //Day
+		url = url.replaceAll("%[iI]L", "%2\\$03d").replaceAll("%[iI]q", "%2\\$d"); //Millisecond
+		url = url.replaceAll("%[iI]S", "%3\\$02d").replaceAll("%[iI]s", "%3\\$d"); //Second
+		url = url.replaceAll("%[iI]M", "%4\\$02d").replaceAll("%[iI]i", "%4\\$d"); //Minute
 		url = url.replaceAll("%[iI]H", "%5\\$02d").replaceAll("%[iI]k", "%5\\$d"); //Hour
-		url = url.replaceAll("%[iI]M", "%6\\$02d").replaceAll("%[iI]i", "%6\\$d"); //Minute
-		url = url.replaceAll("%[iI]S", "%7\\$02d").replaceAll("%[iI]s", "%7\\$d"); //Second
+		url = url.replaceAll("%[iI]D", "%6\\$02d").replaceAll("%[iI]d", "%6\\$d"); //Day
+		url = url.replaceAll("%[iI]m", "%7\\$02d").replaceAll("%[iI]e", "%7\\$d"); //Month
+		url = url.replaceAll("%[iI]Y", "%8\\$04d").replaceAll("%[iI]y", "%8\\$d"); //Year
 		if (!wrapTimestep)
-			return String.format(url, start, years, months + 1, days, hours, minutes, seconds);
-		return String.format(url, start, increment.get(Calendar.YEAR), increment.get(Calendar.MONTH) + 1, increment.get(Calendar.DAY_OF_MONTH),
-				increment.get(Calendar.HOUR_OF_DAY), increment.get(Calendar.MINUTE), increment.get(Calendar.SECOND));
+			return String.format(url, start, offsets[0], offsets[1], offsets[2], offsets[3], offsets[4], offsets[5] + 1, offsets[6]);
+		return String.format(url, start, increment.get(MILLISECOND), increment.get(SECOND), increment.get(MINUTE), increment.get(HOUR_OF_DAY),
+				increment.get(Calendar.DAY_OF_MONTH), increment.get(MONTH) + 1, increment.get(YEAR));
 	}
 	
-	private static final void incrementOffsets(int[] offsets, int[] steps, Calendar test, Calendar base) {
+	private static final void incrementOffsets(int[] offsets, int[] steps, Calendar test, Calendar increment) {
 		for (int i = 0; i < offsets.length; i++) {
 			offsets[i] += steps[i];
-			test.add(calendarOffsetFields[i], steps[i]);
-			base.add(calendarOffsetFields[i], steps[i]);
+			test.add(TIMING_FIELD_IDS.get(i), steps[i]);
+			increment.add(TIMING_FIELD_IDS.get(i), steps[i]);
 		}
 	}
 	
