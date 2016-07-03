@@ -9,9 +9,9 @@ import java.util.logging.Logger;
 import toberumono.namelist.parser.Namelist;
 import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
-import toberumono.wrf.scope.AbstractScope;
 import toberumono.wrf.scope.ModuleScopedMap;
 import toberumono.wrf.scope.NamedScopeValue;
+import toberumono.wrf.scope.ScopedComponent;
 import toberumono.wrf.scope.ScopedList;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.Timing;
@@ -23,7 +23,7 @@ import static toberumono.wrf.SimulationConstants.*;
  * 
  * @author Toberumono
  */
-public abstract class Module extends AbstractScope<Simulation> {
+public abstract class Module extends ScopedComponent<Simulation> {
 	protected final Logger logger;
 	private final String name;
 	private final ScopedMap parameters, module;
@@ -41,7 +41,7 @@ public abstract class Module extends AbstractScope<Simulation> {
 	 *            the {@link Simulation} that initialized the {@link Module}
 	 */
 	public Module(ModuleScopedMap parameters, Simulation sim) {
-		super(sim);
+		super(parameters, sim);
 		this.parameters = parameters;
 		this.parameters.setParent(this);
 		namelistPath = null;
@@ -194,14 +194,6 @@ public abstract class Module extends AbstractScope<Simulation> {
 				return namelist;
 			return namelist = ingestNamelist();
 		}
-	}
-	
-	/**
-	 * @return the parameters that defined the {@link Module} as a {@link ScopedMap}
-	 */
-	@NamedScopeValue("parameters")
-	public ScopedMap getParameters() {
-		return parameters;
 	}
 	
 	/**
