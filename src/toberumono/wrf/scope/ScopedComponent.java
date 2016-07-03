@@ -91,6 +91,8 @@ public class ScopedComponent<T extends Scope> extends AbstractScope<T> {
 	 *             if an instance of {@code T} cannot be produced from {@code value}
 	 */
 	protected <R> R evaluateToType(Object value, String field, Class<R> type) {
+		if (type.isInstance(value))
+			return type.cast(value);
 		if (value instanceof String)
 			value = ScopedFormulaProcessor.process((String) value, this, field);
 		if (!type.isInstance(value))
