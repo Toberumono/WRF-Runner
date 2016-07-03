@@ -24,7 +24,7 @@ import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.Timing;
 
 /**
- * Contains the logic for running getting the grib files.
+ * Contains the logic for getting the necessary GRIB files.
  * 
  * @author Toberumono
  */
@@ -54,9 +54,6 @@ public class GRIBModule extends Module {
 		wrap = null;
 		maxConcurrentDownloads = null;
 		pool = null;
-		ScopedMap grib = (ScopedMap) parameters.get("configuration");
-		url = (String) grib.get("url");
-		timestep = (ScopedMap) grib.get("timestep");
 	}
 	
 	/**
@@ -119,7 +116,7 @@ public class GRIBModule extends Module {
 						maxConcurrentDownloads = Integer.MAX_VALUE;
 				}
 				else if (mcd instanceof Boolean) {
-					if ((Boolean) mcd)
+					if (!(Boolean) mcd)
 						maxConcurrentDownloads = Integer.MAX_VALUE;
 					else
 						throw new IllegalArgumentException("If max-concurrent-downloads is a Boolean, its value must be false.");
@@ -151,11 +148,37 @@ public class GRIBModule extends Module {
 	@NamedScopeValue({"should-wrap", "wrap"})
 	public boolean shouldWrap() {
 		if (wrap == null) //First time is so that we can avoid unnecessary synchronization
-			synchronized (timestep) {
+			synchronized (this) {
 				if (wrap == null)
-					wrap = (Boolean) timestep.get("wrap");
+					wrap = evaluateToType(getTimestep().get("wrap"), "timestep.wrap", Boolean.class);
 			}
 		return wrap;
+	}
+	
+	/**
+	 * @return a {@link ScopedMap} containing the information that determines the timestep between GRIB files
+	 */
+	@NamedScopeValue("timestep")
+	public ScopedMap getTimestep() {
+		if (timestep == null) //First time is so that we can avoid unnecessary synchronization
+			synchronized (this) {
+				if (timestep == null)
+					timestep = evaluateToType(((ScopedMap) getParameters().get("configuration")).get("timestep"), "timestep", ScopedMap.class);
+			}
+		return timestep;
+	}
+	
+	/**
+	 * @return a {@link String} containing the base URL to use for GRIB file downloads
+	 */
+	@NamedScopeValue("url")
+	public String getURL() {
+		if (url == null) //First time is so that we can avoid unnecessary synchronization
+			synchronized (this) {
+				if (url == null)
+					url = evaluateToType(((ScopedMap) getParameters().get("configuration")).get("url"), "url", String.class);
+			}
+		return url;
 	}
 	
 	@Override

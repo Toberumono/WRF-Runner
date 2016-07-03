@@ -56,15 +56,13 @@ public class ComputedTiming extends ScopedComponent<Scope> implements Timing {
 	 */
 	public ComputedTiming(ScopedMap parameters, Calendar base, Scope parent) {
 		super(parameters, parent);
-		if (!(parent instanceof Timing))
-			Objects.requireNonNull(base, "The base Calendar cannot be null if the parent is not an instance of Timing");
+		this.base = parent instanceof Timing ? base : Objects.requireNonNull(base, "The base Calendar cannot be null if the parent is not an instance of Timing");
 		start = end = null;
 		offset = null;
 		round = null;
 		duration = null;
 		clear = null;
 		appliedClear = false;
-		this.base = base;
 	}
 	
 	@Override
