@@ -238,6 +238,7 @@ public class GRIBModule extends Module {
 	 * <ul>
 	 * <li>%ii --&gt; minutes without padding</li>
 	 * <li>%is --&gt; seconds without padding</li>
+	 * <li>%iq --&gt; milliseconds without padding</li>
 	 * </ul>
 	 * 
 	 * @param url
