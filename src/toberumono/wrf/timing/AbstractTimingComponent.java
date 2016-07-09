@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import toberumono.wrf.SimulationConstants;
 import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedComponent;
 import toberumono.wrf.scope.ScopedMap;
@@ -92,13 +93,13 @@ public abstract class AbstractTimingComponent extends ScopedComponent<Scope> imp
 	 * Processes the given value of the {@link AbstractTimingComponent TimingComponent's} {@code enabled} field depending on its type.
 	 * <ul>
 	 * <li>{@link Collection}: the enabled timing fields are the values that are in both the {@code enabled} {@link Collection} and
-	 * {@link #TIMING_FIELD_NAMES}</li>
-	 * <li>{@link Map}: the enabled timing fields are those entries in the {@link Map} with keys in {@link #TIMING_FIELD_NAMES} and values that
-	 * evaluate to {@code true}</li>
-	 * <li>{@link String}: if the {@link String} value of {@code enabled} is in {@link #TIMING_FIELD_NAMES}, then the {@link String} value of
-	 * {@code enabled}; otherwise, none</li>
+	 * {@link SimulationConstants#TIMING_FIELD_NAMES}</li>
+	 * <li>{@link Map}: the enabled timing fields are those entries in the {@link Map} with keys in {@link SimulationConstants#TIMING_FIELD_NAMES} and
+	 * values that evaluate to {@code true}</li>
+	 * <li>{@link String}: if the {@link String} value of {@code enabled} is in {@link SimulationConstants#TIMING_FIELD_NAMES}, then the
+	 * {@link String} value of {@code enabled}; otherwise, none</li>
 	 * </ul>
-	 * If {@code enabled} is not one of those three types, every field in {@link #TIMING_FIELD_NAMES} is considered to be enabled.
+	 * If {@code enabled} is not one of those three types, every field in {@link SimulationConstants#TIMING_FIELD_NAMES} is considered to be enabled.
 	 * 
 	 * @param enabled
 	 *            the value of the <i>enabled</i> field as an {@link Object}; this can be {@code null}
