@@ -1,6 +1,7 @@
 package toberumono.wrf.timing.round;
 
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 import toberumono.structures.sexpressions.ConsCell;
@@ -45,8 +46,10 @@ public class FunctionRound extends AbstractRound {
 	
 	@Override
 	protected void compute() {
+		Collection<String> enabled = parseEnabled();
 		functions = new ConsCell[TIMING_FIELD_NAMES.size()];
 		for (int i = 0; i < functions.length; i++)
-			functions[i] = preProcess(getParameters().containsKey(TIMING_FIELD_NAMES.get(i)) ? getParameters().get(TIMING_FIELD_NAMES.get(i)).toString() : TIMING_FIELD_NAMES.get(i));
+			functions[i] = preProcess(enabled.contains(TIMING_FIELD_NAMES.get(i)) && getParameters().containsKey(TIMING_FIELD_NAMES.get(i)) ? getParameters().get(TIMING_FIELD_NAMES.get(i)).toString()
+					: TIMING_FIELD_NAMES.get(i));
 	}
 }

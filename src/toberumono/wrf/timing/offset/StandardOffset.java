@@ -1,6 +1,7 @@
 package toberumono.wrf.timing.offset;
 
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 import toberumono.wrf.scope.Scope;
@@ -32,9 +33,10 @@ public class StandardOffset extends AbstractOffset {
 	
 	@Override
 	protected void compute() {
+		Collection<String> enabled = parseEnabled();
 		offsets = new int[TIMING_FIELD_NAMES.size()];
 		for (int i = 0; i < offsets.length; i++)
-			if (getParameters().containsKey(TIMING_FIELD_NAMES.get(i)))
+			if (enabled.contains(TIMING_FIELD_NAMES.get(i)) && getParameters().containsKey(TIMING_FIELD_NAMES.get(i)))
 				offsets[i] = ((Number) getParameters().get(TIMING_FIELD_NAMES.get(i))).intValue();
 	}
 	
@@ -52,7 +54,7 @@ public class StandardOffset extends AbstractOffset {
 	@Override
 	public boolean doesWrap() {
 		if (wrap == null)
-			wrap = getParameters().containsKey("wrap") ? ((Boolean) getParameters().get("wrap")) : ((getParent() instanceof AbstractOffset) ? ((AbstractOffset) getParent()).doesWrap() : true);
+			wrap = getParameters().containsKey("wrap") ? ((Boolean) getParameters().get("wrap")) : ((getParent() instanceof Offset) ? ((Offset) getParent()).doesWrap() : true);
 		return wrap;
 	}
 }
