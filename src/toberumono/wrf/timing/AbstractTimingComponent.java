@@ -49,18 +49,24 @@ public abstract class AbstractTimingComponent extends ScopedComponent<Scope> imp
 	public final Calendar apply(Calendar base) {
 		return apply(base, false);
 	}
-
+	
 	/**
-	 * Implementations of this method <i>must</i> modify the {@link Calendar} passed to it.<br>
+	 * Implementations of this method <i>must</i> modify the {@link Calendar} passed to them.
 	 * 
 	 * @param base
-	 *            the {@link Calendar} to modify with the {@link AbstractTimingComponent TimingComponent}
+	 *            the {@link Calendar} that the {@link AbstractTimingComponent TimingComponent} is to modify
 	 * @return the provided {@link Calendar} as modified by the {@link AbstractTimingComponent TimingComponent}
 	 */
 	protected abstract Calendar doApply(Calendar base);
 	
+	/**
+	 * Implementations of this method should perform all possible preprocessing steps and store their results.
+	 */
 	protected abstract void compute();
 	
+	/**
+	 * @return the {@link Logger} assigned to the {@link AbstractTimingComponent TimingComponent}
+	 */
 	protected Logger getLogger() {
 		return log;
 	}
