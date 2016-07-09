@@ -1,11 +1,17 @@
 package toberumono.wrf.timing;
 
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import toberumono.wrf.scope.Scope;
 import toberumono.wrf.scope.ScopedComponent;
 import toberumono.wrf.scope.ScopedMap;
+
+import static toberumono.wrf.SimulationConstants.TIMING_FIELD_NAMES;
 
 /**
  * Provides a simple common mechanism by which lazy evaluation can implemented for components of {@link Timing}.
@@ -69,5 +75,44 @@ public abstract class AbstractTimingComponent extends ScopedComponent<Scope> imp
 	 */
 	protected Logger getLogger() {
 		return log;
+	}
+	
+	/**
+	 * A convenience method that passes the <i>enabled</i> in {@link #getParameters()} (retrieved via {@code getParameters().get("enabled")}) to
+	 * {@link #parseEnabled(Object)}.
+	 * 
+	 * @return the names of the timing fields for which the {@link AbstractTimingComponent TimingComponent} is enabled
+	 * @see #parseEnabled(Object)
+	 */
+	protected Collection<String> parseEnabled() {
+		return parseEnabled(getParameters().get("enabled"));
+	}
+	
+	/**
+	 * Processes the given value of the {@link AbstractTimingComponent TimingComponent's} {@code enabled} field depending on its type.
+	 * <ul>
+	 * <li>{@link Collection}: the enabled timing fields are the values that are in both the {@code enabled} {@link Collection} and
+	 * {@link #TIMING_FIELD_NAMES}</li>
+	 * <li>{@link Map}: the enabled timing fields are those entries in the {@link Map} with keys in {@link #TIMING_FIELD_NAMES} and values that
+	 * evaluate to {@code true}</li>
+	 * <li>{@link String}: if the {@link String} value of {@code enabled} is in {@link #TIMING_FIELD_NAMES}, then the {@link String} value of
+	 * {@code enabled}; otherwise, none</li>
+	 * </ul>
+	 * If {@code enabled} is not one of those three types, every field in {@link #TIMING_FIELD_NAMES} is considered to be enabled.
+	 * 
+	 * @param enabled
+	 *            the value of the <i>enabled</i> field as an {@link Object}; this can be {@code null}
+	 * @return the names of the timing fields for which the {@link AbstractTimingComponent TimingComponent} is enabled
+	 */
+	protected Collection<String> parseEnabled(Object enabled) {
+		if (enabled instanceof Collection) //Casting to String is safe because in order for TIMING_FIELD_NAMES to contain e, e must be a String
+			return ((Collection<?>) enabled).stream().filter(TIMING_FIELD_NAMES::contains).map(e -> (String) e).collect(Collectors.toSet());
+		else if (enabled instanceof Map)
+			return ((Map<?, ?>) enabled).entrySet().stream().filter(e -> TIMING_FIELD_NAMES.contains(e.getKey()) && evaluateToType(e.getValue(), "enabled." + e.getKey(), Boolean.class))
+					.map(e -> (String) e.getKey()).collect(Collectors.toSet());
+		else if (enabled instanceof String)
+			return TIMING_FIELD_NAMES.contains(enabled) ? Collections.singleton((String) enabled) : Collections.emptySet();
+		else //If enabled isn't a List, Map, or String, every timing field is assumed to be enabled
+			return TIMING_FIELD_NAMES;
 	}
 }
