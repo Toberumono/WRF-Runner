@@ -50,7 +50,7 @@ public class BucketRound extends AbstractRound {
 				continue;
 			value = arguments.get(name); //If arguments does not contain name, arguments.get(name) returns null
 			final RoundingMode rm = roundingModeFromField(arguments.get(name + "-rounding-mode"), globalRM);
-			if (value == null) { //Step-offset
+			if (value == null && arguments.containsKey(name + "-step")) { //Step-offset
 				String field = name + "-step";
 				final int step = evaluateToNumber(arguments.get(field), field).intValue();
 				
@@ -75,7 +75,7 @@ public class BucketRound extends AbstractRound {
 				roundingFunctions.put(TIMING_FIELD_IDS.get(i),
 						stepOffsetProcessor(rm, ((Number) value).intValue(), evaluateToNumber(arguments.containsKey(field) ? arguments.get(field) : 0, field).intValue()));
 			}
-			else {
+			else if (value != null) {
 				throw new IllegalArgumentException("The value of " + name + " in BucketRound must be either undefined, null, or an instance of List, Map, or Number.");
 			}
 		}
