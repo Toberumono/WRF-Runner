@@ -425,7 +425,7 @@ public class WRFRunner {
 					((JSONObject) root.get("wrf")).put("parallel", general.get("parallel"));
 				else {
 					JSONObject defaultParallel = new JSONObject();
-					defaultParallel.put("is-dmpar", true);
+					defaultParallel.put("is-dmpar", false);
 					defaultParallel.put("boot-lam", false);
 					defaultParallel.put("processors", 2);
 					((JSONObject) root.get("wrf")).put("parallel", defaultParallel);
