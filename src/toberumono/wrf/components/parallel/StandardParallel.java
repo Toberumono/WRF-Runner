@@ -37,7 +37,7 @@ public class StandardParallel extends AbstractParallel {
 			return dmpar;
 		synchronized (this) {
 			if (dmpar == null) {
-				dmpar = getParameters().get("is-dmpar") instanceof Boolean ? (Boolean) getParameters().get("is-dmpar")
+				dmpar = getParameters().containsKey("is-dmpar") ? evaluateToType(getParameters().get("is-dmpar"), "is-dmpar", Boolean.class)
 						: (getParent() instanceof Parallel ? ((Parallel) getParent()).isParallel() : false);
 			}
 		}
@@ -53,7 +53,7 @@ public class StandardParallel extends AbstractParallel {
 			return bootLAM;
 		synchronized (this) {
 			if (bootLAM == null) {
-				bootLAM = getParameters().get("boot-lam") instanceof Boolean ? (Boolean) getParameters().get("boot-lam")
+				bootLAM = getParameters().containsKey("boot-lam") ? evaluateToType(getParameters().get("boot-lam"), "boot-lam", Boolean.class)
 						: (getParent() instanceof StandardParallel ? ((StandardParallel) getParent()).isBootLAM() : false);
 			}
 		}
@@ -67,7 +67,7 @@ public class StandardParallel extends AbstractParallel {
 			return numProcessors;
 		synchronized (this) {
 			if (numProcessors == null) {
-				numProcessors = getParameters().get("processors") instanceof Integer ? (Integer) getParameters().get("processors")
+				numProcessors = getParameters().containsKey("processors") ? evaluateToNumber(getParameters().get("processors"), "processors").intValue()
 						: (getParent() instanceof Parallel ? ((Parallel) getParent()).getNumProcessors() : 2);
 			}
 		}
