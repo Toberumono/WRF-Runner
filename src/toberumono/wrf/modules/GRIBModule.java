@@ -38,11 +38,11 @@ public class GRIBModule extends Module {
 			TIMING_FACTORS[i] *= TIMING_FACTORS[i - 1];
 	}
 	private String url;
-	private Timing incremented;
-	private ScopedMap timestep, intermediate;
+	private volatile Timing incremented;
+	private volatile ScopedMap timestep, intermediate;
 	private Boolean wrap;
 	private Integer maxConcurrentDownloads;
-	private ExecutorService pool;
+	private volatile ExecutorService pool;
 	
 	/**
 	 * Initializes a new {@link GRIBModule} with the given {@code parameters} for the given {@link Simulation}

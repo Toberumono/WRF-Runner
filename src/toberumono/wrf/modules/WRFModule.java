@@ -30,7 +30,7 @@ public class WRFModule extends Module {
 	private static final String[] timeCodes = {"days", "hours", "minutes", "seconds"};
 	private static final int[] calendarCodes = {Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE, Calendar.SECOND};
 	private static final int[] timeCodeMultipliers = {0, 24, 60, 60};
-	private Parallel parallel;
+	private volatile Parallel parallel;
 	
 	/**
 	 * Initializes a new {@link WRFModule} with the given {@code parameters} for the given {@link Simulation}

@@ -24,11 +24,11 @@ import toberumono.wrf.timing.round.Round;
  * @author Toberumono
  */
 public class ComputedTiming extends ScopedComponent<Scope> implements Timing {
-	private Calendar base, start, end;
-	private Offset offset;
-	private Round round;
-	private Duration duration;
-	private Clear clear;
+	private volatile Calendar base, start, end;
+	private volatile Offset offset;
+	private volatile Round round;
+	private volatile Duration duration;
+	private volatile Clear clear;
 	private boolean appliedClear;
 	
 	/**

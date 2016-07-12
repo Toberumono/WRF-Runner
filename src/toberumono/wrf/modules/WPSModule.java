@@ -25,7 +25,7 @@ import static toberumono.utils.general.ProcessBuilders.*;
  * @author Toberumono
  */
 public class WPSModule extends Module {
-	private Parallel parallel;
+	private volatile Parallel parallel;
 	
 	/**
 	 * Initializes a new {@link WPSModule} with the given {@code parameters} for the given {@link Simulation}
