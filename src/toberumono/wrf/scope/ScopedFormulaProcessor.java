@@ -366,10 +366,6 @@ public class ScopedFormulaProcessor {
 		return input;
 	}
 	
-	public static void main(String[] args) {
-		System.out.println(process("1 + 1 == 3 ? 3 : 5", null, null));
-	}
-	
 	/**
 	 * Processes the scoped formula represented by the {@link String}.
 	 * 
