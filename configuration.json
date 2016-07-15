@@ -53,13 +53,11 @@
 				"seconds" : 0
 			},
 			"round" : {
-				"enabled" : [ "hours" ],
+				"enabled" : true,
 				"type" : "bucket",
-				"arguments" : {
-					"rounding-mode" : "floor",
-					"hours-step" : 3,
-					"hours-offset" : 0
-				}
+				"rounding-mode" : "floor",
+				"hours-step" : 3,
+				"hours-offset" : 0
 			}
 		},
 		"grib" : {
@@ -79,11 +77,9 @@
 				"round" : {
 					"enabled" : [ "hours" ],
 					"type" : "bucket",
-					"arguments" : {
-						"rounding-mode" : "floor",
-						"hours-step" : 3,
-						"hours-offset" : 0
-					}
+					"rounding-mode" : "floor",
+					"hours-step" : 3,
+					"hours-offset" : 0
 				}
 			},
 			"incremented" : {
@@ -102,11 +98,9 @@
 				"round" : {
 					"enabled" : [ "hours" ],
 					"type" : "bucket",
-					"arguments" : {
-						"rounding-mode" : "floor",
-						"hours-step" : 3,
-						"hours-offset" : 0
-					}
+					"rounding-mode" : "floor",
+					"hours-step" : 3,
+					"hours-offset" : 0
 				}
 			}
 		},
