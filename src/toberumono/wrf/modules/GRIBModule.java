@@ -44,7 +44,7 @@ public class GRIBModule extends Module {
 	private String url;
 	private volatile Timing incremented;
 	private volatile ScopedMap timestep, intermediate;
-	private Boolean wrap;
+	private Boolean wrap, useIncrementDuration;
 	private Integer maxConcurrentDownloads;
 	private volatile ExecutorService pool;
 	
@@ -63,6 +63,7 @@ public class GRIBModule extends Module {
 		timestep = null;
 		intermediate = null;
 		wrap = null;
+		useIncrementDuration = null;
 		maxConcurrentDownloads = null;
 		pool = null;
 	}
@@ -167,6 +168,20 @@ public class GRIBModule extends Module {
 	}
 	
 	/**
+	 * @return {@code true} iff the reference end time for GRIB downloads should be the end time computed by {@link #getIncrementedTiming()} rather
+	 *         than the global end time
+	 */
+	@NamedScopeValue("use-increment-duration")
+	public boolean useIncrementDuration() {
+		if (useIncrementDuration == null) //First time is so that we can avoid unnecessary synchronization
+			synchronized (this) {
+				if (useIncrementDuration == null)
+					useIncrementDuration = evaluateToType(((ScopedMap) getParameters().get("configuration")).get("use-increment-duration"), "use-increment-duration", Boolean.class);
+			}
+		return useIncrementDuration;
+	}
+	
+	/**
 	 * @return a {@link ScopedMap} containing the information that determines the timestep between GRIB files
 	 */
 	@NamedScopeValue("timestep")
@@ -199,7 +214,7 @@ public class GRIBModule extends Module {
 		
 		int[] offsets = new int[TIMING_FIELD_IDS.size()], steps = new int[TIMING_FIELD_IDS.size()];
 		Calendar constant = getTiming().getStart(), increment = (Calendar) getIncrementedTiming().getStart().clone();
-		Calendar end = getSim().getTiming().getEnd();
+		Calendar end = useIncrementDuration() ? getIncrementedTiming().getEnd() : getSim().getTiming().getEnd();
 		if (increment.after(end)) {
 			getLogger().info("increment (" + increment.toString() + ") starts after the Simulation's end time (" + end.toString() + "). No GRIB files will be downloaded.");
 			return;
