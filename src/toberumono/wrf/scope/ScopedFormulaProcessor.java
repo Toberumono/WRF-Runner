@@ -84,7 +84,7 @@ public class ScopedFormulaProcessor {
 					if (t instanceof Number && u instanceof Number) {
 						Double res = Math.pow(((Number) t).doubleValue(), ((Number) u).doubleValue());
 						if (isMathematicalInteger((Number) t) && isMathematicalInteger((Number) u))
-							return res.intValue();
+							return t instanceof Long || u instanceof Long ? res.longValue() : res.intValue();
 					}
 					throw makeInvalidArgumentCombinationException(t, u);
 				}
