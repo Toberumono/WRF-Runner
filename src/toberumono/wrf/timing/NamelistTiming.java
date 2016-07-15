@@ -1,6 +1,8 @@
 package toberumono.wrf.timing;
 
 import java.util.Calendar;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import toberumono.namelist.parser.Namelist;
 import toberumono.namelist.parser.NamelistSection;
@@ -13,13 +15,16 @@ import toberumono.wrf.timing.duration.NamelistDuration;
 import toberumono.wrf.timing.offset.Offset;
 import toberumono.wrf.timing.round.Round;
 
+import static toberumono.wrf.SimulationConstants.*;
+
 /**
- * Implementation of {@link Timing} that uses static data from a {@link Namelist} file instead of computing the timing data
- * at runtime.
+ * Implementation of {@link Timing} that uses static data from a {@link Namelist} file instead of computing the timing data at runtime.
  * 
  * @author Toberumono
  */
 public class NamelistTiming extends AbstractScope<Scope> implements Timing {
+	private static final List<String> TIMING_FIELD_SINGULAR_NAMES = TIMING_FIELD_NAMES.stream().map(s -> s.substring(0, s.length() - 1)).collect(Collectors.toList());
+	
 	private final Calendar base;
 	private final Calendar start, end;
 	private final Offset offset;
@@ -33,8 +38,7 @@ public class NamelistTiming extends AbstractScope<Scope> implements Timing {
 	 * @param timeControl
 	 *            the time_control section of a {@link Namelist} file as a {@link NamelistSection}
 	 * @param parent
-	 *            the parent {@link Scope} (this is not used within the class - it is exclusively for consistency with the
-	 *            tree structure
+	 *            the parent {@link Scope} (this is not used within the class - it is exclusively for consistency with the tree structure
 	 */
 	public NamelistTiming(NamelistSection timeControl, Scope parent) { //No need for lazy computation - everything is either Disabled or independent
 		super(parent);
@@ -50,12 +54,12 @@ public class NamelistTiming extends AbstractScope<Scope> implements Timing {
 	
 	private void timecontrolParser(Calendar cal, NamelistSection tc, String prefix) {
 		prefix = prefix.endsWith("_") ? prefix : prefix + "_";
-		cal.set(cal.YEAR, ((Number) tc.get(prefix + "year").get(0).value()).intValue());
-		cal.set(cal.MONTH, ((Number) tc.get(prefix + "month").get(0).value()).intValue() - 1);
-		cal.set(cal.DAY_OF_MONTH, ((Number) tc.get(prefix + "day").get(0).value()).intValue());
-		cal.set(cal.HOUR_OF_DAY, ((Number) tc.get(prefix + "hour").get(0).value()).intValue());
-		cal.set(cal.MINUTE, ((Number) tc.get(prefix + "minute").get(0).value()).intValue());
-		cal.set(cal.SECOND, ((Number) tc.get(prefix + "second").get(0).value()).intValue());
+		String name;
+		for (int i = 0; i < TIMING_FIELD_IDS.size(); i++) {
+			name = prefix + TIMING_FIELD_SINGULAR_NAMES.get(i);
+			if (tc.containsKey(name))
+				cal.set(TIMING_FIELD_IDS.get(i), ((Number) tc.get(name).get(0).value()).intValue());
+		}
 	}
 	
 	@Override

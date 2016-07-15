@@ -8,8 +8,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import toberumono.wrf.SimulationConstants;
+import toberumono.wrf.scope.LoggedScopedComponent;
 import toberumono.wrf.scope.Scope;
-import toberumono.wrf.scope.ScopedComponent;
 import toberumono.wrf.scope.ScopedMap;
 
 import static toberumono.wrf.SimulationConstants.TIMING_FIELD_NAMES;
@@ -19,8 +19,7 @@ import static toberumono.wrf.SimulationConstants.TIMING_FIELD_NAMES;
  * 
  * @author Toberumono
  */
-public abstract class AbstractTimingComponent extends ScopedComponent<Scope> implements TimingComponent {
-	private final Logger log;
+public abstract class AbstractTimingComponent extends LoggedScopedComponent<Scope> implements TimingComponent {
 	private boolean computed;
 	
 	/**
@@ -34,8 +33,7 @@ public abstract class AbstractTimingComponent extends ScopedComponent<Scope> imp
 	 *            the {@link Logger} that the component should use
 	 */
 	public AbstractTimingComponent(ScopedMap parameters, Scope parent, Logger log) {
-		super(parameters, parent);
-		this.log = log;
+		super(parameters, parent, log);
 	}
 	
 	@Override
@@ -43,7 +41,7 @@ public abstract class AbstractTimingComponent extends ScopedComponent<Scope> imp
 		Calendar out = inPlace ? base : (Calendar) base.clone();
 		if (computed)
 			return doApply(out);
-		synchronized (log) {
+		synchronized (getLogger()) {
 			if (!computed) {
 				compute();
 				computed = true;
@@ -70,13 +68,6 @@ public abstract class AbstractTimingComponent extends ScopedComponent<Scope> imp
 	 * Implementations of this method should perform all possible preprocessing steps and store their results.
 	 */
 	protected abstract void compute();
-	
-	/**
-	 * @return the {@link Logger} assigned to the {@link AbstractTimingComponent TimingComponent}
-	 */
-	protected Logger getLogger() {
-		return log;
-	}
 	
 	/**
 	 * A convenience method that passes the <i>enabled</i> in {@link #getParameters()} (retrieved via {@code getParameters().get("enabled")}) to
