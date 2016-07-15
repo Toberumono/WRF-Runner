@@ -6,13 +6,17 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import toberumono.wrf.Module;
@@ -23,8 +27,8 @@ import toberumono.wrf.scope.NamedScopeValue;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.Timing;
 
-import static toberumono.wrf.SimulationConstants.*;
 import static java.util.Calendar.*;
+import static toberumono.wrf.SimulationConstants.*;
 
 /**
  * Contains the logic for getting the necessary GRIB files.
@@ -190,44 +194,78 @@ public class GRIBModule extends Module {
 	
 	@Override
 	public void execute() throws IOException, InterruptedException {
+		if (getMaxConcurrentDownloads() < 1)
+			throw new IllegalArgumentException("max-concurrent-downloads must be greater than 0.");
+		
 		int[] offsets = new int[TIMING_FIELD_IDS.size()], steps = new int[TIMING_FIELD_IDS.size()];
-		List<Future<Boolean>> downloads = new ArrayList<>();
-		Calendar constant = getTiming().getStart(), test = (Calendar) getSim().getTiming().getStart().clone(), end = getSim().getTiming().getEnd(),
-				increment = (Calendar) getIncrementedTiming().getStart().clone();
+		Calendar constant = getTiming().getStart(), increment = (Calendar) getIncrementedTiming().getStart().clone();
+		Calendar end = getSim().getTiming().getEnd();
+		if (increment.after(end)) {
+			getLogger().info("increment (" + increment.toString() + ") starts after the Simulation's end time (" + end.toString() + "). No GRIB files will be downloaded.");
+			return;
+		}
+		
 		long stepLength = 0l;
 		for (int i = 0; i < TIMING_FIELD_IDS.size(); i++) {
 			offsets[i] = increment.get(TIMING_FIELD_IDS.get(i));
-			steps[i] = getTimestep().containsKey(TIMING_FIELD_NAMES.get(i)) ? evaluateToNumber(getTimestep().get(TIMING_FIELD_NAMES.get(i)), "timing." + TIMING_FIELD_NAMES.get(i)).intValue() : 0;
+			steps[i] = getTimestep().containsKey(TIMING_FIELD_NAMES.get(i)) ? evaluateToNumber(getTimestep().get(TIMING_FIELD_NAMES.get(i)), "timestep." + TIMING_FIELD_NAMES.get(i)).intValue() : 0;
 			stepLength += steps[i] * TIMING_FACTORS[i];
 		}
-		
 		if (stepLength <= 0)
 			throw new IllegalArgumentException("The net step length must be greater than 0.");
-		if (getMaxConcurrentDownloads() < 1)
-			throw new IllegalArgumentException("max-concurrent-downloads must be greater than 0.");
-		if (test.after(end))
-			return;
 		
-		IOException exc = null;
-		boolean failed = false;
-		do {
-			for (; downloads.size() < getMaxConcurrentDownloads() && !test.after(end); incrementOffsets(offsets, steps, test, increment))
-				downloads.add(downloadGribFile(parseIncrementedURL(getURL(), constant, increment, shouldWrap(), offsets), getSim()));
-			Future<Boolean> download = downloads.remove(0);
-			try {
-				download.get();
+		CompletionService<Boolean> cpool = new ExecutorCompletionService<>(getPool());
+		final String preprocessedURL = preprocessIncrementedURL(getURL(), constant);
+		Set<Future<Boolean>> active = new HashSet<>();
+		//Initializing wasBefore to true allows us to avoid a do-while loop and support simulation start times that are offset from the increment start time
+		for (boolean wasBefore = true; wasBefore || active.size() > 0;) {
+			for (; active.size() < getMaxConcurrentDownloads() && wasBefore; wasBefore = increment.before(end), incrementOffsets(offsets, steps, increment))
+				active.add(cpool.submit(downloadGribFile(generateIncrementedURL(preprocessedURL, increment, offsets))));
+			if (active.size() > 0) {
+				Future<Boolean> future = cpool.take();
+				try {
+					active.remove(future);
+					future.get();
+					while (active.size() > 0 && (future = cpool.poll(1, TimeUnit.SECONDS)) != null) {
+						active.remove(future);
+						future.get();
+					}
+				}
+				catch (InterruptedException | ExecutionException e) {
+					for (Future<Boolean> cancelling : active) //Cancel all current downloads
+						cancelling.cancel(true);
+					throw e.getCause() instanceof IOException ? (IOException) e.getCause() : new IOException("Failed to download the necessary GRIB files.", e.getCause());
+				}
 			}
-			catch (ExecutionException e) {
-				failed = true;
-				if (e.getCause() instanceof IOException) //We want to throw an IOException if it occured
-					exc = (IOException) e.getCause();
-			}
-		} while (downloads.size() > 0);
-		if (failed) {
-			if (exc != null)
-				throw exc;
-			throw new IOException("Failed to download the necessary GRIB files.");
 		}
+	}
+	
+	private final void incrementOffsets(int[] offsets, int[] steps, Calendar increment) {
+		for (int i = 0; i < offsets.length; i++) {
+			offsets[i] += steps[i];
+			increment.add(TIMING_FIELD_IDS.get(i), steps[i]);
+		}
+	}
+	
+	private String preprocessIncrementedURL(String url, Calendar constant) {
+		//Stores all mid-String escaped % signs and forces the formatter to use the first argument for all of the default date/time markers
+		String out = String.format(url.trim().replaceAll("(%%)(.)", "$1~$2").replaceAll("%[iI].", "%$0").replaceAll("%([\\Q-#+ 0,(\\E]*?[tT])", "%1\\$$1"), constant);
+		out = out.replaceAll("%[iI]L", "%1\\$03d").replaceAll("%[iI]q", "%1\\$d"); //Millisecond
+		out = out.replaceAll("%[iI]S", "%2\\$02d").replaceAll("%[iI]s", "%2\\$d"); //Second
+		out = out.replaceAll("%[iI]M", "%3\\$02d").replaceAll("%[iI]i", "%3\\$d"); //Minute
+		out = out.replaceAll("%[iI]H", "%4\\$02d").replaceAll("%[iI]k", "%4\\$d"); //Hour
+		out = out.replaceAll("%[iI]D", "%5\\$02d").replaceAll("%[iI]d", "%5\\$d"); //Day
+		out = out.replaceAll("%[iI]m", "%6\\$02d").replaceAll("%[iI]e", "%6\\$d"); //Month
+		out = out.replaceAll("%[iI]Y", "%7\\$04d").replaceAll("%[iI]y", "%7\\$d"); //Year
+		out = out.replaceAll("(%)~(.)", "%$1$2");
+		return out.charAt(out.length() - 1) == '%' ? out + "%" : out; //Restores any terminating % signs
+	}
+	
+	private String generateIncrementedURL(String url, Calendar increment, int[] offsets) {
+		if (shouldWrap())
+			return String.format(url, increment.get(MILLISECOND), increment.get(SECOND), increment.get(MINUTE), increment.get(HOUR_OF_DAY), increment.get(Calendar.DAY_OF_MONTH),
+					increment.get(MONTH) + 1, increment.get(YEAR));
+		return String.format(url, offsets[0], offsets[1], offsets[2], offsets[3], offsets[4], offsets[5] + 1, offsets[6]);
 	}
 	
 	/**
@@ -253,6 +291,7 @@ public class GRIBModule extends Module {
 	 *            the offsets from <tt>start</tt>
 	 * @return a {@link String} representation of a {@link URL} pointing to the generated location
 	 */
+	@Deprecated
 	public static String parseIncrementedURL(String url, Calendar start, Calendar increment, boolean wrapTimestep, int[] offsets) {
 		url = url.trim().replaceAll("%([\\Q-#+ 0,(\\E]*?[tT])", "%1\\$$1"); //Force the formatter to use the first argument for all of the default date/time markers
 		url = url.replaceAll("%[iI]L", "%2\\$03d").replaceAll("%[iI]q", "%2\\$d"); //Millisecond
@@ -268,14 +307,6 @@ public class GRIBModule extends Module {
 				increment.get(Calendar.DAY_OF_MONTH), increment.get(MONTH) + 1, increment.get(YEAR));
 	}
 	
-	private static final void incrementOffsets(int[] offsets, int[] steps, Calendar test, Calendar increment) {
-		for (int i = 0; i < offsets.length; i++) {
-			offsets[i] += steps[i];
-			test.add(TIMING_FIELD_IDS.get(i), steps[i]);
-			increment.add(TIMING_FIELD_IDS.get(i), steps[i]);
-		}
-	}
-	
 	/**
 	 * Transfers a file from the given {@link URL} and places it in the grib directory.<br>
 	 * The filename used in the grib directory is the component of the url after the final '/' (
@@ -283,27 +314,24 @@ public class GRIBModule extends Module {
 	 * 
 	 * @param url
 	 *            a {@link String} representation of the {@link URL} to transfer
-	 * @param sim
-	 *            the current {@link Simulation}
 	 * @throws IOException
 	 *             if the transfer fails
 	 */
-	private Future<Boolean> downloadGribFile(String url, Simulation sim) {
-		return getPool().submit(() -> {
-			String name = url.substring(url.lastIndexOf('/') + 1);
-			Path dest = sim.getActivePath(getName()).resolve(name);
-			logger.info("Transferring: " + url + " -> " + dest.toString());
+	private Callable<Boolean> downloadGribFile(String url) {
+		return () -> {
+			Path dest = getSim().getActivePath(getName()).resolve(url.substring(url.lastIndexOf('/') + 1));
+			getLogger().info("Transferring: " + url + " -> " + dest.toString());
 			try (ReadableByteChannel rbc = Channels.newChannel(new URL(url).openStream()); FileOutputStream fos = new FileOutputStream(dest.toString());) {
 				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-				logger.fine("Completed Transfer: " + url + " -> " + dest.toString());
+				getLogger().fine("Completed Transfer: " + url + " -> " + dest.toString());
 				return true; //This makes it Callable
 			}
 			catch (IOException e) {
-				logger.severe("Failed Transfer: " + url + " -> " + dest.toString());
-				logger.log(Level.FINE, e.getMessage(), e);
+				getLogger().severe("Failed Transfer: " + url + " -> " + dest.toString());
+				getLogger().log(Level.FINE, e.getMessage(), e);
 				throw e;
 			}
-		});
+		};
 	}
 	
 	@Override
