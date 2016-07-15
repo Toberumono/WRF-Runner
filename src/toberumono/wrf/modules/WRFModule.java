@@ -122,7 +122,7 @@ public class WRFModule extends Module {
 			throw e;
 		}
 		catch (Throwable t) {
-			logger.log(Level.SEVERE, "WRF error", t);
+			getLogger().log(Level.SEVERE, "WRF error", t);
 		}
 		finally {
 			//Move the wrfout files to the output directory

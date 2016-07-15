@@ -9,9 +9,9 @@ import java.util.logging.Logger;
 import toberumono.namelist.parser.Namelist;
 import toberumono.utils.files.BasicTransferActions;
 import toberumono.utils.files.TransferFileWalker;
+import toberumono.wrf.scope.LoggedScopedComponent;
 import toberumono.wrf.scope.ModuleScopedMap;
 import toberumono.wrf.scope.NamedScopeValue;
-import toberumono.wrf.scope.ScopedComponent;
 import toberumono.wrf.scope.ScopedList;
 import toberumono.wrf.scope.ScopedMap;
 import toberumono.wrf.timing.Timing;
@@ -23,8 +23,7 @@ import static toberumono.wrf.SimulationConstants.*;
  * 
  * @author Toberumono
  */
-public abstract class Module extends ScopedComponent<Simulation> {
-	protected final Logger logger;
+public abstract class Module extends LoggedScopedComponent<Simulation> {
 	private final String name;
 	private final ScopedMap parameters, module;
 	private Timing timing;
@@ -41,7 +40,7 @@ public abstract class Module extends ScopedComponent<Simulation> {
 	 *            the {@link Simulation} that initialized the {@link Module}
 	 */
 	public Module(ModuleScopedMap parameters, Simulation sim) {
-		super(parameters, sim);
+		super(parameters, sim, Logger.getLogger(SIMULATION_LOGGER_ROOT + ".module." + (String) parameters.get("name")));
 		this.parameters = parameters;
 		this.parameters.setParent(this);
 		namelistPath = null;
@@ -49,7 +48,6 @@ public abstract class Module extends ScopedComponent<Simulation> {
 		timing = null;
 		dependencies = null;
 		name = (String) parameters.get("name");
-		logger = Logger.getLogger(SIMULATION_LOGGER_ROOT + ".module." + getName());
 		module = (ScopedMap) parameters.get("module");
 	}
 	
@@ -208,7 +206,7 @@ public abstract class Module extends ScopedComponent<Simulation> {
 		if (getSim().getSourcePath(getName()) != null)
 			//We don't need anything from the src directories, so we exclude them.
 			Files.walkFileTree(getSim().getSourcePath(getName()), new TransferFileWalker(getSim().getActivePath(getName()), BasicTransferActions.SYMLINK,
-					p -> !filenameTest(p.getFileName().toString()), p -> !p.getFileName().toString().equals("src"), null, logger, false));
+					p -> !filenameTest(p.getFileName().toString()), p -> !p.getFileName().toString().equals("src"), null, getLogger(), false));
 	}
 	
 	/**
