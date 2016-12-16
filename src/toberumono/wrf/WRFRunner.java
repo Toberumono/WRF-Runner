@@ -321,6 +321,10 @@ public class WRFRunner {
 		upgrader.addUpgradeAction("4.0.0", root -> depluralize(root, false));
 		upgrader.addUpgradeAction("4.0.0", root -> {
 			JSONObject general = (JSONObject) root.get("general"), timing = (JSONObject) root.get("timing"), modules = (JSONObject) root.get("module");
+			if (modules == null) {
+				modules = new JSONObject();
+				root.put("module", modules);
+			}
 			JSONSystem.transferField("logging-level", new JSONString("INFO"), general);
 			//Build the module section
 			if (general.containsKey("features")) {
