@@ -54,6 +54,8 @@ import toberumono.wrf.upgrader.configuration.ConfigurationUpgrader;
 import toberumono.wrf.upgrader.configuration.FormulaUpgradeProblemHandler;
 
 import static toberumono.wrf.SimulationConstants.TIMING_FIELD_NAMES;
+import static toberumono.json.JSONBoolean.TRUE;
+import static toberumono.json.JSONBoolean.FALSE;
 
 /**
  * A "script" for automatically running WRF and WPS installations.<br>
@@ -273,22 +275,34 @@ public class WRFRunner {
 		upgrader.addUpgradeAction("1.5.5", root -> JSONSystem.renameField((JSONObject) root.get("general"), new JSONNumber<>(15), "max-outputs", "max-kept-outputs"));
 		
 		upgrader.addUpgradeAction("1.5.6", root -> {
-			JSONObject timing = (JSONObject) root.get("timing");
-			JSONSystem.transferField("use-computed-times", timing.get("rounding") instanceof JSONObject ? ((JSONObject) timing.get("rounding")).get("enabled") : new JSONBoolean(true), timing);
+			JSONObject timing = (JSONObject) root.computeIfAbsent("timing", k -> new JSONObject());
+			Object enabled = timing.get("rounding") instanceof JSONObject ? ((JSONObject) timing.get("rounding")).get("enabled") : null;
+			timing.computeIfAbsent("use-computed-times", k -> enabled instanceof JSONBoolean ? (JSONBoolean) enabled : TRUE);
 		});
 		
-		upgrader.addUpgradeAction("1.6.1", root -> JSONSystem.transferField("keep-logs", new JSONBoolean(false), (JSONObject) root.get("general")));
+		upgrader.addUpgradeAction("1.6.1", root -> ((JSONObject) root.get("general")).putIfAbsent("keep-logs", FALSE));
 		
 		upgrader.addUpgradeAction("1.7.0", root -> {
 			JSONObject general = (JSONObject) root.get("general");
 			if (!general.containsKey("always-suffix")) {
-				if (general.get("parallel") instanceof JSONObject && ((JSONObject) general.get("parallel")).containsKey("always-suffix"))
-					general.put("always-suffix", ((JSONObject) general.get("parallel")).get("always-suffix"));
-				else if (root.get("wrf") instanceof JSONObject && ((JSONObject) root.get("wrf")).get("parallel") instanceof JSONObject &&
-						((JSONObject) ((JSONObject) root.get("wrf")).get("parallel")).containsKey("always-suffix"))
-					general.put("always-suffix", ((JSONObject) ((JSONObject) root.get("wrf")).get("parallel")).get("always-suffix"));
-				else
-					general.put("always-suffix", false);
+				JSONData<?> parallel = general.get("parallel");
+				JSONData<?> wrfParallel = root.get("wrf");
+				if (wrfParallel instanceof JSONObject) { //Get the parallel subsection from the wrf subsection if it exists
+					wrfParallel = ((JSONObject) wrfParallel).get("parallel");
+				}
+				if (parallel instanceof JSONObject) {
+					if (wrfParallel instanceof JSONObject) {
+						JSONSystem.transferField("always-suffix", FALSE, (JSONObject) parallel, (JSONObject) wrfParallel, general);
+					} else {
+						JSONSystem.transferField("always-suffix", FALSE, (JSONObject) parallel, general);
+					}
+				} else {
+					if (wrfParallel instanceof JSONObject) {
+						JSONSystem.transferField("always-suffix", FALSE, (JSONObject) wrfParallel, general);
+					} else {
+						general.putIfAbsent("always-suffix", FALSE);
+					}
+				}
 			}
 		});
 		
@@ -307,7 +321,7 @@ public class WRFRunner {
 					JSONSystem.transferField("working-directory", new JSONString(working), general); //We use this because it will also ensure that existing values aren't overwritten
 			}
 			if (general.containsKey("features"))
-				JSONSystem.transferField("cleanup", new JSONBoolean(true), (JSONObject) general.get("features"), general);
+				JSONSystem.transferField("cleanup", TRUE, (JSONObject) general.get("features"), general);
 		});
 		
 		upgrader.addUpgradeAction("2.1.9", root -> {
@@ -316,30 +330,27 @@ public class WRFRunner {
 				((JSONObject) timing.get("rounding")).put("fraction", 1.0);
 		});
 		
-		upgrader.addUpgradeAction("3.1.0", root -> JSONSystem.transferField("wrap-timestep", new JSONBoolean(true), (JSONObject) root.get("grib")));
+		upgrader.addUpgradeAction("3.1.0", root -> JSONSystem.transferField("wrap-timestep", TRUE, (JSONObject) root.get("grib")));
 		
 		upgrader.addUpgradeAction("4.0.0", root -> depluralize(root, false));
 		upgrader.addUpgradeAction("4.0.0", root -> {
-			JSONObject general = (JSONObject) root.get("general"), timing = (JSONObject) root.get("timing"), modules = (JSONObject) root.get("module");
-			if (modules == null) {
-				modules = new JSONObject();
-				root.put("module", modules);
-			}
+			JSONObject general = (JSONObject) root.get("general"), timing = (JSONObject) root.get("timing");
+			JSONObject modules = (JSONObject) root.computeIfAbsent("module", k -> new JSONObject());
 			JSONSystem.transferField("logging-level", new JSONString("INFO"), general);
 			//Build the module section
 			if (general.containsKey("features")) {
 				JSONObject features = (JSONObject) general.get("features");
-				JSONSystem.renameField(features, new JSONBoolean(true), "wget", "grib");
+				JSONSystem.renameField(features, TRUE, "wget", "grib");
 				for (int i = 0; i < DEFAULT_MODULE_NAMES.length; i++) {
 					if (!modules.containsKey(DEFAULT_MODULE_NAMES[i]))
-						modules.put(DEFAULT_MODULE_NAMES[i], buildModuleSubsection(features.containsKey(DEFAULT_MODULE_NAMES[i]) ? (Boolean) features.get(DEFAULT_MODULE_NAMES[i]).value() : true,
+						modules.put(DEFAULT_MODULE_NAMES[i], buildModuleSubsection(features.getOrDefault(DEFAULT_MODULE_NAMES[i], TRUE),
 								DEFAULT_MODULE_CLASSES[i], DEFAULT_MODULE_NAMELISTS[i], DEFAULT_MODULE_DEPENDENCIES[i]));
 				}
 			}
 			else {
 				for (int i = 0; i < DEFAULT_MODULE_NAMES.length; i++)
 					if (!modules.containsKey(DEFAULT_MODULE_NAMES[i]))
-						modules.put(DEFAULT_MODULE_NAMES[i], buildModuleSubsection(true, DEFAULT_MODULE_CLASSES[i], DEFAULT_MODULE_NAMELISTS[i], DEFAULT_MODULE_DEPENDENCIES[i]));
+						modules.put(DEFAULT_MODULE_NAMES[i], buildModuleSubsection(TRUE, DEFAULT_MODULE_CLASSES[i], DEFAULT_MODULE_NAMELISTS[i], DEFAULT_MODULE_DEPENDENCIES[i]));
 			}
 			//Build the timing->global subsection
 			if (!timing.containsKey("global")) {
@@ -365,7 +376,7 @@ public class WRFRunner {
 				rounding.put("type", "fractional");
 				if (!rounding.containsKey("fraction")) {
 					rounding.put("fraction", 1.0);
-					rounding.put("enabled", false);
+					rounding.put("enabled", FALSE);
 				}
 				if (!rounding.containsKey("diff") || rounding.get("diff").equals("current"))
 					rounding.put("diff", "none");
@@ -373,9 +384,9 @@ public class WRFRunner {
 				timing.put("global", global);
 			}
 			if (((JSONObject) root.get("grib")).containsKey("wrap-timestep")) //If grib contains wrap-timestep, transfer it to grib->timestep
-				JSONSystem.transferField("wrap-timestep", new JSONBoolean(true), (JSONObject) root.get("grib"), (JSONObject) ((JSONObject) root.get("grib")).get("timestep"));
+				JSONSystem.transferField("wrap-timestep", TRUE, (JSONObject) root.get("grib"), (JSONObject) ((JSONObject) root.get("grib")).get("timestep"));
 			if (((JSONObject) ((JSONObject) root.get("grib")).get("timestep")).containsKey("wrap-timestep"))
-				JSONSystem.renameField((JSONObject) ((JSONObject) root.get("grib")).get("timestep"), new JSONBoolean(true), "wrap-timestep", "wrap");
+				JSONSystem.renameField((JSONObject) ((JSONObject) root.get("grib")).get("timestep"), TRUE, "wrap-timestep", "wrap");
 		});
 		upgrader.addUpgradeAction("4.0.0", root -> {
 			JSONObject modules = (JSONObject) root.get("module");
@@ -415,33 +426,30 @@ public class WRFRunner {
 			ConfigurationUpgrader.recursiveRenameField(timing, "rounding", "round"); //Rounding should only be renamed within timing
 		});
 		
-		upgrader.addUpgradeAction("5.1.0", root -> {
-			if (!((JSONObject) root.get("general")).containsKey("serial-module-execution"))
-				((JSONObject) root.get("general")).put("serial-module-execution", false);
-		});
+		upgrader.addUpgradeAction("5.1.0", root -> ((JSONObject) root.get("general")).putIfAbsent("serial-module-execution", FALSE));
 		
 		upgrader.addUpgradeAction("5.2.0", root -> {
 			JSONObject general = (JSONObject) root.get("general");
-			if (!root.containsKey("wrf"))
-				root.put("wrf", new JSONObject());
-			if (root.get("wrf") instanceof JSONObject && !((JSONObject) root.get("wrf")).containsKey("parallel")) {
+			JSONObject wrf = (JSONObject) root.computeIfAbsent("wrf", k -> new JSONObject());
+			if (!wrf.containsKey("parallel")) {
 				if (general.containsKey("parallel"))
-					((JSONObject) root.get("wrf")).put("parallel", general.get("parallel"));
+					wrf.put("parallel", general.get("parallel"));
 				else {
 					JSONObject defaultParallel = new JSONObject();
-					defaultParallel.put("is-dmpar", false);
-					defaultParallel.put("boot-lam", false);
-					defaultParallel.put("processors", 2);
-					((JSONObject) root.get("wrf")).put("parallel", defaultParallel);
+					defaultParallel.put("is-dmpar", FALSE);
+					defaultParallel.put("boot-lam", FALSE);
+					defaultParallel.put("processors", new JSONNumber<>(2));
+					wrf.put("parallel", defaultParallel);
 				}
+			} else {
+				JSONSystem.transferField("always-suffix", FALSE, (JSONObject) wrf.get("parallel"), general);
 			}
-			if (general.containsKey("parallel"))
-				general.remove("parallel");
+			general.remove("parallel");
 		});
-		upgrader.addUpgradeAction("5.3.2", root -> JSONSystem.transferField("use-computed-times", new JSONBoolean(true), (JSONObject) root.get("timing"), (JSONObject) root.get("general")));
-		upgrader.addUpgradeAction("6.0.2", root -> JSONSystem.renameField((JSONObject) root.get("general"), new JSONBoolean(false), "serial-module-execution", "force-serial-module-execution"));
+		upgrader.addUpgradeAction("5.3.2", root -> JSONSystem.transferField("use-computed-times", TRUE, (JSONObject) root.get("timing"), (JSONObject) root.get("general")));
+		upgrader.addUpgradeAction("6.0.2", root -> JSONSystem.renameField((JSONObject) root.get("general"), FALSE, "serial-module-execution", "force-serial-module-execution"));
 		upgrader.addUpgradeAction("6.1.0", root -> JSONSystem.renameField((JSONObject) root.get("grib"), new JSONNumber<>(8), "max-concurrent-downloads"));
-		upgrader.addUpgradeAction("7.4.0", root -> JSONSystem.renameField((JSONObject) root.get("grib"), new JSONBoolean(false), "use-increment-duration"));
+		upgrader.addUpgradeAction("7.4.0", root -> JSONSystem.renameField((JSONObject) root.get("grib"), FALSE, "use-increment-duration"));
 	}
 	
 	protected void initConfigurationUpgradeProblemHandlers(ConfigurationUpgrader upgrader) {
@@ -484,7 +492,7 @@ public class WRFRunner {
 		return upgradeResult.getX();
 	}
 	
-	private static final JSONObject buildModuleSubsection(Boolean enabled, String moduleClass, String namelist, String... dependencies) {
+	private static final JSONObject buildModuleSubsection(JSONData<?> enabled, String moduleClass, String namelist, String... dependencies) {
 		JSONObject out = new JSONObject();
 		out.put("enabled", enabled);
 		out.put("class", moduleClass);
